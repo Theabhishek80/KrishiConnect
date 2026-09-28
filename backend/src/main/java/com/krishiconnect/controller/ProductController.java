@@ -61,4 +61,17 @@ public class ProductController {
                 image
         );
     }
+
+    // DELETE PRODUCT - FARMER CAN DELETE ONLY THEIR OWN PRODUCT
+    @DeleteMapping("/farmer/{productId}")
+    @PreAuthorize("hasRole('FARMER')")
+    public void deleteFarmerProduct(
+            Authentication a,
+            @PathVariable Long productId
+    ) {
+        service.deleteProduct(
+                context.userId(a),
+                productId
+        );
+    }
 }

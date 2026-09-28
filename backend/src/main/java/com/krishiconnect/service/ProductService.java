@@ -1,5 +1,6 @@
 package com.krishiconnect.service;
 
+import org.springframework.web.multipart.MultipartFile;
 import com.krishiconnect.domain.ProductStatus;
 import com.krishiconnect.dto.ProductDtos.*;
 import com.krishiconnect.entity.*;
@@ -11,13 +12,27 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ProductService {
     private final ProductRepository products;
-    private final UserRepository users;
-    private final CategoryRepository categories;
-    private final InventoryRepository inventory;
+private final UserRepository users;
+private final CategoryRepository categories;
+private final InventoryRepository inventory;
+private final ProductImageRepository productImages;
+private final ImageKitService imageKitService;
 
-    public ProductService(ProductRepository p, UserRepository u, CategoryRepository c, InventoryRepository i) {
-        products=p; users=u; categories=c; inventory=i;
-    }
+  public ProductService(
+        ProductRepository p,
+        UserRepository u,
+        CategoryRepository c,
+        InventoryRepository i,
+        ProductImageRepository pi,
+        ImageKitService ik
+) {
+    products = p;
+    users = u;
+    categories = c;
+    inventory = i;
+    productImages = pi;
+    imageKitService = ik;
+}
 
     public Page<Product> publicProducts(String q, int page, int size) {
         int safePage = Math.max(page, 0);
@@ -51,4 +66,24 @@ public class ProductService {
         inventory.save(inv);
         return p;
     }
+
+    @Transactional
+public ProductImage addProductImage(Long farmerId, Long productId, MultipartFile image) {
+
+    Product product = products.findById(productId)
+            .orElseThrow(() -> new IllegalArgumentException("Product not found."));
+
+    if (!product.getFarmer().getId().equals(farmerId)) {
+        throw new IllegalArgumentException("You can only upload images for your own products.");
+    }
+
+    String imageUrl = imageKitService.uploadProductImage(image, productId);
+
+    ProductImage productImage = new ProductImage();
+    productImage.setProduct(product);
+    productImage.setUrl(imageUrl);
+    productImage.setSortOrder(0);
+
+    return productImages.save(productImage);
+}
 }

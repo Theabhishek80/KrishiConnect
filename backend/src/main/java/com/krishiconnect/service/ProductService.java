@@ -59,7 +59,9 @@ public class ProductService {
 
         User farmer = users.findById(farmerId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("Farmer not found.")
+                        new IllegalArgumentException(
+                                "Farmer not found."
+                        )
                 );
 
         if (farmer.getRole() != com.krishiconnect.domain.Role.FARMER) {
@@ -148,5 +150,17 @@ public class ProductService {
         }
 
         products.delete(product);
+    }
+
+    // GET PRODUCTS CREATED BY THE LOGGED-IN FARMER
+    public Page<Product> farmerProducts(Long farmerId) {
+        return products.findByFarmerId(
+                farmerId,
+                PageRequest.of(
+                        0,
+                        100,
+                        Sort.by("createdAt").descending()
+                )
+        );
     }
 }

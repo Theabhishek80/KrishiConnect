@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: krishiconnect-postgres
+    environment:
+      POSTGRES_DB: krishiconnect
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d krishiconnect"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: krishiconnect-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  backend:
+    build: ./backend
+    container_name: krishiconnect-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/krishiconnect
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      JWT_SECRET: change-this-development-secret-please
+      FRONTEND_URL: http://localhost:5173
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      ADMIN_EMAIL: admin@krishiconnect.local
+      ADMIN_PASSWORD: ChangeMe123!
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

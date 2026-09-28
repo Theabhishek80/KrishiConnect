@@ -44,7 +44,8 @@ public class ImageKitService {
                     .build();
 
             FileUploadResponse response = imageKitClient.files().upload(params);
-            return response.url();
+            return response.url()
+        .orElseThrow(() -> new IllegalStateException("ImageKit did not return an image URL."));
 
         } catch (IOException e) {
             throw new IllegalStateException("Could not read the uploaded image.", e);

@@ -6,12 +6,17 @@ import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ProductRepository extends JpaRepository<Product,Long> {
-    @EntityGraph(attributePaths={"category","farmer"})
+public interface ProductRepository extends JpaRepository<Product, Long> {
+
+    @EntityGraph(attributePaths = {"category", "farmer", "images"})
     Page<Product> findByStatus(ProductStatus status, Pageable pageable);
 
-    @EntityGraph(attributePaths={"category","farmer"})
-    Page<Product> findByStatusAndNameContainingIgnoreCase(ProductStatus status,String name,Pageable pageable);
+    @EntityGraph(attributePaths = {"category", "farmer", "images"})
+    Page<Product> findByStatusAndNameContainingIgnoreCase(
+            ProductStatus status,
+            String name,
+            Pageable pageable
+    );
 
-    Page<Product> findByFarmerId(Long farmerId,Pageable pageable);
+    Page<Product> findByFarmerId(Long farmerId, Pageable pageable);
 }

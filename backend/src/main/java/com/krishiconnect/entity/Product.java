@@ -1,4 +1,10 @@
+
 package com.krishiconnect.entity;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import java.util.ArrayList;
+import java.util.List;
+
+
 import com.krishiconnect.domain.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;

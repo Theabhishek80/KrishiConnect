@@ -328,6 +328,28 @@ export default function Profile() {
 
       </div>
 
+      {showImagePreview && (
+  <div
+    className="profile-image-preview-overlay"
+    onClick={() => setShowImagePreview(false)}
+  >
+    <button
+      className="profile-image-preview-close"
+      onClick={() => setShowImagePreview(false)}
+      aria-label="Close image preview"
+    >
+      <X size={24} />
+    </button>
+
+    <img
+      src={profile.profileImageUrl}
+      alt="Profile preview"
+      className="profile-image-preview"
+      onClick={e => e.stopPropagation()}
+    />
+  </div>
+)}
+
     </main>
   );
 }

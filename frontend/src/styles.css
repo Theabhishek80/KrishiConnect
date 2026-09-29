@@ -704,6 +704,33 @@ button{
   gap:16px
 }
 
+/* =========================
+   AUTH DIVIDER
+========================= */
+
+.auth-divider{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin:20px 0;
+  color:#8a948d;
+  font-size:.78rem;
+  font-weight:700;
+  letter-spacing:.08em;
+}
+
+.auth-divider::before,
+.auth-divider::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:var(--line);
+}
+
+.auth-divider span{
+  flex:0 0 auto;
+}
+
 .authbox label,
 .modern-form label{
   display:grid;

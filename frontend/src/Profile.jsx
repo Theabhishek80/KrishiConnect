@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Camera, UserRound, Save } from "lucide-react";
+import { onAuthStateChanged } from "firebase/auth";
 import api from "./api";
+import { auth } from "./firebase";
 
 export default function Profile() {
 
@@ -16,9 +18,25 @@ export default function Profile() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
+ useEffect(() => {
+
+  const unsubscribe = onAuthStateChanged(
+    auth,
+    firebaseUser => {
+
+      if (firebaseUser) {
+        loadProfile();
+      } else {
+        setError("Please sign in to view your profile.");
+        setLoading(false);
+      }
+
+    }
+  );
+
+  return () => unsubscribe();
+
+}, []);
 
   const loadProfile = async () => {
 

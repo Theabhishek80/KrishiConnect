@@ -35,7 +35,10 @@ import api from "./api";
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendEmailVerification
 } from "firebase/auth";
 
 import { auth } from "./firebase";
@@ -950,19 +953,118 @@ function Register() {
 
     try {
 
-      await api.post(
-        "/auth/register",
-        form
+      // 1. Create Firebase account
+      const credential =
+        await createUserWithEmailAndPassword(
+          auth,
+          form.email,
+          form.password
+        );
+
+      const firebaseUser = credential.user;
+
+
+      // 2. Save user's name in Firebase
+      await updateProfile(
+        firebaseUser,
+        {
+          displayName: form.name.trim()
+        }
       );
+
+
+      // 3. Send verification email
+      await sendEmailVerification(
+        firebaseUser
+      );
+
+
+      // 4. Get Firebase ID token
+      const idToken =
+        await firebaseUser.getIdToken();
+
+
+      // 5. Send profile + role to Spring Boot
+      const response =
+        await api.post(
+          "/auth/firebase/onboard",
+          {
+            name: form.name.trim(),
+            role: form.role
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${idToken}`
+            }
+          }
+        );
+
+
+      // 6. Store application user information
+      localStorage.setItem(
+        "kc_access",
+        idToken
+      );
+
+      localStorage.setItem(
+        "kc_user",
+        JSON.stringify(
+          response.data
+        )
+      );
+
+
+      // 7. Firebase account is created,
+      // but user must verify email before login.
+      await auth.signOut();
 
       navigate("/login");
 
     } catch (e) {
 
-      setError(
-        e.response?.data?.error ||
-        "Registration failed."
-      );
+      console.error(e);
+
+      if (
+        e.code ===
+        "auth/email-already-in-use"
+      ) {
+
+        setError(
+          "An account already exists with this email."
+        );
+
+      } else if (
+        e.code ===
+        "auth/weak-password"
+      ) {
+
+        setError(
+          "Password should be at least 6 characters."
+        );
+
+      } else if (
+        e.code ===
+        "auth/invalid-email"
+      ) {
+
+        setError(
+          "Please enter a valid email address."
+        );
+
+      } else if (
+        e.response?.data?.message
+      ) {
+
+        setError(
+          e.response.data.message
+        );
+
+      } else {
+
+        setError(
+          "Registration failed. Please try again."
+        );
+      }
 
     } finally {
 
@@ -1094,7 +1196,6 @@ function Register() {
     </Auth>
   );
 }
-
 
 /* =========================
    FORGOT PASSWORD

@@ -1552,3 +1552,19 @@ footer{
     justify-content: center;
   }
 }
+.profile-image-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 650px) {
+  .profile-image-actions {
+    flex-direction: column;
+  }
+
+  .profile-image-actions .secondary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

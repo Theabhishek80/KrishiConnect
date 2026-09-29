@@ -3,6 +3,7 @@ package com.krishiconnect.controller;
 import com.krishiconnect.domain.Role;
 import com.krishiconnect.dto.AuthDtos.*;
 import com.krishiconnect.entity.User;
+import com.krishiconnect.security.FirebaseIdentity;
 import com.krishiconnect.service.AuthService;
 import com.krishiconnect.service.FirebaseUserService;
 
@@ -86,20 +87,30 @@ public class AuthController {
             Authentication authentication
     ) {
 
-        if (authentication == null
-                || authentication.getDetails() == null) {
-
+        if (authentication == null) {
             throw new IllegalStateException(
                     "Firebase authentication required."
             );
         }
 
-        Long userId =
-                (Long) authentication.getDetails();
+        Object details = authentication.getDetails();
 
-        return Map.of(
-                "id", userId,
-                "email", authentication.getName()
+        // Existing PostgreSQL user
+        if (details instanceof Long userId) {
+
+            return Map.of(
+                    "id", userId,
+                    "email", authentication.getName(),
+                    "role", authentication.getAuthorities()
+                            .iterator()
+                            .next()
+                            .getAuthority()
+                            .replace("ROLE_", "")
+            );
+        }
+
+        throw new IllegalStateException(
+                "Application profile not found."
         );
     }
 
@@ -113,40 +124,57 @@ public class AuthController {
             @RequestBody Map<String, String> request
     ) {
 
-        if (authentication == null
-                || authentication.getDetails() == null) {
-
+        if (authentication == null) {
             throw new IllegalStateException(
                     "Firebase authentication required."
             );
         }
 
-        Long userId =
-                (Long) authentication.getDetails();
+        Object details = authentication.getDetails();
 
-        String name = request.get("name");
-        String roleValue = request.get("role");
-
-        Role role = null;
-
-        if (roleValue != null && !roleValue.isBlank()) {
-            role = Role.valueOf(
-                    roleValue.trim().toUpperCase()
+        if (!(details instanceof FirebaseIdentity identity)) {
+            throw new IllegalStateException(
+                    "Firebase onboarding is only available for new accounts."
             );
         }
 
-        /*
-         * At this point the FirebaseAuthFilter has already
-         * verified the Firebase token and linked/loaded
-         * the PostgreSQL user.
-         *
-         * This endpoint is temporarily kept simple.
-         */
+        String firebaseUid = identity.uid();
+
+        String email = authentication.getName();
+
+        String name = request.get("name");
+
+        String roleValue = request.get("role");
+
+        Role requestedRole = null;
+
+        if (roleValue != null && !roleValue.isBlank()) {
+            try {
+                requestedRole = Role.valueOf(
+                        roleValue.trim().toUpperCase()
+                );
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(
+                        "Invalid role. Use CONSUMER or FARMER."
+                );
+            }
+        }
+
+        User user = firebaseUserService.getOrCreateUser(
+                firebaseUid,
+                email,
+                name,
+                requestedRole,
+                identity.emailVerified()
+        );
 
         return Map.of(
-                "id", userId,
-                "name", name == null ? "" : name,
-                "role", role == null ? "" : role.name()
+                "id", user.getId(),
+                "firebaseUid", user.getFirebaseUid(),
+                "email", user.getEmail(),
+                "name", user.getName(),
+                "role", user.getRole().name(),
+                "emailVerified", user.isEmailVerified()
         );
     }
 }

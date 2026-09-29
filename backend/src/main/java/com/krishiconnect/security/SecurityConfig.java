@@ -47,13 +47,22 @@ public class SecurityConfig {
                 .authorizeHttpRequests(a -> a
 
                         // PUBLIC
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/categories/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**"
-                        ).permitAll()
+                      .requestMatchers(
+        "/api/auth/login",
+        "/api/auth/register",
+        "/api/auth/refresh",
+        "/api/auth/forgot-password",
+        "/api/auth/reset-password",
+        "/api/categories/**",
+        "/swagger-ui/**",
+        "/swagger-ui.html",
+        "/v3/api-docs/**"
+).permitAll()
+
+// Firebase authentication / onboarding
+.requestMatchers(
+        "/api/auth/firebase/**"
+).authenticated()
 
                         // FARMER ONLY
                         .requestMatchers(

@@ -215,10 +215,17 @@ export default function Profile() {
           <div className="profile-picture">
 
             {profile.profileImageUrl ? (
-              <img
-                src={profile.profileImageUrl}
-                alt="Profile"
-              />
+             <img
+  src={profile.profileImageUrl}
+  alt="Profile"
+  style={{
+    width: "96px",
+    height: "96px",
+    objectFit: "cover",
+    borderRadius: "50%",
+    display: "block"
+  }}
+/>
             ) : (
               <UserRound size={42} />
             )}

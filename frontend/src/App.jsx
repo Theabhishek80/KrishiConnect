@@ -32,6 +32,14 @@ import {
 
 import api from "./api";
 
+import {
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "firebase/auth";
+
+import { auth } from "./firebase";
+
 
 const getUser = () =>
   JSON.parse(localStorage.getItem("kc_user") || "null");
@@ -737,6 +745,7 @@ function Auth({
    LOGIN
 ========================= */
 
+
 function Login() {
 
   const navigate = useNavigate();
@@ -749,7 +758,6 @@ function Login() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-
   const submit = async e => {
 
     e.preventDefault();
@@ -757,31 +765,61 @@ function Login() {
     setBusy(true);
     setError("");
 
-
     try {
 
-      const r = await api.post(
-        "/auth/login",
-        form
+      const credential =
+        await signInWithEmailAndPassword(
+          auth,
+          form.email,
+          form.password
+        );
+
+      const firebaseUser = credential.user;
+
+      if (!firebaseUser.emailVerified) {
+
+        setError(
+          "Please verify your email before signing in."
+        );
+
+        await auth.signOut();
+
+        return;
+      }
+
+      const idToken =
+        await firebaseUser.getIdToken();
+
+      localStorage.setItem(
+        "kc_access",
+        idToken
       );
 
-      saveSession(r.data);
-
-      navigate(
-        r.data.role === "ADMIN"
-          ? "/admin"
-          : r.data.role === "FARMER"
-            ? "/farmer"
-            : "/"
+      localStorage.setItem(
+        "kc_user",
+        JSON.stringify({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName || ""
+        })
       );
+
+      navigate("/");
 
       window.location.reload();
 
     } catch (e) {
 
+      console.error(e);
+
       setError(
-        e.response?.data?.error ||
-        "Login failed."
+        e.code === "auth/invalid-credential"
+          ? "Invalid email or password."
+          : e.code === "auth/user-not-found"
+            ? "No account found with this email."
+            : e.code === "auth/wrong-password"
+              ? "Incorrect password."
+              : "Login failed. Please try again."
       );
 
     } finally {
@@ -860,6 +898,7 @@ function Login() {
         <button
           className="primary-btn full"
           disabled={busy}
+          type="submit"
         >
           {busy
             ? "Signing in…"
@@ -871,6 +910,7 @@ function Login() {
 
       <p className="auth-switch">
         New here?{" "}
+
         <Link to="/register">
           Create an account
         </Link>

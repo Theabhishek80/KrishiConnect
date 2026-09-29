@@ -1,10 +1,9 @@
-import com.krishiconnect.repository.UserRepository;
-
 package com.krishiconnect.controller;
 
 import com.krishiconnect.domain.Role;
 import com.krishiconnect.dto.AuthDtos.*;
 import com.krishiconnect.entity.User;
+import com.krishiconnect.repository.UserRepository;
 import com.krishiconnect.security.FirebaseIdentity;
 import com.krishiconnect.service.AuthService;
 import com.krishiconnect.service.FirebaseUserService;

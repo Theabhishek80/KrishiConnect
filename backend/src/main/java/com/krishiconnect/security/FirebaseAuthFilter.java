@@ -151,10 +151,11 @@ SecurityContextHolder
                     .getContext()
                     .setAuthentication(authentication);
 
-        } catch (Exception ignored) {
-            // Invalid Firebase token.
-            // Continue without authentication.
-        }
+      } catch (Exception e) {
+
+    e.printStackTrace();
+
+}
 
         chain.doFilter(req, res);
     }

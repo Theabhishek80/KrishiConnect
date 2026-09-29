@@ -29,7 +29,8 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtAuthFilter filter
+            FirebaseAuthFilter firebaseAuthFilter,
+            JwtAuthFilter jwtAuthFilter
     ) throws Exception {
 
         return http
@@ -81,9 +82,16 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
+                // Firebase authentication first
                 .addFilterBefore(
-                        filter,
+                        firebaseAuthFilter,
                         UsernamePasswordAuthenticationFilter.class
+                )
+
+                // Keep old JWT authentication temporarily
+                .addFilterAfter(
+                        jwtAuthFilter,
+                        FirebaseAuthFilter.class
                 )
 
                 .build();

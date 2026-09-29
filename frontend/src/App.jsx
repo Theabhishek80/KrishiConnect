@@ -1843,6 +1843,34 @@ const [loadingProducts, setLoadingProducts] = useState(true);
   };
 
 
+  const deleteProduct = async productId => {
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this product?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+      await api.delete(
+        `/products/farmer/${productId}`
+      );
+
+      setMessage("Product deleted successfully.");
+      await loadMyProducts();
+
+    } catch (e) {
+
+      setMessage(
+        e.response?.data?.error ||
+        "Could not delete product."
+      );
+
+    }
+  };
+
+
   return (
 
     <section className="page-section">
@@ -2163,6 +2191,56 @@ const [loadingProducts, setLoadingProducts] = useState(true);
 
       </div>
 
+      {/* =========================
+          MY PRODUCTS
+      ========================= */}
+
+      <div className="panel admin-panel" style={{ marginTop: "24px" }}>
+
+        <div className="sectionhead">
+          <div>
+            <span className="section-kicker">MY PRODUCTS</span>
+            <h2>Products you listed</h2>
+          </div>
+          <span>{myProducts.length} products</span>
+        </div>
+
+        {loadingProducts ? (
+          <div className="empty-inline">Loading your products…</div>
+        ) : !myProducts.length ? (
+          <div className="empty-inline">
+            <Package />
+            You have not listed any products yet.
+          </div>
+        ) : (
+          myProducts.map(p => {
+            const productImage = p.images?.length > 0 ? p.images[0]?.url : null;
+            return (
+              <div className="review-row" key={p.id}>
+                <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+                  {productImage ? (
+                    <img src={productImage} alt={p.name} style={{ width: "64px", height: "64px", objectFit: "cover", borderRadius: "10px", flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: "64px", height: "64px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", background: "#f1f5f0", fontSize: "26px", flexShrink: 0 }}>🌱</div>
+                  )}
+                  <div>
+                    <b>{p.name}</b>
+                    <span>₹{Number(p.price || 0).toLocaleString("en-IN")} / {p.unit}</span>
+                    <span>Status: {p.status || "PENDING_APPROVAL"}</span>
+                  </div>
+                </div>
+                <div className="review-actions">
+                  <button className="reject" onClick={() => deleteProduct(p.id)}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+
     </section>
   );
 }
@@ -2176,6 +2254,8 @@ function Admin() {
 
   const [d, setD] = useState(null);
   const [pending, setPending] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
   const [error, setError] = useState("");
 
 
@@ -2203,6 +2283,25 @@ function Admin() {
       )
       .catch(() => {});
 
+
+    setLoadingProducts(true);
+
+    api
+      .get("/admin/products")
+      .then(r =>
+        setAllProducts(
+          r.data.content ||
+          r.data ||
+          []
+        )
+      )
+      .catch(() => {
+        setAllProducts([]);
+      })
+      .finally(() => {
+        setLoadingProducts(false);
+      });
+
   };
 
 
@@ -2217,6 +2316,27 @@ function Admin() {
 
     load();
 
+  };
+
+
+  const deleteProduct = async productId => {
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this product?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/admin/products/${productId}`);
+      setError("");
+      load();
+    } catch (e) {
+      setError(
+        e.response?.data?.error ||
+        "Could not delete product."
+      );
+    }
   };
 
 
@@ -2392,6 +2512,56 @@ function Admin() {
         )}
 
       </div>
+
+      {/* =========================
+          ALL PRODUCTS
+      ========================= */}
+
+      <div className="panel admin-panel" style={{ marginTop: "24px" }}>
+        <div className="sectionhead">
+          <div>
+            <span className="section-kicker">ALL PRODUCTS</span>
+            <h2>Product management</h2>
+          </div>
+          <span>{allProducts.length} products</span>
+        </div>
+
+        {loadingProducts ? (
+          <div className="empty-inline">Loading products…</div>
+        ) : !allProducts.length ? (
+          <div className="empty-inline">
+            <CheckCircle2 />
+            No products found.
+          </div>
+        ) : (
+          allProducts.map(p => {
+            const productImage = p.images?.length > 0 ? p.images[0]?.url : null;
+            return (
+              <div className="review-row" key={p.id}>
+                <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+                  {productImage ? (
+                    <img src={productImage} alt={p.name} style={{ width: "64px", height: "64px", objectFit: "cover", borderRadius: "10px", flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: "64px", height: "64px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", background: "#f1f5f0", fontSize: "26px", flexShrink: 0 }}>🌱</div>
+                  )}
+                  <div>
+                    <b>{p.name}</b>
+                    <span>₹{Number(p.price || 0).toLocaleString("en-IN")} / {p.unit}</span>
+                    <span>Farmer: {p.farmer?.name || "Unknown"}</span>
+                    <span>Status: {p.status || "UNKNOWN"}</span>
+                  </div>
+                </div>
+                <div className="review-actions">
+                  <button className="reject" onClick={() => deleteProduct(p.id)}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
 
     </section>
   );

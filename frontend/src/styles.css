@@ -1366,3 +1366,36 @@ footer{
     align-self:start
   }
 }
+.nav-profile-image {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.nav-profile-name {
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .nav-user {
+    gap: 5px;
+    padding: 6px 8px;
+  }
+
+  .nav-profile-image,
+  .nav-user .avatar {
+    width: 30px;
+    height: 30px;
+  }
+
+  .nav-profile-name {
+    display: none;
+  }
+
+  .nav-user svg {
+    width: 16px;
+    height: 16px;
+  }
+}

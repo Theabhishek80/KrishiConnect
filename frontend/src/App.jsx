@@ -922,14 +922,23 @@ function Login() {
         idToken
       );
 
-      localStorage.setItem(
-        "kc_user",
-        JSON.stringify({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName || ""
-        })
-      );
+     const profile = await api.get("/auth/firebase/me", {
+  headers: {
+    Authorization: `Bearer ${idToken}`
+  }
+});
+
+localStorage.setItem("kc_access", idToken);
+
+localStorage.setItem(
+  "kc_user",
+  JSON.stringify({
+    ...profile.data,
+    uid: firebaseUser.uid,
+    email: firebaseUser.email,
+    name: firebaseUser.displayName || ""
+  })
+);
 
       navigate("/");
 

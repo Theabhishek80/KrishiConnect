@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Camera, UserRound, Save } from "lucide-react";
+import { Camera, UserRound, Save, X } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
 import api from "./api";
 import { auth } from "./firebase";
@@ -8,6 +8,7 @@ import { auth } from "./firebase";
 export default function Profile() {
 
   const [profile, setProfile] = useState(null);
+  const [showImagePreview, setShowImagePreview] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 

@@ -39,8 +39,10 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   sendEmailVerification,
+  sendPasswordResetEmail,
   signOut
 } from "firebase/auth";
+
 import { auth } from "./firebase";
 
 
@@ -1556,19 +1558,42 @@ function ForgotPassword() {
 
     try {
 
-      await api.post(
-        "/auth/forgot-password",
-        { email }
+      await sendPasswordResetEmail(
+        auth,
+        email
       );
 
       setSent(true);
 
     } catch (e) {
 
-      setError(
-        e.response?.data?.error ||
-        "Could not process request."
-      );
+      console.error(e);
+
+      if (e.code === "auth/user-not-found") {
+
+        setError(
+          "No account found with this email."
+        );
+
+      } else if (e.code === "auth/invalid-email") {
+
+        setError(
+          "Please enter a valid email address."
+        );
+
+      } else if (e.code === "auth/too-many-requests") {
+
+        setError(
+          "Too many attempts. Please try again later."
+        );
+
+      } else {
+
+        setError(
+          "Could not send reset email. Please try again."
+        );
+
+      }
 
     } finally {
 
@@ -1582,7 +1607,7 @@ function ForgotPassword() {
 
     <Auth
       title="Reset your password"
-      subtitle="Enter your account email and we’ll send a secure reset link."
+      subtitle="Enter your account email and we'll send a secure reset link."
     >
 
       {sent ? (
@@ -1597,8 +1622,7 @@ function ForgotPassword() {
 
           <p>
             If an account exists for that email,
-            a reset link has been sent.
-            The link expires in 30 minutes.
+            a password reset link has been sent.
           </p>
 
           <Link
@@ -1615,6 +1639,7 @@ function ForgotPassword() {
         <form onSubmit={submit}>
 
           <label>
+
             Email
 
             <input
@@ -1631,19 +1656,24 @@ function ForgotPassword() {
 
 
           {error && (
+
             <div className="notice error">
               {error}
             </div>
+
           )}
 
 
           <button
             className="primary-btn full"
             disabled={busy}
+            type="submit"
           >
+
             {busy
               ? "Sending…"
               : "Send reset link"}
+
           </button>
 
 

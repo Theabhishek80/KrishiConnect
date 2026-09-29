@@ -157,7 +157,7 @@ const [accountSidebarOpen, setAccountSidebarOpen] = useState(false);
           {user ? (
             <button
               className="nav-user"
-              onClick={logout}
+             onClick={() => setAccountSidebarOpen(true)}
             >
               <span className="avatar">
                 {user.name?.[0]?.toUpperCase()}

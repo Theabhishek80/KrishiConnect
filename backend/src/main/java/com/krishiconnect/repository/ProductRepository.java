@@ -6,6 +6,7 @@ import com.krishiconnect.domain.ProductStatus;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -29,7 +30,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             Pageable pageable
     );
 
-    // ADMIN - GET ALL PRODUCTS WITH DETAILS
-    @EntityGraph(attributePaths = {"category", "farmer", "images"})
-    List<Product> findAllWithDetails();
+  // ADMIN - GET ALL PRODUCTS WITH DETAILS
+@EntityGraph(attributePaths = {"category", "farmer", "images"})
+@Query("SELECT p FROM Product p")
+List<Product> findAllWithDetails();
+   
 }

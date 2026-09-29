@@ -104,11 +104,18 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
                  * The onboarding endpoint can use the authenticated
                  * Firebase identity to create the database user.
                  */
-                authentication.setDetails(firebaseUid);
+               authentication.setDetails(
+        new FirebaseIdentity(
+                firebaseUid,
+                Boolean.TRUE.equals(
+                        decodedToken.isEmailVerified()
+                )
+        )
+);
 
-                SecurityContextHolder
-                        .getContext()
-                        .setAuthentication(authentication);
+SecurityContextHolder
+        .getContext()
+        .setAuthentication(authentication);
 
                 chain.doFilter(req, res);
                 return;

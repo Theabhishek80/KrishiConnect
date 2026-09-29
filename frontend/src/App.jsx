@@ -915,20 +915,18 @@ function Login() {
       }
 
       const idToken =
-        await firebaseUser.getIdToken();
+  await firebaseUser.getIdToken();
 
-      localStorage.setItem(
-        "kc_access",
-        idToken
-      );
-
-     const profile = await api.get("/auth/firebase/me", {
+const profile = await api.get("/auth/firebase/me", {
   headers: {
     Authorization: `Bearer ${idToken}`
   }
 });
 
-localStorage.setItem("kc_access", idToken);
+localStorage.setItem(
+  "kc_access",
+  idToken
+);
 
 localStorage.setItem(
   "kc_user",

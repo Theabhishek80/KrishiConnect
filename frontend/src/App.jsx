@@ -1656,18 +1656,48 @@ function Farmer() {
   const [message, setMessage] = useState("");
 
   const [busy, setBusy] = useState(false);
+  const [myProducts, setMyProducts] = useState([]);
+const [loadingProducts, setLoadingProducts] = useState(true);
 
 
-  useEffect(() => {
+  const loadMyProducts = async () => {
+  try {
+    setLoadingProducts(true);
 
-    api
-      .get("/categories")
-      .then(r => setCategories(r.data))
-      .catch(() => {
-        setCategories([]);
-      });
+    const r = await api.get(
+      "/products/farmer/my-products"
+    );
 
-  }, []);
+    setMyProducts(
+      r.data.content || []
+    );
+
+  } catch (e) {
+
+    console.error(
+      "Could not load farmer products",
+      e
+    );
+
+    setMyProducts([]);
+
+  } finally {
+    setLoadingProducts(false);
+  }
+};
+
+   useEffect(() => {
+
+  api
+    .get("/categories")
+    .then(r => setCategories(r.data))
+    .catch(() => {
+      setCategories([]);
+    });
+
+  loadMyProducts();
+
+}, []);
 
 
   const handleImageChange = e => {

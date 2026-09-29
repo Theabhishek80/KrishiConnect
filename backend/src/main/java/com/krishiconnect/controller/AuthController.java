@@ -1,3 +1,5 @@
+import com.krishiconnect.repository.UserRepository;
+
 package com.krishiconnect.controller;
 
 import com.krishiconnect.domain.Role;
@@ -19,15 +21,18 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService service;
-    private final FirebaseUserService firebaseUserService;
+   private final FirebaseUserService firebaseUserService;
+private final UserRepository users;
 
-    public AuthController(
-            AuthService service,
-            FirebaseUserService firebaseUserService
-    ) {
-        this.service = service;
-        this.firebaseUserService = firebaseUserService;
-    }
+  public AuthController(
+        AuthService service,
+        FirebaseUserService firebaseUserService,
+        UserRepository users
+) {
+    this.service = service;
+    this.firebaseUserService = firebaseUserService;
+    this.users = users;
+}
 
     // -------------------------
     // OLD AUTH - TEMPORARY
@@ -119,54 +124,33 @@ public class AuthController {
     // -------------------------
 
     @PostMapping("/firebase/onboard")
-    public Map<String, Object> firebaseOnboard(
-            Authentication authentication,
-            @RequestBody Map<String, String> request
-    ) {
+public Map<String, Object> firebaseOnboard(
+        Authentication authentication,
+        @RequestBody Map<String, String> request
+) {
 
-        if (authentication == null) {
-            throw new IllegalStateException(
-                    "Firebase authentication required."
-            );
-        }
-
-        Object details = authentication.getDetails();
-
-        if (!(details instanceof FirebaseIdentity identity)) {
-            throw new IllegalStateException(
-                    "Firebase onboarding is only available for new accounts."
-            );
-        }
-
-        String firebaseUid = identity.uid();
-
-        String email = authentication.getName();
-
-        String name = request.get("name");
-
-        String roleValue = request.get("role");
-
-        Role requestedRole = null;
-
-        if (roleValue != null && !roleValue.isBlank()) {
-            try {
-                requestedRole = Role.valueOf(
-                        roleValue.trim().toUpperCase()
-                );
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(
-                        "Invalid role. Use CONSUMER or FARMER."
-                );
-            }
-        }
-
-        User user = firebaseUserService.getOrCreateUser(
-                firebaseUid,
-                email,
-                name,
-                requestedRole,
-                identity.emailVerified()
+    if (authentication == null) {
+        throw new IllegalStateException(
+                "Firebase authentication required."
         );
+    }
+
+    Object details = authentication.getDetails();
+
+    /*
+     * EXISTING APPLICATION USER
+     *
+     * FirebaseAuthFilter already found the user's
+     * PostgreSQL profile.
+     */
+    if (details instanceof Long userId) {
+
+        User user = users.findById(userId)
+                .orElseThrow(() ->
+                        new IllegalStateException(
+                                "Application profile not found."
+                        )
+                );
 
         return Map.of(
                 "id", user.getId(),
@@ -177,4 +161,56 @@ public class AuthController {
                 "emailVerified", user.isEmailVerified()
         );
     }
+
+    /*
+     * NEW FIREBASE USER
+     */
+    if (!(details instanceof FirebaseIdentity identity)) {
+
+        throw new IllegalStateException(
+                "Firebase authentication required."
+        );
+    }
+
+    String firebaseUid = identity.uid();
+    String email = authentication.getName();
+
+    String name = request.get("name");
+
+    String roleValue = request.get("role");
+
+    Role requestedRole = null;
+
+    if (roleValue != null && !roleValue.isBlank()) {
+
+        try {
+
+            requestedRole = Role.valueOf(
+                    roleValue.trim().toUpperCase()
+            );
+
+        } catch (IllegalArgumentException e) {
+
+            throw new IllegalArgumentException(
+                    "Invalid role. Use CONSUMER or FARMER."
+            );
+        }
+    }
+
+    User user = firebaseUserService.getOrCreateUser(
+            firebaseUid,
+            email,
+            name,
+            requestedRole,
+            identity.emailVerified()
+    );
+
+    return Map.of(
+            "id", user.getId(),
+            "firebaseUid", user.getFirebaseUid(),
+            "email", user.getEmail(),
+            "name", user.getName(),
+            "role", user.getRole().name(),
+            "emailVerified", user.isEmailVerified()
+    );
 }

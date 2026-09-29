@@ -76,9 +76,40 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
                                     .orElse(null)
                     );
 
-            // Firebase account is valid, but application profile
-            // does not exist yet.
+            /*
+             * Firebase authentication is valid, but this is a
+             * completely new application user.
+             *
+             * We still authenticate the Firebase identity so that
+             * /api/auth/firebase/onboard can create the PostgreSQL
+             * profile.
+             */
             if (user == null) {
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                decodedToken.getEmail(),
+                                null,
+                                List.of(
+                                        new SimpleGrantedAuthority(
+                                                "ROLE_FIREBASE_USER"
+                                        )
+                                )
+                        );
+
+                /*
+                 * For a new Firebase user there is no PostgreSQL ID yet.
+                 *
+                 * Store the Firebase UID here instead of the database ID.
+                 * The onboarding endpoint can use the authenticated
+                 * Firebase identity to create the database user.
+                 */
+                authentication.setDetails(firebaseUid);
+
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(authentication);
+
                 chain.doFilter(req, res);
                 return;
             }
@@ -105,8 +136,8 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
                             )
                     );
 
-            // AuthContext currently expects the database user ID
-            // inside Authentication.details.
+            // Existing application user:
+            // AuthContext expects the PostgreSQL user ID here.
             authentication.setDetails(user.getId());
 
             SecurityContextHolder

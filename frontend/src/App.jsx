@@ -65,7 +65,8 @@ function saveSession(data) {
 function Layout({ children }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(getUser());
-  const [open, setOpen] = useState(false);
+const [open, setOpen] = useState(false);
+const [accountSidebarOpen, setAccountSidebarOpen] = useState(false);
 
   useEffect(() => {
     const sync = () => setUser(getUser());
@@ -81,12 +82,17 @@ function Layout({ children }) {
     localStorage.removeItem("kc_user");
 
     setUser(null);
+    setProfile(null);
     setOpen(false);
+    setAccountSidebarOpen(false);
 
     navigate("/");
   };
 
-  const close = () => setOpen(false);
+ const close = () => {
+  setOpen(false);
+  setAccountSidebarOpen(false);
+};
 
   return (
     <div className="app-shell">

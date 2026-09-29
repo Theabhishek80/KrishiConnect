@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 
 import api from "./api";
+import Profile from "./Profile";
 
 import {
   signInWithEmailAndPassword,

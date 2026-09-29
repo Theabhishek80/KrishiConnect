@@ -1814,6 +1814,7 @@ const [loadingProducts, setLoadingProducts] = useState(true);
 
       setImage(null);
       setImagePreview("");
+      await loadMyProducts();
 
 
       /* Reset file input */

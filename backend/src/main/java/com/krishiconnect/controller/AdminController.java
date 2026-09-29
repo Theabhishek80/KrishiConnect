@@ -1,195 +1,82 @@
 package com.krishiconnect.controller;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseToken;
-import com.krishiconnect.domain.Role;
-import com.krishiconnect.dto.AuthDtos.*;
-import com.krishiconnect.entity.User;
-import com.krishiconnect.service.AuthService;
-import com.krishiconnect.service.FirebaseUserService;
+import com.krishiconnect.domain.ProductStatus;
+import com.krishiconnect.repository.OrderRepository;
+import com.krishiconnect.repository.ProductRepository;
+import com.krishiconnect.repository.UserRepository;
+import com.krishiconnect.security.AuthContext;
 
-import jakarta.validation.Valid;
-
-import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/auth")
-public class AuthController {
+@RequestMapping("/api/admin")
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminController {
 
-    private final AuthService service;
-    private final FirebaseUserService firebaseUserService;
+    private final UserRepository users;
+    private final ProductRepository products;
+    private final OrderRepository orders;
+    private final AuthContext context;
 
-    public AuthController(
-            AuthService service,
-            FirebaseUserService firebaseUserService
+    public AdminController(
+            UserRepository users,
+            ProductRepository products,
+            OrderRepository orders,
+            AuthContext context
     ) {
-        this.service = service;
-        this.firebaseUserService = firebaseUserService;
+        this.users = users;
+        this.products = products;
+        this.orders = orders;
+        this.context = context;
     }
 
-    // -------------------------
-    // OLD AUTH - TEMPORARY
-    // -------------------------
-
-    @PostMapping("/register")
-    public AuthResponse register(
-            @Valid @RequestBody RegisterRequest request
-    ) {
-        return service.register(request);
-    }
-
-    @PostMapping("/login")
-    public AuthResponse login(
-            @Valid @RequestBody LoginRequest request
-    ) {
-        return service.login(request);
-    }
-
-    @PostMapping("/refresh")
-    public AuthResponse refresh(
-            @Valid @RequestBody RefreshRequest request
-    ) {
-        return service.refresh(request);
-    }
-
-    @PostMapping("/forgot-password")
-    public Map<String, String> forgot(
-            @Valid @RequestBody ForgotPasswordRequest request
-    ) {
-        service.forgotPassword(request);
-
+    @GetMapping("/dashboard")
+    public Map<String, Object> dashboard() {
         return Map.of(
-                "message",
-                "If an account exists for that email, a password reset link has been sent."
+                "users", users.count(),
+                "products", products.count(),
+                "pendingProducts",
+                products.findByStatus(
+                        ProductStatus.PENDING_APPROVAL,
+                        org.springframework.data.domain.PageRequest.of(0, 1)
+                ).getTotalElements(),
+                "orders", orders.count()
         );
     }
 
-    @PostMapping("/reset-password")
-    public Map<String, String> reset(
-            @Valid @RequestBody ResetPasswordRequest request
-    ) {
-        service.resetPassword(request);
+    @GetMapping("/products")
+    public Object allProducts() {
+        return products.findAllWithDetails();
+    }
 
-        return Map.of(
-                "message",
-                "Password updated successfully. You can now sign in."
+    @GetMapping("/products/pending")
+    public Object pendingProducts() {
+        return products.findByStatus(
+                ProductStatus.PENDING_APPROVAL,
+                org.springframework.data.domain.PageRequest.of(0, 100)
         );
     }
 
-    // -------------------------
-    // FIREBASE PROFILE
-    // -------------------------
-
-    @GetMapping("/firebase/me")
-    public Map<String, Object> firebaseMe(
-            Authentication authentication
-    ) {
-
-        if (authentication == null) {
-            throw new IllegalStateException(
-                    "Firebase authentication required."
-            );
-        }
-
-        Object details = authentication.getDetails();
-
-        // Existing PostgreSQL user
-        if (details instanceof Long userId) {
-
-            return Map.of(
-                    "id", userId,
-                    "email", authentication.getName(),
-                    "role", authentication.getAuthorities()
-                            .iterator()
-                            .next()
-                            .getAuthority()
-                            .replace("ROLE_", "")
-            );
-        }
-
-        throw new IllegalStateException(
-                "Application profile not found."
-        );
+    @PatchMapping("/products/{id}/approve")
+    public Object approve(@PathVariable Long id) {
+        var product = products.findById(id).orElseThrow();
+        product.setStatus(ProductStatus.APPROVED);
+        return products.save(product);
     }
 
-    // -------------------------
-    // FIREBASE ONBOARDING
-    // -------------------------
+    @PatchMapping("/products/{id}/reject")
+    public Object reject(@PathVariable Long id) {
+        var product = products.findById(id).orElseThrow();
+        product.setStatus(ProductStatus.REJECTED);
+        return products.save(product);
+    }
 
-    @PostMapping("/firebase/onboard")
-    public Map<String, Object> firebaseOnboard(
-            Authentication authentication,
-            @RequestBody Map<String, String> request
-    ) {
-
-        if (authentication == null) {
-            throw new IllegalStateException(
-                    "Firebase authentication required."
-            );
-        }
-
-        Object details = authentication.getDetails();
-
-        if (!(details instanceof String firebaseUid)) {
-            throw new IllegalStateException(
-                    "Firebase onboarding is only available for new accounts."
-            );
-        }
-
-        String email = authentication.getName();
-
-        String name = request.get("name");
-
-        String roleValue = request.get("role");
-
-        Role requestedRole = null;
-
-        if (roleValue != null && !roleValue.isBlank()) {
-            try {
-                requestedRole = Role.valueOf(
-                        roleValue.trim().toUpperCase()
-                );
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(
-                        "Invalid role. Use CONSUMER or FARMER."
-                );
-            }
-        }
-
-        /*
-         * Get the Firebase token again so that the backend,
-         * rather than the frontend, determines the Firebase
-         * UID and email verification status.
-         */
-        String authorization =
-                null;
-
-        /*
-         * The Firebase UID is already verified by
-         * FirebaseAuthFilter and stored in Authentication.details.
-         *
-         * We use the Firebase identity from the authentication
-         * object and create the PostgreSQL profile.
-         */
-        User user = firebaseUserService.getOrCreateUser(
-                firebaseUid,
-                email,
-                name,
-                requestedRole,
-                false
-        );
-
-        return Map.of(
-                "id", user.getId(),
-                "firebaseUid", user.getFirebaseUid(),
-                "email", user.getEmail(),
-                "name", user.getName(),
-                "role", user.getRole().name(),
-                "emailVerified", user.isEmailVerified()
-        );
+    @DeleteMapping("/products/{id}")
+    public void deleteProduct(@PathVariable Long id) {
+        products.deleteById(id);
     }
 }
 

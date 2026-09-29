@@ -1,5 +1,10 @@
 package com.krishiconnect.controller;
 
+
+import com.krishiconnect.service.ImageKitService;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.krishiconnect.entity.User;
 import com.krishiconnect.repository.UserRepository;
 import com.krishiconnect.security.AuthContext;
@@ -16,15 +21,18 @@ import java.util.Map;
 public class ProfileController {
 
     private final UserRepository users;
-    private final AuthContext context;
+private final AuthContext context;
+private final ImageKitService imageKitService;
 
-    public ProfileController(
-            UserRepository users,
-            AuthContext context
-    ) {
-        this.users = users;
-        this.context = context;
-    }
+   public ProfileController(
+        UserRepository users,
+        AuthContext context,
+        ImageKitService imageKitService
+) {
+    this.users = users;
+    this.context = context;
+    this.imageKitService = imageKitService;
+}
 
     // Get logged-in user's profile
     @GetMapping
@@ -75,6 +83,35 @@ public class ProfileController {
 
         return profileResponse(savedUser);
     }
+
+
+    @PostMapping(
+        value = "/image",
+        consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+)
+public Map<String, Object> uploadProfileImage(
+        Authentication authentication,
+        @RequestParam("image") MultipartFile image
+) {
+
+    Long userId = context.userId(authentication);
+
+    User user = users.findById(userId)
+            .orElseThrow(() ->
+                    new IllegalStateException(
+                            "User profile not found."
+                    )
+            );
+
+    String imageUrl =
+            imageKitService.uploadProfileImage(image, userId);
+
+    user.setProfileImageUrl(imageUrl);
+
+    User savedUser = users.save(user);
+
+    return profileResponse(savedUser);
+}
 
     private Map<String, Object> profileResponse(User user) {
 

@@ -57,9 +57,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         .getContext()
                         .setAuthentication(auth);
 
-            } catch (Exception ignored) {
-                // Invalid JWT - continue without authentication
-            }
+            } } catch (Exception e) {
+    System.err.println("JWT AUTH ERROR: " + e.getMessage());
+    e.printStackTrace();
+}
         }
 
         chain.doFilter(req, res);

@@ -159,13 +159,23 @@ const [accountSidebarOpen, setAccountSidebarOpen] = useState(false);
               className="nav-user"
              onClick={() => setAccountSidebarOpen(true)}
             >
-              <span className="avatar">
-                {user.name?.[0]?.toUpperCase()}
-              </span>
+             {user.profileImageUrl ? (
+  <img
+    className="nav-profile-image"
+    src={user.profileImageUrl}
+    alt="Profile"
+  />
+) : (
+  <span className="avatar">
+    {user.name?.[0]?.toUpperCase()}
+  </span>
+)}
 
-              {user.name?.split(" ")[0]}
+<span className="nav-profile-name">
+  {user.name?.split(" ")[0]}
+</span>
 
-              <LogOut size={16} />
+<ChevronRight size={17} />
             </button>
           ) : (
             <Link

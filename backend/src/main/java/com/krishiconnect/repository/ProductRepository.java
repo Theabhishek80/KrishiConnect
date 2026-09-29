@@ -25,10 +25,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             Pageable pageable
     );
 
-    Page<Product> findByFarmerId(
-            Long farmerId,
-            Pageable pageable
-    );
+   @EntityGraph(attributePaths = {"category", "farmer", "images"})
+Page<Product> findByFarmerId(
+        Long farmerId,
+        Pageable pageable
+);
 
   // ADMIN - GET ALL PRODUCTS WITH DETAILS
 @EntityGraph(attributePaths = {"category", "farmer", "images"})

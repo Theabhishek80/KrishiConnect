@@ -27,8 +27,14 @@ public class User {
     @Column(name = "password_hash", nullable = true)
     private String passwordHash;
 
-    @Column(name = "firebase_uid", unique = true, length = 128)
-    private String firebaseUid;
+  @Column(name = "firebase_uid", unique = true, length = 128)
+private String firebaseUid;
+
+@Column(name = "profile_image_url")
+private String profileImageUrl;
+
+@Column(name = "phone", length = 40)
+private String phone;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

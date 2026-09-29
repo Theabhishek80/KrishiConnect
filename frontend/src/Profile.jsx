@@ -216,15 +216,17 @@ export default function Profile() {
           <div className="profile-picture">
 
             {profile.profileImageUrl ? (
-             <img
+            <img
   src={profile.profileImageUrl}
   alt="Profile"
+  onClick={() => setShowImagePreview(true)}
   style={{
     width: "96px",
     height: "96px",
     objectFit: "cover",
     borderRadius: "50%",
-    display: "block"
+    display: "block",
+    cursor: "pointer"
   }}
 />
             ) : (

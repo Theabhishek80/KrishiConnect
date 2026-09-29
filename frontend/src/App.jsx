@@ -183,6 +183,72 @@ const [accountSidebarOpen, setAccountSidebarOpen] = useState(false);
       </header>
 
 
+            {accountSidebarOpen && (
+        <div className="account-sidebar-overlay">
+          <aside className="account-sidebar">
+            <div className="account-sidebar-header">
+              <div>
+                <p className="eyebrow">Account</p>
+                <h2>My Account</h2>
+              </div>
+
+              <button
+                className="account-sidebar-close"
+                onClick={() => setAccountSidebarOpen(false)}
+                aria-label="Close account menu"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <nav className="account-sidebar-nav">
+              <Link
+                to="/profile"
+                onClick={() => setAccountSidebarOpen(false)}
+              >
+                <UserRound size={18} />
+                My Profile
+              </Link>
+
+              <Link
+                to="/orders"
+                onClick={() => setAccountSidebarOpen(false)}
+              >
+                <Package size={18} />
+                My Orders
+              </Link>
+
+              <Link
+                to="/addresses"
+                onClick={() => setAccountSidebarOpen(false)}
+              >
+                <Truck size={18} />
+                Saved Addresses
+              </Link>
+
+              <Link
+                to="/settings"
+                onClick={() => setAccountSidebarOpen(false)}
+              >
+                <LayoutDashboard size={18} />
+                Settings
+              </Link>
+            </nav>
+
+            <div className="account-sidebar-footer">
+              <button
+                className="account-sidebar-logout"
+                onClick={logout}
+              >
+                <LogOut size={18} />
+                Logout
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+
       <main>
         {children}
       </main>

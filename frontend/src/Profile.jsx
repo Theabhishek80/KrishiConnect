@@ -7,7 +7,6 @@ import api from "./api";
 import { auth } from "./firebase";
 
 export default function Profile() {
-
   const [profile, setProfile] = useState(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -19,6 +18,7 @@ export default function Profile() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Full image preview
   const [showImagePreview, setShowImagePreview] = useState(false);
 
   // Crop states
@@ -29,23 +29,19 @@ export default function Profile() {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   useEffect(() => {
-
     const unsubscribe = onAuthStateChanged(
       auth,
       firebaseUser => {
-
         if (firebaseUser) {
           loadProfile();
         } else {
           setError("Please sign in to view your profile.");
           setLoading(false);
         }
-
       }
     );
 
     return () => unsubscribe();
-
   }, []);
 
   const loadProfile = async () => {
@@ -58,7 +54,6 @@ export default function Profile() {
       setProfile(response.data);
       setName(response.data.name || "");
       setPhone(response.data.phone || "");
-
     } catch (e) {
       console.error(e);
 
@@ -66,7 +61,6 @@ export default function Profile() {
         e.response?.data?.message ||
         "Could not load your profile."
       );
-
     } finally {
       setLoading(false);
     }
@@ -90,7 +84,6 @@ export default function Profile() {
       setPhone(response.data.phone || "");
 
       setSuccess("Profile updated successfully.");
-
     } catch (e) {
       console.error(e);
 
@@ -98,15 +91,13 @@ export default function Profile() {
         e.response?.data?.message ||
         "Could not update your profile."
       );
-
     } finally {
       setSaving(false);
     }
   };
 
-  // Select image
+  // Select image from device or camera
   const selectImage = e => {
-
     const file = e.target.files?.[0];
 
     if (!file) return;
@@ -143,21 +134,18 @@ export default function Profile() {
     []
   );
 
-  // Create cropped image
+  // Create cropped image and upload
   const createCroppedImage = async () => {
-
     if (!selectedImage || !croppedAreaPixels) {
       return;
     }
 
     try {
-
       setUploading(true);
       setError("");
       setSuccess("");
 
       const image = new Image();
-
       image.src = selectedImage;
 
       await new Promise((resolve, reject) => {
@@ -176,6 +164,10 @@ export default function Profile() {
       canvas.height = size;
 
       const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        throw new Error("Could not create image canvas.");
+      }
 
       ctx.drawImage(
         image,
@@ -210,7 +202,6 @@ export default function Profile() {
       );
 
       const formData = new FormData();
-
       formData.append("image", file);
 
       const response = await api.post(
@@ -225,35 +216,34 @@ export default function Profile() {
       URL.revokeObjectURL(selectedImage);
 
       setSelectedImage(null);
+      setCroppedAreaPixels(null);
+      setZoom(1);
+      setCrop({ x: 0, y: 0 });
 
       setSuccess(
         "Profile picture updated successfully."
       );
-
     } catch (e) {
-
       console.error(e);
 
       setError(
         e.response?.data?.message ||
         "Could not upload profile picture."
       );
-
     } finally {
-
       setUploading(false);
-
     }
   };
 
+  // Cancel crop
   const cancelCrop = () => {
-
     if (selectedImage) {
       URL.revokeObjectURL(selectedImage);
     }
 
     setSelectedImage(null);
     setShowCropper(false);
+    setCroppedAreaPixels(null);
     setZoom(1);
     setCrop({ x: 0, y: 0 });
   };
@@ -272,7 +262,6 @@ export default function Profile() {
     return (
       <main className="page-section">
         <div className="modern-form">
-
           <div className="notice error">
             {error || "Profile not found."}
           </div>
@@ -283,7 +272,6 @@ export default function Profile() {
           >
             Back to marketplace
           </Link>
-
         </div>
       </main>
     );
@@ -295,7 +283,6 @@ export default function Profile() {
       <div className="modern-form">
 
         <div className="profile-page-header">
-
           <div>
             <p className="eyebrow">
               Account
@@ -309,7 +296,6 @@ export default function Profile() {
               Manage your personal information.
             </p>
           </div>
-
         </div>
 
         {error && (
@@ -324,12 +310,12 @@ export default function Profile() {
           </div>
         )}
 
+        {/* Profile Picture */}
         <div className="profile-picture-section">
 
           <div className="profile-picture">
 
             {profile.profileImageUrl ? (
-
               <img
                 src={profile.profileImageUrl}
                 alt="Profile"
@@ -345,11 +331,8 @@ export default function Profile() {
                   cursor: "pointer"
                 }}
               />
-
             ) : (
-
               <UserRound size={42} />
-
             )}
 
           </div>
@@ -361,33 +344,56 @@ export default function Profile() {
             </h3>
 
             <p className="muted">
-              Choose a picture and crop it before uploading.
+              Choose a picture or take a photo, then crop it.
             </p>
 
-            <label className="secondary-btn">
+            <div className="profile-image-actions">
 
-              <Camera size={17} />
+              {/* Choose existing image */}
+              <label className="secondary-btn">
 
-              Change picture
+                <Camera size={17} />
 
-              <input
-                type="file"
-                accept="image/*"
-                onChange={selectImage}
-                disabled={uploading}
-                hidden
-              />
+                Choose image
 
-            </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={selectImage}
+                  disabled={uploading}
+                  hidden
+                />
+
+              </label>
+
+              {/* Open camera */}
+              <label className="secondary-btn">
+
+                <Camera size={17} />
+
+                Take photo
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={selectImage}
+                  disabled={uploading}
+                  hidden
+                />
+
+              </label>
+
+            </div>
 
           </div>
 
         </div>
 
+        {/* Profile Form */}
         <form onSubmit={saveProfile}>
 
           <label>
-
             Full name
 
             <input
@@ -399,11 +405,9 @@ export default function Profile() {
               placeholder="Your name"
               required
             />
-
           </label>
 
           <label>
-
             Email
 
             <input
@@ -415,11 +419,9 @@ export default function Profile() {
             <small className="muted">
               Email is managed by Firebase.
             </small>
-
           </label>
 
           <label>
-
             Phone number
 
             <input
@@ -430,7 +432,6 @@ export default function Profile() {
               }
               placeholder="Enter your phone number"
             />
-
           </label>
 
           <button
@@ -438,20 +439,20 @@ export default function Profile() {
             type="submit"
             disabled={saving}
           >
-
             <Save size={17} />
 
             {saving
               ? "Saving..."
               : "Save changes"}
-
           </button>
 
         </form>
 
       </div>
 
-      {/* Crop Modal */}
+      {/* =========================
+          CROP MODAL
+         ========================= */}
 
       {showCropper && selectedImage && (
 
@@ -541,9 +542,11 @@ export default function Profile() {
 
       )}
 
-      {/* Full Image Preview */}
+      {/* =========================
+          FULL IMAGE PREVIEW
+         ========================= */}
 
-      {showImagePreview && (
+      {showImagePreview && profile.profileImageUrl && (
 
         <div
           className="profile-image-preview-overlay"

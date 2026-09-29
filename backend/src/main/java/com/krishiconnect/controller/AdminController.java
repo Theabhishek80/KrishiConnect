@@ -1,3 +1,4 @@
+
 package com.krishiconnect.controller;
 
 import com.krishiconnect.domain.ProductStatus;
@@ -45,6 +46,12 @@ public class AdminController {
                 ).getTotalElements(),
                 "orders", orders.count()
         );
+    }
+
+    // GET ALL PRODUCTS FOR ADMIN
+    @GetMapping("/products")
+    public Object allProducts() {
+        return products.findAllWithDetails();
     }
 
     @GetMapping("/products/pending")

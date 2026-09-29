@@ -1,58 +1,30 @@
 import axios from "axios";
+import { auth } from "./firebase";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api"
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ||
+    "http://localhost:8080/api"
 });
 
-let refreshing = null;
+api.interceptors.request.use(
+  async config => {
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("kc_access");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+    const firebaseUser = auth.currentUser;
 
-api.interceptors.response.use(
-  response => response,
-  async error => {
-    const original = error.config;
+    if (firebaseUser) {
 
-    if (
-      error.response?.status !== 401 ||
-      original?._retry ||
-      original?.url?.includes("/auth/")
-    ) {
-      return Promise.reject(error);
+      const idToken =
+        await firebaseUser.getIdToken();
+
+      config.headers.Authorization =
+        `Bearer ${idToken}`;
     }
 
-    const refreshToken = localStorage.getItem("kc_refresh");
-    if (!refreshToken) return Promise.reject(error);
+    return config;
+  },
 
-    original._retry = true;
-
-    try {
-      refreshing ||= api.post("/auth/refresh", { refreshToken });
-
-      const response = await refreshing;
-      refreshing = null;
-
-      localStorage.setItem("kc_access", response.data.accessToken);
-      localStorage.setItem("kc_refresh", response.data.refreshToken);
-      localStorage.setItem("kc_user", JSON.stringify(response.data));
-
-      original.headers.Authorization = `Bearer ${response.data.accessToken}`;
-
-      return api(original);
-    } catch (refreshError) {
-      refreshing = null;
-
-      localStorage.removeItem("kc_access");
-      localStorage.removeItem("kc_refresh");
-      localStorage.removeItem("kc_user");
-
-      return Promise.reject(refreshError);
-    }
-  }
+  error => Promise.reject(error)
 );
 
 export default api;

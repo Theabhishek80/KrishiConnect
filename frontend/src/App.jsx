@@ -38,9 +38,9 @@ import {
   signInWithPopup,
   createUserWithEmailAndPassword,
   updateProfile,
-  sendEmailVerification
+  sendEmailVerification,
+  signOut
 } from "firebase/auth";
-
 import { auth } from "./firebase";
 
 
@@ -743,6 +743,130 @@ function Auth({
   );
 }
 
+/* =========================
+   Add Google authentication
+========================= */
+
+function GoogleButton({ role = "CONSUMER" }) {
+
+  const navigate = useNavigate();
+
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const continueWithGoogle = async () => {
+
+    setBusy(true);
+    setError("");
+
+    try {
+
+      const provider =
+        new GoogleAuthProvider();
+
+      const result =
+        await signInWithPopup(
+          auth,
+          provider
+        );
+
+      const firebaseUser = result.user;
+
+      // Google accounts are already verified
+      const idToken =
+        await firebaseUser.getIdToken();
+
+      // Create/find application profile
+      const response =
+        await api.post(
+          "/auth/firebase/onboard",
+          {
+            name:
+              firebaseUser.displayName ||
+              firebaseUser.email,
+            role
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${idToken}`
+            }
+          }
+        );
+
+      localStorage.setItem(
+        "kc_access",
+        idToken
+      );
+
+      localStorage.setItem(
+        "kc_user",
+        JSON.stringify(
+          response.data
+        )
+      );
+
+      navigate("/");
+
+      window.location.reload();
+
+    } catch (e) {
+
+      console.error(e);
+
+      if (
+        e.code ===
+        "auth/popup-closed-by-user"
+      ) {
+
+        setError(
+          "Google sign-in was cancelled."
+        );
+
+      } else if (
+        e.code ===
+        "auth/account-exists-with-different-credential"
+      ) {
+
+        setError(
+          "An account already exists with this email using another sign-in method. Please use email/password login."
+        );
+
+      } else {
+
+        setError(
+          "Google sign-in failed. Please try again."
+        );
+      }
+
+    } finally {
+
+      setBusy(false);
+    }
+  };
+
+
+  return (
+    <>
+      {error && (
+        <div className="notice error">
+          {error}
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="secondary-btn full"
+        onClick={continueWithGoogle}
+        disabled={busy}
+      >
+        {busy
+          ? "Connecting to Google…"
+          : "Continue with Google"}
+      </button>
+    </>
+  );
+}
+
 
 /* =========================
    LOGIN
@@ -910,6 +1034,12 @@ function Login() {
 
       </form>
 
+      <div className="auth-divider">
+  <span>OR</span>
+</div>
+
+<GoogleButton />
+
 
       <p className="auth-switch">
         New here?{" "}
@@ -942,14 +1072,12 @@ function Register() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-
   const submit = async e => {
 
     e.preventDefault();
 
     setBusy(true);
     setError("");
-
 
     try {
 
@@ -963,7 +1091,6 @@ function Register() {
 
       const firebaseUser = credential.user;
 
-
       // 2. Save user's name in Firebase
       await updateProfile(
         firebaseUser,
@@ -972,53 +1099,41 @@ function Register() {
         }
       );
 
-
       // 3. Send verification email
       await sendEmailVerification(
         firebaseUser
       );
 
-
       // 4. Get Firebase ID token
       const idToken =
         await firebaseUser.getIdToken();
 
-
-      // 5. Send profile + role to Spring Boot
-      const response =
-        await api.post(
-          "/auth/firebase/onboard",
-          {
-            name: form.name.trim(),
-            role: form.role
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${idToken}`
-            }
+      // 5. Create application profile
+      await api.post(
+        "/auth/firebase/onboard",
+        {
+          name: form.name.trim(),
+          role: form.role
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`
           }
-        );
-
-
-      // 6. Store application user information
-      localStorage.setItem(
-        "kc_access",
-        idToken
+        }
       );
 
-      localStorage.setItem(
-        "kc_user",
-        JSON.stringify(
-          response.data
-        )
-      );
+      /*
+       * IMPORTANT:
+       * Do not save the login session yet.
+       * User must verify email first.
+       */
 
-
-      // 7. Firebase account is created,
-      // but user must verify email before login.
-      await auth.signOut();
-
-      navigate("/login");
+      // Go to verification screen
+      navigate("/verify-email", {
+        state: {
+          email: firebaseUser.email
+        }
+      });
 
     } catch (e) {
 
@@ -1073,9 +1188,7 @@ function Register() {
     }
   };
 
-
   return (
-
     <Auth
       title="Create your account"
       subtitle="Choose how you want to use KrishiConnect."
@@ -1097,9 +1210,7 @@ function Register() {
             }
             required
           />
-
         </label>
-
 
         <label>
           Email
@@ -1116,9 +1227,7 @@ function Register() {
             }
             required
           />
-
         </label>
-
 
         <label>
           Password
@@ -1136,9 +1245,7 @@ function Register() {
             }
             required
           />
-
         </label>
-
 
         <label>
           Account type
@@ -1160,9 +1267,7 @@ function Register() {
               Farmer — sell produce
             </option>
           </select>
-
         </label>
-
 
         {error && (
           <div className="notice error">
@@ -1170,10 +1275,10 @@ function Register() {
           </div>
         )}
 
-
         <button
           className="primary-btn full"
           disabled={busy}
+          type="submit"
         >
           {busy
             ? "Creating…"
@@ -1182,20 +1287,220 @@ function Register() {
 
       </form>
 
+      <div className="auth-divider">
+        <span>OR</span>
+      </div>
+
+      <GoogleButton
+        role={form.role}
+      />
 
       <p className="auth-switch">
-
         Already have an account?{" "}
 
         <Link to="/login">
           Sign in
         </Link>
-
       </p>
 
     </Auth>
   );
 }
+
+
+
+/*=======================
+
+    VerifyEmail() component
+===========================*/ 
+
+
+function VerifyEmail() {
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const email =
+    location.state?.email ||
+    auth.currentUser?.email ||
+    "";
+
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const resend = async () => {
+
+    setBusy(true);
+    setMessage("");
+    setError("");
+
+    try {
+
+      const user = auth.currentUser;
+
+      if (!user) {
+        setError(
+          "Your verification session has expired. Please register again or sign in."
+        );
+        return;
+      }
+
+      await sendEmailVerification(user);
+
+      setMessage(
+        "Verification email sent again. Please check your inbox and spam folder."
+      );
+
+    } catch (e) {
+
+      console.error(e);
+
+      if (e.code === "auth/too-many-requests") {
+
+        setError(
+          "Too many verification emails requested. Please wait a little before trying again."
+        );
+
+      } else {
+
+        setError(
+          "Could not resend the verification email. Please try again."
+        );
+      }
+
+    } finally {
+
+      setBusy(false);
+    }
+  };
+
+
+  const checkVerification = async () => {
+
+    setBusy(true);
+    setMessage("");
+    setError("");
+
+    try {
+
+      const user = auth.currentUser;
+
+      if (!user) {
+        setError(
+          "Your verification session has expired. Please sign in again."
+        );
+        return;
+      }
+
+      await user.reload();
+
+      if (!user.emailVerified) {
+
+        setError(
+          "Your email is not verified yet. Please click the verification link in your email."
+        );
+
+        return;
+      }
+
+      await signOut(auth);
+
+      navigate("/login");
+
+    } catch (e) {
+
+      console.error(e);
+
+      setError(
+        "Could not check verification status. Please try again."
+      );
+
+    } finally {
+
+      setBusy(false);
+    }
+  };
+
+
+  return (
+    <Auth
+      title="Verify your email"
+      subtitle="One more step before you can sign in."
+    >
+
+      <div className="success-box">
+
+        <Mail size={34} />
+
+        <h3>
+          Check your inbox
+        </h3>
+
+        <p>
+          We've sent a verification link to:
+        </p>
+
+        <strong>
+          {email}
+        </strong>
+
+        <p>
+          Click the link in the email to verify
+          your account. Also check your spam or
+          junk folder if you don't see it.
+        </p>
+
+      </div>
+
+      {message && (
+        <div className="notice success">
+          {message}
+        </div>
+      )}
+
+      {error && (
+        <div className="notice error">
+          {error}
+        </div>
+      )}
+
+      <button
+        className="primary-btn full"
+        onClick={checkVerification}
+        disabled={busy}
+      >
+        {busy
+          ? "Checking…"
+          : "I've verified my email"}
+      </button>
+
+      <button
+        className="secondary-btn full"
+        onClick={resend}
+        disabled={busy}
+        style={{ marginTop: "10px" }}
+      >
+        Resend verification email
+      </button>
+
+      <button
+        className="secondary-btn full"
+        onClick={async () => {
+          await signOut(auth);
+          navigate("/login");
+        }}
+        disabled={busy}
+        style={{ marginTop: "10px" }}
+      >
+        Go to login
+      </button>
+
+    </Auth>
+  );
+}
+
+
 
 /* =========================
    FORGOT PASSWORD
@@ -2735,6 +3040,11 @@ export default function App() {
           path="/register"
           element={<Register />}
         />
+
+        <Route
+  path="/verify-email"
+  element={<VerifyEmail />}
+/>
 
         <Route
           path="/forgot-password"

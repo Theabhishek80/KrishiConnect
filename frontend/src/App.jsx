@@ -34,6 +34,7 @@ import api from "./api";
 import Profile from "./Profile";
 import GoogleButton from "./components/Auth/GoogleButton";
 import Login from "./components/Auth/Login";
+import Register from "./components/Auth/Register";
 
 import {
   signInWithEmailAndPassword,

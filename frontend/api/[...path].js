@@ -1,3 +1,7 @@
+export const config = {
+  runtime: "nodejs"
+};
+
 export default async function handler(req, res) {
   const railway = process.env.PRIMARY_BACKEND_URL;
   const render = process.env.BACKUP_BACKEND_URL;
@@ -8,6 +12,7 @@ export default async function handler(req, res) {
     });
   }
 
+  // /api/products → /products
   const path = req.url.replace(/^\/api/, "");
 
   const headers = new Headers();
@@ -38,7 +43,9 @@ export default async function handler(req, res) {
 
     for await (const chunk of req) {
       chunks.push(
-        Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
+        Buffer.isBuffer(chunk)
+          ? chunk
+          : Buffer.from(chunk)
       );
     }
 
@@ -47,6 +54,8 @@ export default async function handler(req, res) {
 
   async function callBackend(baseUrl) {
     const url = `${baseUrl.replace(/\/$/, "")}${path}`;
+
+    console.log(`Calling backend: ${url}`);
 
     return fetch(url, {
       method: req.method,
@@ -58,26 +67,33 @@ export default async function handler(req, res) {
 
   async function sendResponse(response) {
     response.headers.forEach((value, key) => {
+      const lower = key.toLowerCase();
+
       if (
-        key.toLowerCase() !== "content-encoding" &&
-        key.toLowerCase() !== "content-length"
+        lower !== "content-encoding" &&
+        lower !== "content-length"
       ) {
         res.setHeader(key, value);
       }
     });
 
-    const buffer = Buffer.from(await response.arrayBuffer());
+    const buffer = Buffer.from(
+      await response.arrayBuffer()
+    );
 
     res.status(response.status).send(buffer);
   }
 
   try {
+    // Primary backend: Railway
     let response = await callBackend(railway);
 
+    // Railway worked — return its response
     if (![502, 503, 504].includes(response.status)) {
       return await sendResponse(response);
     }
 
+    // Railway unavailable — try Render
     console.log(
       `Railway returned ${response.status}. Trying Render...`
     );
@@ -85,6 +101,7 @@ export default async function handler(req, res) {
     response = await callBackend(render);
 
     return await sendResponse(response);
+
   } catch (error) {
     console.error(
       "Railway unavailable. Trying Render...",
@@ -95,14 +112,16 @@ export default async function handler(req, res) {
       const response = await callBackend(render);
 
       return await sendResponse(response);
+
     } catch (backupError) {
       console.error(
-        "Both Railway and Render failed",
+        "Both backend servers failed",
         backupError
       );
 
       return res.status(503).json({
-        message: "Both backend servers are currently unavailable"
+        message:
+          "Both backend servers are currently unavailable"
       });
     }
   }

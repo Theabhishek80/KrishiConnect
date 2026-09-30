@@ -2896,16 +2896,13 @@ function Admin() {
           []
         )
       )
-    .catch(e => {
+   .catch(e => {
   console.error("All products error:", e);
   setAllProducts([]);
+})
+.finally(() => {
+  setLoadingProducts(false);
 });
-      .finally(() => {
-        setLoadingProducts(false);
-      });
-
-  };
-
 
   useEffect(load, []);
 

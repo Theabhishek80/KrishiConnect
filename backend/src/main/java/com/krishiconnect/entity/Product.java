@@ -27,6 +27,7 @@ public class Product {
     @JoinColumn(name = "farmer_id")
     private User farmer;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;

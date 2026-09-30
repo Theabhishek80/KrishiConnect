@@ -1568,3 +1568,32 @@ footer{
     justify-content: center;
   }
 }
+/* Logout confirmation modal */
+.logout-modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.55);
+
+  z-index: 99999 !important;
+}
+
+.logout-modal {
+  position: relative;
+  width: min(420px, calc(100vw - 32px));
+  max-width: 420px;
+
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 28px;
+
+  box-sizing: border-box;
+
+  z-index: 100000 !important;
+}

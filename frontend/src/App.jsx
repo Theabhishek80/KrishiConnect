@@ -2862,11 +2862,13 @@ function Admin() {
       .get("/admin/dashboard")
       .then(r => setD(r.data))
       .catch(e =>
-        setError(
-          e.response?.data?.error ||
-          "Could not load dashboard"
-        )
-      );
+  setError(
+    typeof e.response?.data?.error === "string"
+      ? e.response.data.error
+      : e.response?.data?.message ||
+        "Could not load dashboard"
+  )
+);
 
 
     api
@@ -2878,7 +2880,9 @@ function Admin() {
           []
         )
       )
-      .catch(() => {});
+   .catch(e => {
+  console.error("Pending products error:", e);
+});
 
 
     setLoadingProducts(true);
@@ -2892,9 +2896,10 @@ function Admin() {
           []
         )
       )
-      .catch(() => {
-        setAllProducts([]);
-      })
+    .catch(e => {
+  console.error("All products error:", e);
+  setAllProducts([]);
+});
       .finally(() => {
         setLoadingProducts(false);
       });

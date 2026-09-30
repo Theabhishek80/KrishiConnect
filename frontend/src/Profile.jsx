@@ -2,7 +2,10 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Camera, UserRound, Save, X } from "lucide-react";
 import Cropper from "react-easy-crop";
-import { onAuthStateChanged } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  updateProfile
+} from "firebase/auth";
 import api from "./api";
 import { auth } from "./firebase";
 

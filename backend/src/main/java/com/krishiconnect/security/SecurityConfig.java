@@ -1,18 +1,24 @@
 package com.krishiconnect.security;
 
-import org.springframework.context.annotation.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.*;
+
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
-
-import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 @EnableMethodSecurity
@@ -29,83 +35,124 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            FirebaseAuthFilter firebaseAuthFilter,
-            JwtAuthFilter jwtAuthFilter
+            FirebaseAuthFilter firebaseAuthFilter
     ) throws Exception {
 
         return http
+
+                // -------------------------------------------------
+                // CSRF
+                // -------------------------------------------------
                 .csrf(c -> c.disable())
 
+                // -------------------------------------------------
+                // CORS
+                // -------------------------------------------------
                 .cors(c -> c.configurationSource(cors()))
 
+                // -------------------------------------------------
+                // STATELESS API
+                // -------------------------------------------------
                 .sessionManagement(s ->
                         s.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
+                // -------------------------------------------------
+                // AUTHORIZATION
+                // -------------------------------------------------
                 .authorizeHttpRequests(a -> a
 
-                        // PUBLIC
-                      .requestMatchers(
-        "/api/auth/login",
-        "/api/auth/register",
-        "/api/auth/refresh",
-        "/api/auth/forgot-password",
-        "/api/auth/reset-password",
-        "/api/categories/**",
-        "/swagger-ui/**",
-        "/swagger-ui.html",
-        "/v3/api-docs/**"
-).permitAll()
+                        // ===============================
+                        // PUBLIC AUTH ENDPOINTS
+                        // ===============================
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/refresh",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password"
+                        ).permitAll()
 
-// Firebase authentication / onboarding
-.requestMatchers(
-        "/api/auth/firebase/**"
-).authenticated()
+                        // ===============================
+                        // PUBLIC CATEGORIES
+                        // ===============================
+                        .requestMatchers(
+                                "/api/categories/**"
+                        ).permitAll()
 
-                        // FARMER ONLY
+                        // ===============================
+                        // SWAGGER
+                        // ===============================
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
+                        // ===============================
+                        // FIREBASE AUTH
+                        // ===============================
+                        .requestMatchers(
+                                "/api/auth/firebase/**"
+                        ).authenticated()
+
+                        // ===============================
+                        // FARMER PRODUCTS
+                        // ===============================
                         .requestMatchers(
                                 "/api/products/farmer",
                                 "/api/products/farmer/**"
                         ).hasRole("FARMER")
 
+                        // ===============================
                         // PUBLIC PRODUCT CATALOG
+                        // ===============================
                         .requestMatchers(
                                 "/api/products",
                                 "/api/products/**"
                         ).permitAll()
 
-                        // ADMIN ONLY
+                        // ===============================
+                        // ADMIN
+                        // ===============================
                         .requestMatchers(
                                 "/api/admin/**"
                         ).hasRole("ADMIN")
 
+                        // ===============================
                         // AUTHENTICATED USERS
+                        // ===============================
                         .requestMatchers(
                                 "/api/cart/**",
                                 "/api/orders/**",
                                 "/api/notifications/**"
                         ).authenticated()
 
+                        // ===============================
+                        // EVERYTHING ELSE
+                        // ===============================
                         .anyRequest().authenticated()
                 )
 
-                // Firebase authentication first
+                // -------------------------------------------------
+                // FIREBASE AUTHENTICATION
+                //
+                // Firebase is now the active authentication
+                // mechanism for the application.
+                // -------------------------------------------------
                 .addFilterBefore(
                         firebaseAuthFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
 
-                // Keep old JWT authentication temporarily
-                .addFilterAfter(
-                        jwtAuthFilter,
-                        FirebaseAuthFilter.class
-                )
-
                 .build();
     }
 
+    // -------------------------------------------------------------
+    // CORS CONFIGURATION
+    // -------------------------------------------------------------
     @Bean
     CorsConfigurationSource cors() {
 
@@ -123,14 +170,14 @@ public class SecurityConfig {
                 List.of("*")
         );
 
-        UrlBasedCorsConfigurationSource s =
+        UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
-        s.registerCorsConfiguration(
+        source.registerCorsConfiguration(
                 "/**",
                 c
         );
 
-        return s;
+        return source;
     }
 }

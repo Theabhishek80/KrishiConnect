@@ -76,18 +76,24 @@ const [accountSidebarOpen, setAccountSidebarOpen] = useState(false);
     return () => window.removeEventListener("storage", sync);
   }, []);
 
-  const logout = () => {
+ const logout = async () => {
+  try {
+    await signOut(auth);
+
     localStorage.removeItem("kc_access");
     localStorage.removeItem("kc_refresh");
     localStorage.removeItem("kc_user");
 
     setUser(null);
-    setProfile(null);
     setOpen(false);
     setAccountSidebarOpen(false);
 
     navigate("/");
-  };
+  } catch (error) {
+    console.error("Logout failed:", error);
+    alert("Logout failed. Please try again.");
+  }
+};
 
  const close = () => {
   setOpen(false);

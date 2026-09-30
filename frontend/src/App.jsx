@@ -36,9 +36,7 @@ import GoogleButton from "./components/Auth/GoogleButton";
 
 import {
   signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  createUserWithEmailAndPassword,
+ createUserWithEmailAndPassword,
   updateProfile,
   sendEmailVerification,
   sendPasswordResetEmail,

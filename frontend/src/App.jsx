@@ -67,6 +67,7 @@ function Layout({ children }) {
   const [user, setUser] = useState(getUser());
 const [open, setOpen] = useState(false);
 const [accountSidebarOpen, setAccountSidebarOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   useEffect(() => {
     const sync = () => setUser(getUser());
@@ -76,7 +77,7 @@ const [accountSidebarOpen, setAccountSidebarOpen] = useState(false);
     return () => window.removeEventListener("storage", sync);
   }, []);
 
- const logout = async () => {
+const logout = async () => {
   try {
     await signOut(auth);
 
@@ -87,6 +88,7 @@ const [accountSidebarOpen, setAccountSidebarOpen] = useState(false);
     setUser(null);
     setOpen(false);
     setAccountSidebarOpen(false);
+    setLogoutConfirmOpen(false);
 
     navigate("/");
   } catch (error) {
@@ -252,17 +254,57 @@ const [accountSidebarOpen, setAccountSidebarOpen] = useState(false);
             </nav>
 
             <div className="account-sidebar-footer">
-              <button
-                className="account-sidebar-logout"
-                onClick={logout}
-              >
-                <LogOut size={18} />
-                Logout
-              </button>
+             <button
+  className="account-sidebar-logout"
+  onClick={() => setLogoutConfirmOpen(true)}
+>
+  <LogOut size={18} />
+  Logout
+</button>
             </div>
           </aside>
         </div>
       )}
+
+      {logoutConfirmOpen && (
+  <div
+    className="logout-modal-overlay"
+    onClick={() => setLogoutConfirmOpen(false)}
+  >
+    <div
+      className="logout-modal"
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="logout-modal-icon">
+        <LogOut size={22} />
+      </div>
+
+      <h3>Are you sure you want to logout?</h3>
+
+      <p>
+        You will be signed out of your KrishiConnect account.
+      </p>
+
+      <div className="logout-modal-actions">
+
+        <button
+          className="secondary-btn"
+          onClick={() => setLogoutConfirmOpen(false)}
+        >
+          Cancel
+        </button>
+
+        <button
+          className="primary-btn"
+          onClick={logout}
+        >
+          Yes, Logout
+        </button>
+
+      </div>
+    </div>
+  </div>
+)}
 
 
       <main>

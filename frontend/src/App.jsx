@@ -2848,105 +2848,209 @@ const [loadingProducts, setLoadingProducts] = useState(true);
 ========================= */
 
 function Admin() {
-
   const [d, setD] = useState(null);
   const [pending, setPending] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
+
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
+  const [loadingPending, setLoadingPending] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
+
   const [error, setError] = useState("");
+  const [actionBusy, setActionBusy] = useState(null);
+
+  const getErrorMessage = error => {
+    const data = error?.response?.data;
+
+    if (typeof data?.error === "string") {
+      return data.error;
+    }
+
+    if (typeof data?.message === "string") {
+      return data.message;
+    }
+
+    if (typeof data === "string") {
+      return data;
+    }
+
+    if (error?.message) {
+      return error.message;
+    }
+
+    return "Something went wrong. Please try again.";
+  };
 
 
-  const load = () => {
+  const loadDashboard = async () => {
+    setLoadingDashboard(true);
 
-    api
-      .get("/admin/dashboard")
-      .then(r => setD(r.data))
-      .catch(e =>
-  setError(
-    typeof e.response?.data?.error === "string"
-      ? e.response.data.error
-      : e.response?.data?.message ||
-        "Could not load dashboard"
-  )
-);
-
-
-    api
-      .get("/admin/products/pending")
-      .then(r =>
-        setPending(
-          r.data.content ||
-          r.data ||
-          []
-        )
-      )
-   .catch(e => {
-  console.error("Pending products error:", e);
-});
+    try {
+      const response = await api.get("/admin/dashboard");
+      setD(response.data);
+    } catch (error) {
+      console.error("Admin dashboard error:", error);
+      setError(getErrorMessage(error));
+    } finally {
+      setLoadingDashboard(false);
+    }
+  };
 
 
+  const loadPendingProducts = async () => {
+    setLoadingPending(true);
+
+    try {
+      const response = await api.get(
+        "/admin/products/pending"
+      );
+
+      const data =
+        response.data?.content ||
+        response.data ||
+        [];
+
+      setPending(
+        Array.isArray(data)
+          ? data
+          : []
+      );
+    } catch (error) {
+      console.error(
+        "Pending products error:",
+        error
+      );
+
+      setPending([]);
+
+      setError(
+        getErrorMessage(error)
+      );
+    } finally {
+      setLoadingPending(false);
+    }
+  };
+
+
+  const loadAllProducts = async () => {
     setLoadingProducts(true);
 
-    api
-      .get("/admin/products")
-      .then(r =>
-        setAllProducts(
-          r.data.content ||
-          r.data ||
-          []
-        )
-      )
-   .catch(e => {
-  console.error("All products error:", e);
-  setAllProducts([]);
-})
-.finally(() => {
-  setLoadingProducts(false);
-});
+    try {
+      const response = await api.get(
+        "/admin/products"
+      );
 
-  useEffect(load, []);
+      const data =
+        response.data?.content ||
+        response.data ||
+        [];
+
+      setAllProducts(
+        Array.isArray(data)
+          ? data
+          : []
+      );
+    } catch (error) {
+      console.error(
+        "All products error:",
+        error
+      );
+
+      setAllProducts([]);
+
+      setError(
+        getErrorMessage(error)
+      );
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+
+  const load = async () => {
+    setError("");
+
+    await Promise.all([
+      loadDashboard(),
+      loadPendingProducts(),
+      loadAllProducts()
+    ]);
+  };
+
+
+  useEffect(() => {
+    load();
+  }, []);
 
 
   const act = async (id, type) => {
+    try {
+      setActionBusy(`${type}-${id}`);
+      setError("");
 
-    await api.patch(
-      `/admin/products/${id}/${type}`
-    );
+      await api.patch(
+        `/admin/products/${id}/${type}`
+      );
 
-    load();
+      await load();
+    } catch (error) {
+      console.error(
+        `Product ${type} error:`,
+        error
+      );
 
+      setError(
+        getErrorMessage(error)
+      );
+    } finally {
+      setActionBusy(null);
+    }
   };
 
 
   const deleteProduct = async productId => {
-
     const confirmed = window.confirm(
       "Are you sure you want to delete this product?"
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
-      await api.delete(`/admin/products/${productId}`);
+      setActionBusy(`delete-${productId}`);
       setError("");
-      load();
-    } catch (e) {
-      setError(
-        e.response?.data?.error ||
-        "Could not delete product."
+
+      await api.delete(
+        `/admin/products/${productId}`
       );
+
+      await load();
+    } catch (error) {
+      console.error(
+        "Delete product error:",
+        error
+      );
+
+      setError(
+        getErrorMessage(error)
+      );
+    } finally {
+      setActionBusy(null);
     }
   };
 
 
   return (
-
     <section className="page-section">
+
+      {/* =========================
+          HEADER
+      ========================= */}
 
       <div className="page-heading">
 
         <div>
-
           <span className="section-kicker">
             CONTROL CENTER
           </span>
@@ -2955,19 +3059,22 @@ function Admin() {
             Admin dashboard
           </h1>
 
+          <p>
+            Manage users, products and marketplace activity.
+          </p>
         </div>
 
-
         <span className="status-chip">
-
           <ShieldCheck size={15} />
-
           Protected
-
         </span>
 
       </div>
 
+
+      {/* =========================
+          ERROR
+      ========================= */}
 
       {error && (
         <div className="notice error">
@@ -2976,61 +3083,68 @@ function Admin() {
       )}
 
 
+      {/* =========================
+          OVERVIEW STATS
+      ========================= */}
+
       <div className="stats modern-stats">
 
         <div>
-
           <UserRound />
 
           <b>
-            {d?.users ?? "—"}
+            {loadingDashboard
+              ? "..."
+              : d?.users ?? "0"}
           </b>
 
           <span>
             Registered users
           </span>
-
         </div>
 
 
         <div>
-
           <Package />
 
           <b>
-            {d?.products ?? "—"}
+            {loadingDashboard
+              ? "..."
+              : d?.products ?? "0"}
           </b>
 
           <span>
             Total products
           </span>
-
         </div>
 
 
         <div>
-
           <ShoppingCart />
 
           <b>
-            {d?.orders ?? "—"}
+            {loadingDashboard
+              ? "..."
+              : d?.orders ?? "0"}
           </b>
 
           <span>
             Total orders
           </span>
-
         </div>
 
       </div>
 
+
+      {/* =========================
+          PENDING PRODUCTS
+      ========================= */}
 
       <div className="panel admin-panel">
 
         <div className="sectionhead">
 
           <div>
-
             <span className="section-kicker">
               REVIEW QUEUE
             </span>
@@ -3038,134 +3152,352 @@ function Admin() {
             <h2>
               Products awaiting approval
             </h2>
-
           </div>
 
-
           <span>
-            {pending.length} pending
+            {loadingPending
+              ? "Loading..."
+              : `${pending.length} pending`}
           </span>
 
         </div>
 
 
-        {!pending.length ? (
+        {loadingPending ? (
 
           <div className="empty-inline">
+            Loading pending products…
+          </div>
 
+        ) : !pending.length ? (
+
+          <div className="empty-inline">
             <CheckCircle2 />
-
             Nothing waiting for review.
-
           </div>
 
         ) : (
 
-          pending.map(p => (
+          pending.map(product => {
 
-            <div
-              className="review-row"
-              key={p.id}
-            >
+            const productImage =
+              product.images?.length > 0
+                ? product.images[0]?.url
+                : null;
 
-              <div>
+            const approveBusy =
+              actionBusy ===
+              `approve-${product.id}`;
 
-                <b>
-                  {p.name}
-                </b>
+            const rejectBusy =
+              actionBusy ===
+              `reject-${product.id}`;
 
-                <span>
-                  {p.description}
-                </span>
+            return (
+              <div
+                className="review-row"
+                key={product.id}
+              >
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "14px",
+                    alignItems: "center"
+                  }}
+                >
+
+                  {productImage ? (
+
+                    <img
+                      src={productImage}
+                      alt={product.name}
+                      style={{
+                        width: "64px",
+                        height: "64px",
+                        objectFit: "cover",
+                        borderRadius: "10px",
+                        flexShrink: 0
+                      }}
+                    />
+
+                  ) : (
+
+                    <div
+                      style={{
+                        width: "64px",
+                        height: "64px",
+                        borderRadius: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "#f1f5f0",
+                        fontSize: "26px",
+                        flexShrink: 0
+                      }}
+                    >
+                      🌱
+                    </div>
+
+                  )}
+
+
+                  <div>
+
+                    <b>
+                      {product.name}
+                    </b>
+
+                    <span>
+                      ₹
+                      {Number(
+                        product.price || 0
+                      ).toLocaleString("en-IN")}
+                      {" / "}
+                      {product.unit}
+                    </span>
+
+                    <span>
+                      Farmer:{" "}
+                      {product.farmer?.name ||
+                        "Unknown"}
+                    </span>
+
+                    <span>
+                      Status:{" "}
+                      {product.status ||
+                        "PENDING_APPROVAL"}
+                    </span>
+
+                    {product.description && (
+                      <span>
+                        {product.description}
+                      </span>
+                    )}
+
+                  </div>
+
+                </div>
+
+
+                <div className="review-actions">
+
+                  <button
+                    className="approve"
+                    disabled={
+                      approveBusy ||
+                      rejectBusy
+                    }
+                    onClick={() =>
+                      act(
+                        product.id,
+                        "approve"
+                      )
+                    }
+                  >
+                    {approveBusy
+                      ? "Approving…"
+                      : "Approve"}
+                  </button>
+
+
+                  <button
+                    className="reject"
+                    disabled={
+                      approveBusy ||
+                      rejectBusy
+                    }
+                    onClick={() =>
+                      act(
+                        product.id,
+                        "reject"
+                      )
+                    }
+                  >
+                    {rejectBusy
+                      ? "Rejecting…"
+                      : "Reject"}
+                  </button>
+
+                </div>
 
               </div>
-
-
-              <div className="review-actions">
-
-                <button
-                  className="approve"
-                  onClick={() =>
-                    act(p.id, "approve")
-                  }
-                >
-                  Approve
-                </button>
-
-
-                <button
-                  className="reject"
-                  onClick={() =>
-                    act(p.id, "reject")
-                  }
-                >
-                  Reject
-                </button>
-
-              </div>
-
-            </div>
-
-          ))
+            );
+          })
 
         )}
 
       </div>
+
 
       {/* =========================
           ALL PRODUCTS
       ========================= */}
 
-      <div className="panel admin-panel" style={{ marginTop: "24px" }}>
+      <div
+        className="panel admin-panel"
+        style={{
+          marginTop: "24px"
+        }}
+      >
+
         <div className="sectionhead">
+
           <div>
-            <span className="section-kicker">ALL PRODUCTS</span>
-            <h2>Product management</h2>
+            <span className="section-kicker">
+              ALL PRODUCTS
+            </span>
+
+            <h2>
+              Product management
+            </h2>
           </div>
-          <span>{allProducts.length} products</span>
+
+          <span>
+            {loadingProducts
+              ? "Loading..."
+              : `${allProducts.length} products`}
+          </span>
+
         </div>
 
+
         {loadingProducts ? (
-          <div className="empty-inline">Loading products…</div>
+
+          <div className="empty-inline">
+            Loading products…
+          </div>
+
         ) : !allProducts.length ? (
+
           <div className="empty-inline">
             <CheckCircle2 />
             No products found.
           </div>
+
         ) : (
-          allProducts.map(p => {
-            const productImage = p.images?.length > 0 ? p.images[0]?.url : null;
+
+          allProducts.map(product => {
+
+            const productImage =
+              product.images?.length > 0
+                ? product.images[0]?.url
+                : null;
+
+            const deleteBusy =
+              actionBusy ===
+              `delete-${product.id}`;
+
             return (
-              <div className="review-row" key={p.id}>
-                <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+              <div
+                className="review-row"
+                key={product.id}
+              >
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "14px",
+                    alignItems: "center"
+                  }}
+                >
+
                   {productImage ? (
-                    <img src={productImage} alt={p.name} style={{ width: "64px", height: "64px", objectFit: "cover", borderRadius: "10px", flexShrink: 0 }} />
+
+                    <img
+                      src={productImage}
+                      alt={product.name}
+                      style={{
+                        width: "64px",
+                        height: "64px",
+                        objectFit: "cover",
+                        borderRadius: "10px",
+                        flexShrink: 0
+                      }}
+                    />
+
                   ) : (
-                    <div style={{ width: "64px", height: "64px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", background: "#f1f5f0", fontSize: "26px", flexShrink: 0 }}>🌱</div>
+
+                    <div
+                      style={{
+                        width: "64px",
+                        height: "64px",
+                        borderRadius: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "#f1f5f0",
+                        fontSize: "26px",
+                        flexShrink: 0
+                      }}
+                    >
+                      🌱
+                    </div>
+
                   )}
+
+
                   <div>
-                    <b>{p.name}</b>
-                    <span>₹{Number(p.price || 0).toLocaleString("en-IN")} / {p.unit}</span>
-                    <span>Farmer: {p.farmer?.name || "Unknown"}</span>
-                    <span>Status: {p.status || "UNKNOWN"}</span>
+
+                    <b>
+                      {product.name}
+                    </b>
+
+                    <span>
+                      ₹
+                      {Number(
+                        product.price || 0
+                      ).toLocaleString("en-IN")}
+                      {" / "}
+                      {product.unit}
+                    </span>
+
+                    <span>
+                      Farmer:{" "}
+                      {product.farmer?.name ||
+                        "Unknown"}
+                    </span>
+
+                    <span>
+                      Status:{" "}
+                      {product.status ||
+                        "UNKNOWN"}
+                    </span>
+
                   </div>
+
                 </div>
+
+
                 <div className="review-actions">
-                  <button className="reject" onClick={() => deleteProduct(p.id)}>
-                    Delete
+
+                  <button
+                    className="reject"
+                    disabled={deleteBusy}
+                    onClick={() =>
+                      deleteProduct(
+                        product.id
+                      )
+                    }
+                  >
+                    {deleteBusy
+                      ? "Deleting…"
+                      : "Delete"}
                   </button>
+
                 </div>
+
               </div>
             );
           })
-        )}
-      </div>
 
+        )}
+
+      </div>
 
     </section>
   );
 }
-
 
 /* =========================
    APP ROUTES

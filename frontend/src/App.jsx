@@ -424,15 +424,17 @@ function Home() {
   setToast("");
 }, 2500);
 
-    } catch (e) {
+  } catch (e) {
+  setToast(
+    e.response?.data?.error ||
+    e.response?.data?.message ||
+    "Could not add item"
+  );
 
-      alert(
-        e.response?.data?.error ||
-        "Could not add item"
-      );
-
-    }
-  };
+  setTimeout(() => {
+    setToast("");
+  }, 3000);
+}
 
 
   return (

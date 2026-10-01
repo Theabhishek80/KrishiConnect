@@ -357,6 +357,7 @@ function Home() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
 
 
   useEffect(() => {

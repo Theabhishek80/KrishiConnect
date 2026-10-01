@@ -414,7 +414,7 @@ function Home() {
         }
       );
 
-      alert("Added to cart");
+     setToast("Added to cart");
 
     } catch (e) {
 

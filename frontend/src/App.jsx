@@ -38,6 +38,7 @@ import Register from "./components/Auth/Register";
 import VerifyEmail from "./components/Auth/VerifyEmail";
 import ForgotPassword from "./components/Auth/ForgotPassword";
 import ResetPassword from "./components/Auth/ResetPassword";
+import CartPage from "./components/Cart/Cart";
 
 import {
   signInWithEmailAndPassword,
@@ -2486,10 +2487,10 @@ export default function App() {
           element={<ResetPassword />}
         />
 
-        <Route
-          path="/cart"
-          element={<Cart />}
-        />
+      <Route
+  path="/cart"
+  element={<CartPage />}
+/>
 
         <Route
   path="/profile"

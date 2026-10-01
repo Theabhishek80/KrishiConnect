@@ -38,7 +38,7 @@ import Register from "./components/Auth/Register";
 import VerifyEmail from "./components/Auth/VerifyEmail";
 import ForgotPassword from "./components/Auth/ForgotPassword";
 import ResetPassword from "./components/Auth/ResetPassword";
-import CartPage from "./components/Cart/Cart";
+import CartPage from "./components/Marketplace/Cart";
 
 import {
   signInWithEmailAndPassword,

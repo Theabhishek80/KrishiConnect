@@ -398,11 +398,15 @@ function Home() {
 
   const add = async id => {
 
-    if (!getUser()) {
-      return alert(
-        "Please sign in to add products to your cart."
-      );
-    }
+   if (!getUser()) {
+  setToast("Please sign in to add products to your cart.");
+
+  setTimeout(() => {
+    setToast("");
+  }, 3000);
+
+  return;
+}
 
 
     try {

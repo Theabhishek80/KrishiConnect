@@ -429,7 +429,12 @@ function Home() {
 
 
   return (
-    <div>
+    <div>  {toast && (
+      <div className="app-toast">
+        <span className="app-toast-icon">✓</span>
+        <span>{toast}</span>
+      </div>
+    )}
 
       <section className="hero-modern">
 

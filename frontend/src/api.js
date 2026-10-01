@@ -1,21 +1,43 @@
 import axios from "axios";
-import { auth } from "./firebase";
+import {
+  auth,
+  onAuthStateChanged
+} from "./firebase";
 
 const api = axios.create({
   baseURL:
     import.meta.env.VITE_API_BASE_URL ||
-    "http://localhost:8080/api"
+    "/api"
 });
+
+let authReadyPromise;
+
+function waitForAuthReady() {
+  if (!authReadyPromise) {
+    authReadyPromise = new Promise(resolve => {
+      const unsubscribe = onAuthStateChanged(
+        auth,
+        user => {
+          unsubscribe();
+          resolve(user);
+        }
+      );
+    });
+  }
+
+  return authReadyPromise;
+}
 
 api.interceptors.request.use(
   async config => {
-
-    const firebaseUser = auth.currentUser;
+    const firebaseUser = await waitForAuthReady();
 
     if (firebaseUser) {
-
       const idToken =
         await firebaseUser.getIdToken();
+
+      config.headers =
+        config.headers || {};
 
       config.headers.Authorization =
         `Bearer ${idToken}`;
@@ -23,7 +45,6 @@ api.interceptors.request.use(
 
     return config;
   },
-
   error => Promise.reject(error)
 );
 

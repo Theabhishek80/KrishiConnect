@@ -3,6 +3,7 @@ package com.krishiconnect.service;
 import com.krishiconnect.domain.ProductStatus;
 import com.krishiconnect.dto.CartDtos;
 import com.krishiconnect.dto.CartDtos.ItemRequest;
+import com.krishiconnect.dto.CartDtos.QuantityRequest;
 import com.krishiconnect.entity.Cart;
 import com.krishiconnect.entity.CartItem;
 import com.krishiconnect.entity.Product;
@@ -57,7 +58,6 @@ public class CartService {
             Long uid,
             ItemRequest request
     ) {
-
         Cart cart = cart(uid);
 
         Product product = products.findById(request.productId())
@@ -80,7 +80,6 @@ public class CartService {
                 ).orElse(null);
 
         if (item == null) {
-
             item = new CartItem();
 
             item.setCart(cart);
@@ -104,8 +103,35 @@ public class CartService {
 
     @Transactional(readOnly = true)
     public CartDtos.CartResponse get(Long uid) {
-
         Cart cart = cart(uid);
+
+        return toResponse(cart);
+    }
+
+    @Transactional
+    public CartDtos.CartResponse updateQuantity(
+            Long uid,
+            Long productId,
+            QuantityRequest request
+    ) {
+        Cart cart = cart(uid);
+
+        CartItem item =
+                items.findByCartIdAndProductId(
+                        cart.getId(),
+                        productId
+                ).orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Product is not in your cart."
+                        )
+                );
+
+        item.setQuantity(request.quantity());
+
+        cart.setUpdatedAt(Instant.now());
+
+        items.save(item);
+        carts.save(cart);
 
         return toResponse(cart);
     }
@@ -115,16 +141,13 @@ public class CartService {
             Long uid,
             Long productId
     ) {
-
         Cart cart = cart(uid);
 
         items.findByCartIdAndProductId(
                 cart.getId(),
                 productId
         ).ifPresent(item -> {
-
             cart.getItems().remove(item);
-
             items.delete(item);
         });
 
@@ -159,7 +182,6 @@ public class CartService {
     private CartDtos.CartItemResponse toItemResponse(
             CartItem item
     ) {
-
         Product product = item.getProduct();
 
         List<String> images =

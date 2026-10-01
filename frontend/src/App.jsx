@@ -702,8 +702,8 @@ return (
 
       </section>
 
-    </div>
-  );
+</>
+);
 }
 
 

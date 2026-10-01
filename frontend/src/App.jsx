@@ -436,14 +436,16 @@ function Home() {
   }, 3000);
 }
 
-
-  return (
-    <div>  {toast && (
+return (
+  <>
+    {toast && (
       <div className="app-toast">
         <span className="app-toast-icon">✓</span>
         <span>{toast}</span>
       </div>
     )}
+
+  
 
       <section className="hero-modern">
 

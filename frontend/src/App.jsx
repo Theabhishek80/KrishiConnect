@@ -416,6 +416,9 @@ function Home() {
       );
 
      setToast("Added to cart");
+      setTimeout(() => {
+  setToast("");
+}, 2500);
 
     } catch (e) {
 

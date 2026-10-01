@@ -396,44 +396,47 @@ function Home() {
   }, [q]);
 
 
-  const add = async id => {
+const add = async id => {
+  if (!getUser()) {
+    setToast("Please sign in to add products to your cart.");
 
-   if (!getUser()) {
-  setToast("Please sign in to add products to your cart.");
+    setTimeout(() => {
+      setToast("");
+    }, 3000);
 
-  setTimeout(() => {
-    setToast("");
-  }, 3000);
+    return;
+  }
 
-  return;
-}
+  try {
+    await api.post(
+      "/cart/items",
+      {
+        productId: id,
+        quantity: 1
+      }
+    );
 
+    setToast("Added to cart");
 
-    try {
-
-      await api.post(
-        "/cart/items",
-        {
-          productId: id,
-          quantity: 1
-        }
-      );
-
-     setToast("Added to cart");
-      setTimeout(() => {
-  setToast("");
-}, 2500);
+    setTimeout(() => {
+      setToast("");
+    }, 2500);
 
   } catch (e) {
-  setToast(
-    e.response?.data?.error ||
-    e.response?.data?.message ||
-    "Could not add item"
-  );
+    console.error("Add to cart failed:", e);
 
-   setTimeout(() => {
-    setToast("");
-  }, 3000);
+    const errorMessage =
+      typeof e.response?.data?.error === "string"
+        ? e.response.data.error
+        : typeof e.response?.data?.message === "string"
+          ? e.response.data.message
+          : "Could not add item to cart.";
+
+    setToast(errorMessage);
+
+    setTimeout(() => {
+      setToast("");
+    }, 3000);
   }
 };
 

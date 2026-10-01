@@ -1,8 +1,6 @@
 import axios from "axios";
-import {
-  auth,
-  onAuthStateChanged
-} from "./firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
 
 const api = axios.create({
   baseURL:
@@ -10,27 +8,33 @@ const api = axios.create({
     "/api"
 });
 
-let authReadyPromise;
+let initialAuthCheck = null;
 
-function waitForAuthReady() {
-  if (!authReadyPromise) {
-    authReadyPromise = new Promise(resolve => {
+function waitForInitialAuth() {
+  if (!initialAuthCheck) {
+    initialAuthCheck = new Promise(resolve => {
       const unsubscribe = onAuthStateChanged(
         auth,
-        user => {
+        () => {
           unsubscribe();
-          resolve(user);
+          resolve();
         }
       );
     });
   }
 
-  return authReadyPromise;
+  return initialAuthCheck;
 }
 
 api.interceptors.request.use(
   async config => {
-    const firebaseUser = await waitForAuthReady();
+    // Firebase may still be restoring the session after a page refresh.
+    if (!auth.currentUser) {
+      await waitForInitialAuth();
+    }
+
+    // IMPORTANT: check currentUser AGAIN after waiting.
+    const firebaseUser = auth.currentUser;
 
     if (firebaseUser) {
       const idToken =

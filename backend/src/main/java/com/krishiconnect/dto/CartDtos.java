@@ -17,6 +17,11 @@ public final class CartDtos {
     ) {
     }
 
+    public record QuantityRequest(
+            @Min(1) int quantity
+    ) {
+    }
+
     public record CartResponse(
             Long id,
             List<CartItemResponse> items,

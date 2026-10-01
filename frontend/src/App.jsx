@@ -434,6 +434,7 @@ function Home() {
    setTimeout(() => {
     setToast("");
   }, 3000);
+  }
 };
 
 return (

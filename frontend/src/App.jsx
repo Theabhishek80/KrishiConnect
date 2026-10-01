@@ -431,10 +431,10 @@ function Home() {
     "Could not add item"
   );
 
-  setTimeout(() => {
+   setTimeout(() => {
     setToast("");
   }, 3000);
-}
+};
 
 return (
   <>

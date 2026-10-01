@@ -2109,3 +2109,78 @@ footer{
     justify-self: end;
   }
 }
+
+.app-toast {
+  position: fixed;
+  top: 92px;
+  right: 24px;
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  max-width: min(380px, calc(100vw - 32px));
+
+  padding: 13px 17px;
+
+  background: #ffffff;
+  color: var(--ink);
+
+  border: 1px solid var(--line);
+  border-radius: 12px;
+
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.12);
+
+  font-size: 14px;
+  font-weight: 600;
+
+  animation:
+    toastSlideIn 0.28s ease-out,
+    toastFadeOut 0.3s ease-in 2.2s forwards;
+}
+
+.app-toast-icon {
+  width: 24px;
+  height: 24px;
+
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+
+  border-radius: 50%;
+
+  background: #e8f5ea;
+  color: var(--green);
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translate3d(25px, -8px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes toastFadeOut {
+  to {
+    opacity: 0;
+    transform: translate3d(15px, -5px, 0);
+  }
+}
+
+@media (max-width: 600px) {
+  .app-toast {
+    top: 78px;
+    right: 16px;
+    left: 16px;
+    max-width: none;
+  }
+}

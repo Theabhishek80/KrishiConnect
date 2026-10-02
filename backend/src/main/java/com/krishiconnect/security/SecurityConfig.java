@@ -39,34 +39,24 @@ public class SecurityConfig {
     ) throws Exception {
 
         return http
-
-                // -------------------------------------------------
-                // CSRF
-                // -------------------------------------------------
                 .csrf(c -> c.disable())
 
-                // -------------------------------------------------
-                // CORS
-                // -------------------------------------------------
-                .cors(c -> c.configurationSource(cors()))
+                .cors(c ->
+                        c.configurationSource(cors())
+                )
 
-                // -------------------------------------------------
-                // STATELESS API
-                // -------------------------------------------------
                 .sessionManagement(s ->
                         s.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
-                // -------------------------------------------------
-                // AUTHORIZATION
-                // -------------------------------------------------
                 .authorizeHttpRequests(a -> a
 
-                        // ===============================
-                        // PUBLIC AUTH ENDPOINTS
-                        // ===============================
+                        // =================================================
+                        // PUBLIC AUTH
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/register",
@@ -75,73 +65,92 @@ public class SecurityConfig {
                                 "/api/auth/reset-password"
                         ).permitAll()
 
-                        // ===============================
+
+                        // =================================================
                         // PUBLIC CATEGORIES
-                        // ===============================
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/categories/**"
                         ).permitAll()
 
-                        // ===============================
-                        // SWAGGER
-                        // ===============================
+
+                        // =================================================
+                        // PUBLIC ADVERTISEMENTS
+                        // =================================================
+
+                        .requestMatchers(
+                                "/api/advertisements"
+                        ).permitAll()
+
+
+                        // =================================================
+                        // SWAGGER / OPENAPI
+                        // =================================================
+
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // ===============================
-                        // FIREBASE AUTH
-                        // ===============================
+
+                        // =================================================
+                        // FIREBASE AUTHENTICATION
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/auth/firebase/**"
                         ).authenticated()
 
-                        // ===============================
-                        // FARMER PRODUCTS
-                        // ===============================
+
+                        // =================================================
+                        // FARMER PRODUCT APIs
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/products/farmer",
                                 "/api/products/farmer/**"
                         ).hasRole("FARMER")
 
-                        // ===============================
-                        // PUBLIC PRODUCT CATALOG
-                        // ===============================
+
+                        // =================================================
+                        // PUBLIC PRODUCT APIs
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/products",
                                 "/api/products/**"
                         ).permitAll()
 
-                        // ===============================
-                        // ADMIN
-                        // ===============================
+
+                        // =================================================
+                        // ADMIN APIs
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/admin/**"
                         ).hasRole("ADMIN")
 
-                        // ===============================
-                        // AUTHENTICATED USERS
-                        // ===============================
+
+                        // =================================================
+                        // CART / ORDERS / NOTIFICATIONS
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/cart/**",
                                 "/api/orders/**",
                                 "/api/notifications/**"
                         ).authenticated()
 
-                        // ===============================
+
+                        // =================================================
                         // EVERYTHING ELSE
-                        // ===============================
+                        // =================================================
+
                         .anyRequest().authenticated()
                 )
 
-                // -------------------------------------------------
-                // FIREBASE AUTHENTICATION
-                //
-                // Firebase is now the active authentication
-                // mechanism for the application.
-                // -------------------------------------------------
                 .addFilterBefore(
                         firebaseAuthFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -150,13 +159,11 @@ public class SecurityConfig {
                 .build();
     }
 
-    // -------------------------------------------------------------
-    // CORS CONFIGURATION
-    // -------------------------------------------------------------
     @Bean
     CorsConfigurationSource cors() {
 
-        CorsConfiguration c = new CorsConfiguration();
+        CorsConfiguration c =
+                new CorsConfiguration();
 
         c.setAllowedOrigins(
                 List.of(frontendUrl)

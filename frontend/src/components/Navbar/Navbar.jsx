@@ -165,6 +165,12 @@ export default function Navbar({ user, onLogout }) {
     <span>Admin</span>
   </Link>
 )}
+            {user?.role === "FARMER" && (
+  <Link to="/farmer" onClick={closeAll}>
+    <Sprout size={17} />
+    <span>Farmer</span>
+  </Link>
+)}
 
             {user && (
               <button

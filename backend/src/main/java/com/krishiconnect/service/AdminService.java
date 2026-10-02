@@ -79,18 +79,14 @@ public class AdminService {
     public void deleteProduct(Long id) {
         products.deleteById(id);
     }
-}
 
-@Transactional(readOnly = true)
-public Object getAllUsers() {
-    return users.findAll();
-}
-@Transactional(readOnly = true)
-public Object getAllUsers() {
-    return users.findAll();
-}
+    @Transactional(readOnly = true)
+    public Object getAllUsers() {
+        return users.findAll();
+    }
 
-@Transactional(readOnly = true)
-public Object getAllOrders() {
-    return orders.findAll();
+    @Transactional(readOnly = true)
+    public Object getAllOrders() {
+        return orders.findAll();
+    }
 }

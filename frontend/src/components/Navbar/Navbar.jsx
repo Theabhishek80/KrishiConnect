@@ -783,79 +783,62 @@ export default function Navbar({ user, onLogout }) {
       )}
 
 
-         {/* =========================
-          NOTIFICATIONS
-          Only consumer/farmer
-      ========================= */}
+{/* =====================================================
+    NOTIFICATION DROPDOWN
+===================================================== */}
 
-      {notificationsOpen &&
-        user &&
-        !isAdmin && (
+{notificationsOpen &&
+  user &&
+  !isAdmin && (
 
-          <div
-            className="kd-drawer-overlay"
-            onClick={closeAll}
-          >
+    <div
+      className="kd-notification-popover"
+      role="dialog"
+      aria-label="Notifications"
+      onClick={event =>
+        event.stopPropagation()
+      }
+    >
 
-            <aside
-              className="kd-notification-drawer"
-              onClick={event =>
-                event.stopPropagation()
-              }
-            >
+      <div className="kd-notification-popover-header">
 
-              <div className="kd-drawer-header">
+        <div>
+          <strong>
+            Notifications
+          </strong>
 
-                <div>
+          <span>
+            Latest updates
+          </span>
+        </div>
 
-                  <span className="kd-drawer-eyebrow">
-                    UPDATES
-                  </span>
+        <button
+          type="button"
+          onClick={closeAll}
+          aria-label="Close notifications"
+        >
+          <X size={17} />
+        </button>
 
-                  <h2>
-                    Notifications
-                  </h2>
+      </div>
 
-                  <p>
-                    Your latest account updates
-                  </p>
+      <div className="kd-notification-popover-body">
 
-                </div>
+        <div className="kd-notification-empty-icon">
+          <Bell size={20} />
+        </div>
 
-                <button
-                  type="button"
-                  className="kd-drawer-close"
-                  onClick={closeAll}
-                  aria-label="Close notifications"
-                >
-                  <X size={20} />
-                </button>
+        <strong>
+          You're all caught up
+        </strong>
 
-              </div>
+        <p>
+          New order and account updates
+          will appear here.
+        </p>
 
-              <div className="kd-notification-empty">
+      </div>
 
-                <span className="kd-notification-empty-icon">
-                  <Bell size={22} />
-                </span>
+    </div>
 
-                <h3>
-                  You're all caught up
-                </h3>
-
-                <p>
-                  New order, account and platform
-                  updates will appear here.
-                </p>
-
-              </div>
-
-            </aside>
-
-          </div>
-
-        )}
-
-    </>
-  );
-}
+)}

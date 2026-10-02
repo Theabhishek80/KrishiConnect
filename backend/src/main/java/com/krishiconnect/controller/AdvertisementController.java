@@ -4,6 +4,7 @@ import com.krishiconnect.entity.Advertisement;
 import com.krishiconnect.service.AdvertisementService;
 
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,10 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping(
-        value = "/api",
-        produces = MediaType.APPLICATION_JSON_VALUE
-)
+@RequestMapping("/api")
 public class AdvertisementController {
 
     private final AdvertisementService service;
@@ -29,9 +27,19 @@ public class AdvertisementController {
     // PUBLIC
     // =========================================================
 
-    @GetMapping("/advertisements")
-    public List<Advertisement> getActiveAdvertisements() {
-        return service.getActiveAdvertisements();
+    @GetMapping(
+            value = "/advertisements",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<List<Advertisement>> getActiveAdvertisements() {
+
+        List<Advertisement> advertisements =
+                service.getActiveAdvertisements();
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(advertisements);
     }
 
     // =========================================================

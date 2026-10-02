@@ -38,8 +38,11 @@ import ForgotPassword from "./components/Auth/ForgotPassword";
 import ResetPassword from "./components/Auth/ResetPassword";
 import CartPage from "./components/Marketplace/Cart";
 import Navbar from "./components/Navbar/Navbar";
+import AdvertisementSlider from "./components/Advertisement/AdvertisementSlider";
+import AdvertisementManager from "./components/Advertisement/AdvertisementManager";
 
 import "./styles/navbar.css";
+import "./styles/advertisement.css";
 
 import {
   signInWithEmailAndPassword,
@@ -398,6 +401,9 @@ return (
         </div>
 
       </section>
+
+
+      <AdvertisementSlider />
 
 
       <section className="benefits">
@@ -1929,6 +1935,9 @@ function Admin() {
           {error}
         </div>
       )}
+
+
+      <AdvertisementManager />
 
 
       {/* =========================

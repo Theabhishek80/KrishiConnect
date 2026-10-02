@@ -2403,121 +2403,100 @@ export default function App() {
 
     <Layout>
 
-    <Routes>
+      <Routes>
 
-  {/* =========================
-      PUBLIC
-  ========================= */}
+        <Route
+          path="/"
+          element={<Home />}
+        />
 
-  <Route
-    path="/"
-    element={<Home />}
-  />
+        <Route
+          path="/about"
+          element={<About />}
+        />
 
-  <Route
-    path="/about"
-    element={<About />}
-  />
+        <Route
+          path="/kisandirect-ai"
+          element={<KisanDirectAI />}
+        />
 
-  <Route
-    path="/kisandirect-ai"
-    element={<KisanDirectAI />}
-  />
+        <Route
+          path="/login"
+          element={<Login />}
+        />
 
+        <Route
+          path="/register"
+          element={<Register />}
+        />
 
-  {/* =========================
-      AUTH
-  ========================= */}
+        <Route
+          path="/verify-email"
+          element={<VerifyEmail />}
+        />
 
-  <Route
-    path="/login"
-    element={<Login />}
-  />
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
 
-  <Route
-    path="/register"
-    element={<Register />}
-  />
+        <Route
+          path="/reset-password"
+          element={<ResetPassword />}
+        />
 
-  <Route
-    path="/verify-email"
-    element={<VerifyEmail />}
-  />
+        <Route
+          path="/cart"
+          element={<CartPage />}
+        />
 
-  <Route
-    path="/forgot-password"
-    element={<ForgotPassword />}
-  />
+        <Route
+          path="/profile"
+          element={<Profile />}
+        />
 
-  <Route
-    path="/reset-password"
-    element={<ResetPassword />}
-  />
+        <Route
+          path="/orders"
+          element={
+            <AccountPlaceholder
+              title="My Orders"
+              description="Your order history will appear here."
+            />
+          }
+        />
 
+        <Route
+          path="/addresses"
+          element={
+            <AccountPlaceholder
+              title="Saved Addresses"
+              description="Your saved delivery addresses will appear here."
+            />
+          }
+        />
 
-  {/* =========================
-      CONSUMER ACCOUNT
-  ========================= */}
+        <Route
+          path="/settings"
+          element={
+            <AccountPlaceholder
+              title="Settings"
+              description="Your account preferences will appear here."
+            />
+          }
+        />
 
-  <Route
-    path="/cart"
-    element={<CartPage />}
-  />
+        <Route
+          path="/farmer"
+          element={<Farmer />}
+        />
 
-  <Route
-    path="/profile"
-    element={<Profile />}
-  />
+        <Route
+          path="/admin"
+          element={<Admin />}
+        />
 
-  <Route
-    path="/orders"
-    element={
-      <AccountPlaceholder
-        title="My Orders"
-        description="Your order history will appear here."
-      />
-    }
-  />
+      </Routes>
 
-  <Route
-    path="/addresses"
-    element={
-      <AccountPlaceholder
-        title="Saved Addresses"
-        description="Your saved delivery addresses will appear here."
-      />
-    }
-  />
-
-  <Route
-    path="/settings"
-    element={
-      <AccountPlaceholder
-        title="Settings"
-        description="Your account preferences will appear here."
-      />
-    }
-  />
-
-
-  {/* =========================
-      FARMER
-      KEEP FOR FUTURE
-  ========================= */}
-
-  <Route
-    path="/farmer"
-    element={<Farmer />}
-  />
-
-
-  {/* =========================
-      ADMIN
-  ========================= */}
-
-  <Route
-    path="/admin"
-    element={<Admin />}
-  />
-
-</Routes>
+    </Layout>
+  );
+}

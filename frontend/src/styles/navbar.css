@@ -1,58 +1,48 @@
 /* =========================================================
-   KISANDIRECT NAVBAR
-   Matches improved Navbar.jsx
+   KISANDIRECT NAVBAR — STEP 1
+   Single responsive navbar for public / consumer / farmer.
+   Admin uses the same shell but different navigation items.
 ========================================================= */
+
+.kd-navbar,
+.kd-navbar *,
+.kd-mobile-panel,
+.kd-mobile-panel *,
+.kd-account-overlay,
+.kd-account-overlay * {
+  box-sizing: border-box;
+}
 
 .kd-navbar {
   position: sticky;
   top: 0;
   z-index: 5000;
-
   width: 100%;
-
   background: #ffffff;
-
   border-bottom: 1px solid #e4ebe5;
-
-  box-shadow:
-    0 3px 16px rgba(25, 60, 35, 0.06);
+  box-shadow: 0 3px 16px rgba(25, 60, 35, 0.06);
 }
 
 .kd-navbar-inner {
   width: 100%;
   max-width: 1500px;
-
   min-height: 70px;
-
   margin: 0 auto;
-
   padding: 0 24px;
-
-  box-sizing: border-box;
-
   display: flex;
   align-items: center;
-
-  gap: 18px;
+  gap: 16px;
 }
 
-
-/* =========================================================
-   BRAND
-========================================================= */
+/* ---------- Brand ---------- */
 
 .kd-brand {
   flex: 0 0 auto;
-
   display: inline-flex;
   align-items: center;
-
   gap: 9px;
-
   color: #193a25;
-
   text-decoration: none;
-
   white-space: nowrap;
 }
 
@@ -62,50 +52,35 @@
 
 .kd-brand-mark {
   position: relative;
-
   width: 36px;
   height: 36px;
-
   flex: 0 0 36px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
+  display: grid;
+  place-items: center;
   border-radius: 11px;
-
   background: #e8f4ea;
-
   color: #176b3a;
 }
 
 .kd-brand-k {
   font-size: 20px;
   font-weight: 900;
-
   line-height: 1;
 }
 
 .kd-brand-leaf {
   position: absolute;
-
   top: 3px;
   right: 5px;
-
   color: #5ca56d;
-
   font-size: 12px;
-
   line-height: 1;
 }
 
 .kd-brand-word {
   font-size: 20px;
-
   font-weight: 800;
-
   letter-spacing: -0.04em;
-
   line-height: 1;
 }
 
@@ -113,49 +88,28 @@
   color: #31934f;
 }
 
-
-/* =========================================================
-   SEARCH
-========================================================= */
+/* ---------- Search ---------- */
 
 .kd-search {
-  flex: 1 1 420px;
-
-  min-width: 180px;
+  flex: 1 1 430px;
+  min-width: 160px;
   max-width: 560px;
-
   height: 44px;
-
-  box-sizing: border-box;
-
   display: flex;
   align-items: center;
-
   gap: 9px;
-
-  padding: 0 13px;
-
-  background: #f7faf7;
-
+  padding: 0 12px;
   border: 1px solid #dce6dd;
-
   border-radius: 12px;
-
+  background: #f7faf7;
   color: #6f7d74;
-
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
 }
 
 .kd-search:focus-within {
   background: #ffffff;
-
   border-color: #72a47c;
-
-  box-shadow:
-    0 0 0 3px rgba(49, 147, 79, 0.10);
+  box-shadow: 0 0 0 3px rgba(49, 147, 79, .10);
 }
 
 .kd-search > svg {
@@ -165,18 +119,13 @@
 .kd-search input {
   width: 100%;
   min-width: 0;
-
   height: 100%;
-
   padding: 0;
-
   border: 0;
   outline: 0;
-
   background: transparent;
-
   color: #183421;
-
+  font: inherit;
   font-size: 14px;
 }
 
@@ -191,979 +140,531 @@
 .kd-search-clear {
   width: 28px;
   height: 28px;
-
   flex: 0 0 28px;
-
   display: grid;
   place-items: center;
-
   padding: 0;
-
   border: 0;
-
   border-radius: 8px;
-
   background: #e9f0ea;
-
   color: #526259;
-
   cursor: pointer;
 }
 
-.kd-search-clear:hover {
-  background: #dfeae1;
-}
+/* ---------- Desktop nav ---------- */
 
-
-/* =========================================================
-   DESKTOP NAVIGATION
-========================================================= */
-
-.kd-nav-links {
+.kd-desktop-nav {
   flex: 0 0 auto;
-
   display: flex;
   align-items: center;
-
   gap: 3px;
 }
 
-.kd-nav-links > a {
+.kd-desktop-nav > a {
   min-height: 40px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   gap: 7px;
-
-  padding: 0 10px;
-
+  padding: 0 9px;
   border-radius: 9px;
-
   color: #435149;
-
   text-decoration: none;
-
   font-size: 14px;
-
   font-weight: 650;
-
   white-space: nowrap;
-
-  transition:
-    background 0.18s ease,
-    color 0.18s ease;
 }
 
-.kd-nav-links > a:hover {
+.kd-desktop-nav > a:hover {
   background: #f0f6f1;
-
   color: #176b3a;
 }
 
-.kd-nav-links > a svg {
-  flex: 0 0 auto;
-}
-
-
-/* =========================================================
-   HIDE MOBILE ITEMS BY DEFAULT
-========================================================= */
-
-.kd-mobile-profile-link,
-.kd-mobile-ai {
-  display: none;
-}
-
-
-/* =========================================================
-   RIGHT NAVBAR ACTIONS
-========================================================= */
+/* ---------- Right actions ---------- */
 
 .kd-navbar-actions {
   flex: 0 0 auto;
-
   margin-left: auto;
-
   display: flex;
   align-items: center;
-
-  gap: 8px;
+  gap: 7px;
 }
 
-
-/* =========================================================
-   AI BUTTON
-========================================================= */
-
-.kd-desktop-ai-button {
+.kd-ai-nav-button {
   height: 40px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   gap: 7px;
-
   padding: 0 11px;
-
   border: 1px solid #dce9de;
-
   border-radius: 10px;
-
   background: #f5faf6;
-
   color: #287643;
-
   font-size: 13px;
-
   font-weight: 700;
-
   white-space: nowrap;
-
   cursor: pointer;
-
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease;
 }
 
-.kd-desktop-ai-button:hover {
+.kd-ai-nav-button:hover {
   background: #eaf5ec;
-
-  border-color: #c9ddcc;
 }
 
-.kd-desktop-ai-button svg {
-  flex: 0 0 auto;
-}
-
-
-/* =========================================================
-   ICON BUTTON
-========================================================= */
-
-.kd-nav-icon-button {
+.kd-icon-button {
   width: 40px;
   height: 40px;
-
   flex: 0 0 40px;
-
   display: grid;
   place-items: center;
-
   padding: 0;
-
   border: 1px solid #dce5de;
-
   border-radius: 10px;
-
   background: #ffffff;
-
   color: #46564d;
-
   cursor: pointer;
-
-  transition:
-    background 0.18s ease,
-    color 0.18s ease,
-    border-color 0.18s ease;
 }
 
-.kd-nav-icon-button:hover {
+.kd-icon-button:hover,
+.kd-icon-button.is-active {
   background: #f2f7f3;
-
   border-color: #cbd9ce;
-
   color: #176b3a;
 }
 
+/* ---------- Profile ---------- */
 
-/* =========================================================
-   PROFILE BUTTON
-========================================================= */
-
-.kd-profile-trigger {
+.kd-profile-button {
   height: 44px;
-
   min-width: 44px;
   max-width: 170px;
-
   flex: 0 0 auto;
-
   display: inline-flex;
   align-items: center;
-
   gap: 8px;
-
   padding: 4px 8px 4px 5px;
-
-  box-sizing: border-box;
-
   border: 1px solid #dce5de;
-
   border-radius: 12px;
-
   background: #ffffff;
-
   color: #293d31;
-
   cursor: pointer;
-
   overflow: hidden;
-
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease;
 }
 
-.kd-profile-trigger:hover {
+.kd-profile-button:hover {
   background: #f7faf7;
-
   border-color: #cbd9ce;
 }
 
-
-/* IMPORTANT:
-   Profile image is ALWAYS constrained.
-*/
-
-.kd-profile-image {
+.kd-profile-image,
+.kd-profile-avatar {
   width: 34px !important;
   height: 34px !important;
-
   min-width: 34px !important;
   max-width: 34px !important;
-
   min-height: 34px !important;
   max-height: 34px !important;
-
   flex: 0 0 34px;
-
-  display: block;
-
-  object-fit: cover;
-
   border-radius: 50%;
-
-  overflow: hidden;
 }
 
-.kd-avatar {
-  width: 34px;
-  height: 34px;
+.kd-profile-image {
+  display: block;
+  object-fit: cover;
+}
 
-  min-width: 34px;
-
-  flex: 0 0 34px;
-
+.kd-profile-avatar {
   display: grid;
   place-items: center;
-
-  border-radius: 50%;
-
   background: #e7f3e9;
-
   color: #176b3a;
-
   font-size: 14px;
-
   font-weight: 800;
 }
 
 .kd-profile-name {
   min-width: 0;
-
   overflow: hidden;
-
   text-overflow: ellipsis;
-
   white-space: nowrap;
-
   font-size: 13px;
-
   font-weight: 700;
 }
 
-.kd-profile-trigger > svg {
+.kd-profile-button > svg {
   flex: 0 0 auto;
-
   color: #829088;
 }
 
-
-/* =========================================================
-   SIGN IN
-========================================================= */
-
-.kd-signin {
+.kd-signin-button {
   height: 42px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   gap: 7px;
-
   padding: 0 13px;
-
   border-radius: 10px;
-
   background: #176b3a;
-
   color: #ffffff;
-
   text-decoration: none;
-
   font-size: 14px;
-
   font-weight: 700;
 }
 
-.kd-signin:hover {
+.kd-signin-button:hover {
   background: #125a30;
-
   color: #ffffff;
 }
 
+/* ---------- Mobile menu ---------- */
 
-/* =========================================================
-   MOBILE MENU BUTTON
-========================================================= */
-
-.kd-mobile-menu {
+.kd-mobile-menu-button {
   display: none;
-
   width: 40px;
   height: 40px;
-
   flex: 0 0 40px;
-
   align-items: center;
   justify-content: center;
-
   padding: 0;
-
   border: 1px solid #dce5de;
-
   border-radius: 10px;
-
   background: #ffffff;
-
   color: #35493c;
-
   cursor: pointer;
 }
 
-.kd-mobile-menu:hover {
-  background: #f2f7f3;
+/* ---------- Notification dropdown ---------- */
+
+.kd-notification-wrap {
+  position: relative;
 }
-
-
-/* =========================================================
-   MOBILE NAVIGATION PANEL
-========================================================= */
-
-.kd-mobile-nav-panel {
-  display: none;
-}
-
-.kd-mobile-nav-inner {
-  display: none;
-}
-
-
-/* =========================================================
-   NOTIFICATION DROPDOWN
-========================================================= */
 
 .kd-notification-popover {
-  position: fixed;
-
-  top: 77px;
-  right: 24px;
-
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
   z-index: 9000;
-
   width: 350px;
-
-  max-width: calc(100vw - 24px);
-
-  box-sizing: border-box;
-
+  max-width: calc(100vw - 20px);
   background: #ffffff;
-
   border: 1px solid #e0e8e1;
-
   border-radius: 14px;
-
-  box-shadow:
-    0 18px 45px rgba(20, 45, 27, 0.16),
-    0 5px 15px rgba(20, 45, 27, 0.07);
-
+  box-shadow: 0 18px 45px rgba(20, 45, 27, .16), 0 5px 15px rgba(20, 45, 27, .07);
   overflow: hidden;
-
-  animation:
-    kdNotificationDrop
-    0.18s
-    ease-out;
+  animation: kdNotificationIn .16s ease-out;
 }
 
 .kd-notification-popover::before {
   content: "";
-
   position: absolute;
-
   top: -6px;
-  right: 24px;
-
-  width: 12px;
-  height: 12px;
-
+  right: 17px;
+  width: 11px;
+  height: 11px;
   background: #ffffff;
-
   border-left: 1px solid #e0e8e1;
   border-top: 1px solid #e0e8e1;
-
   transform: rotate(45deg);
 }
 
-.kd-notification-popover-header {
+.kd-popover-header {
   position: relative;
-
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-
-  gap: 15px;
-
-  padding: 15px 16px;
-
-  background: #ffffff;
-
+  gap: 12px;
+  padding: 14px 15px;
   border-bottom: 1px solid #edf1ed;
 }
 
-.kd-notification-popover-header > div {
-  min-width: 0;
-
+.kd-popover-header > div {
   display: flex;
   flex-direction: column;
-
   gap: 3px;
 }
 
-.kd-notification-popover-header strong {
+.kd-popover-header strong {
   color: #20382a;
-
   font-size: 14px;
-
-  font-weight: 750;
 }
 
-.kd-notification-popover-header span {
+.kd-popover-header span {
   color: #89958d;
-
   font-size: 11px;
 }
 
-.kd-notification-popover-header button {
+.kd-popover-close {
   width: 30px;
   height: 30px;
-
   flex: 0 0 30px;
-
   display: grid;
   place-items: center;
-
   padding: 0;
-
   border: 0;
-
   border-radius: 8px;
-
   background: #f2f5f2;
-
   color: #617067;
-
   cursor: pointer;
 }
 
-.kd-notification-popover-header button:hover {
-  background: #e8eee9;
-
-  color: #30483a;
-}
-
-.kd-notification-popover-body {
-  min-height: 180px;
-
+.kd-notification-empty {
+  min-height: 175px;
   display: flex;
   flex-direction: column;
-
   align-items: center;
   justify-content: center;
-
-  padding: 28px 20px;
-
+  padding: 25px 20px;
   text-align: center;
 }
 
 .kd-notification-empty-icon {
   width: 44px;
   height: 44px;
-
   display: grid;
   place-items: center;
-
-  margin-bottom: 12px;
-
+  margin-bottom: 11px;
   border-radius: 50%;
-
   background: #edf6ef;
-
   color: #398151;
 }
 
-.kd-notification-popover-body > strong {
+.kd-notification-empty > strong {
   color: #20382a;
-
   font-size: 14px;
 }
 
-.kd-notification-popover-body p {
+.kd-notification-empty > p {
   max-width: 260px;
-
   margin: 6px 0 0;
-
   color: #849087;
-
   font-size: 12px;
-
   line-height: 1.5;
 }
 
-@keyframes kdNotificationDrop {
-
+@keyframes kdNotificationIn {
   from {
     opacity: 0;
-
-    transform:
-      translateY(-7px);
+    transform: translateY(-5px);
   }
-
   to {
     opacity: 1;
-
-    transform:
-      translateY(0);
+    transform: translateY(0);
   }
-
 }
 
+/* ---------- Mobile panel ---------- */
 
-/* =========================================================
-   ACCOUNT DRAWER
-========================================================= */
+.kd-mobile-panel {
+  display: none;
+}
 
-.kd-drawer-overlay {
+/* ---------- Account drawer ---------- */
+
+.kd-account-overlay {
   position: fixed;
-
   inset: 0;
-
   z-index: 10000;
-
   display: flex;
-
   justify-content: flex-end;
-
-  background:
-    rgba(13, 28, 18, 0.35);
+  background: rgba(13, 28, 18, .35);
 }
 
-.kd-drawer {
+.kd-account-drawer {
   width: min(420px, 94vw);
-
   height: 100vh;
-
   display: flex;
-
   flex-direction: column;
-
   background: #ffffff;
-
-  box-shadow:
-    -15px 0 45px
-    rgba(20, 40, 25, 0.15);
-
+  box-shadow: -15px 0 45px rgba(20, 40, 25, .15);
   overflow: hidden;
 }
 
-
-/* =========================================================
-   DRAWER HEADER
-========================================================= */
-
-.kd-drawer-header {
+.kd-account-header {
   flex: 0 0 auto;
-
   display: flex;
-
   align-items: flex-start;
-
   justify-content: space-between;
-
   gap: 14px;
-
   padding: 22px;
-
   border-bottom: 1px solid #e7ece8;
 }
 
-.kd-account-heading {
+.kd-account-identity {
   min-width: 0;
-
   display: flex;
-
   align-items: center;
-
   gap: 12px;
 }
 
-.kd-drawer-profile-image {
+.kd-drawer-profile-image,
+.kd-drawer-avatar {
   width: 50px !important;
   height: 50px !important;
-
   min-width: 50px !important;
   max-width: 50px !important;
-
   min-height: 50px !important;
   max-height: 50px !important;
-
   flex: 0 0 50px;
-
-  display: block;
-
-  object-fit: cover;
-
   border-radius: 50%;
+}
+
+.kd-drawer-profile-image {
+  display: block;
+  object-fit: cover;
 }
 
 .kd-drawer-avatar {
-  width: 50px;
-  height: 50px;
-
-  min-width: 50px;
-
-  flex: 0 0 50px;
-
   display: grid;
   place-items: center;
-
-  border-radius: 50%;
-
   background: #e7f3e9;
-
   color: #176b3a;
-
   font-size: 18px;
-
   font-weight: 800;
 }
 
-.kd-account-heading-text {
+.kd-account-text {
   min-width: 0;
-
   overflow: hidden;
 }
 
-.kd-drawer-eyebrow {
+.kd-account-label {
   display: block;
-
   margin-bottom: 3px;
-
   color: #6a8b72;
-
   font-size: 10px;
-
   font-weight: 800;
-
-  letter-spacing: 0.1em;
+  letter-spacing: .1em;
 }
 
-.kd-account-heading-text h2 {
+.kd-account-text h2 {
   margin: 0 0 3px;
-
   overflow: hidden;
-
   text-overflow: ellipsis;
-
   white-space: nowrap;
-
   color: #193624;
-
   font-size: 18px;
 }
 
-.kd-account-heading-text p {
+.kd-account-text p {
   margin: 0;
-
   overflow: hidden;
-
   text-overflow: ellipsis;
-
   white-space: nowrap;
-
   color: #7a887f;
-
   font-size: 12px;
 }
 
-.kd-drawer-close {
+.kd-account-close {
   width: 36px;
   height: 36px;
-
-  min-width: 36px;
-
   flex: 0 0 36px;
-
   display: grid;
   place-items: center;
-
   padding: 0;
-
   border: 0;
-
   border-radius: 9px;
-
   background: #f2f5f2;
-
   color: #526158;
-
   cursor: pointer;
 }
 
-.kd-drawer-close:hover {
-  background: #e8eee9;
-}
-
-
-/* =========================================================
-   DRAWER CONTENT
-========================================================= */
-
-.kd-drawer-scroll {
+.kd-account-content {
   flex: 1 1 auto;
-
   min-height: 0;
-
   overflow-y: auto;
-
   overflow-x: hidden;
-
   padding: 10px 16px 20px;
 }
 
-
-/* =========================================================
-   DRAWER NAVIGATION
-========================================================= */
-
-.kd-drawer-nav {
+.kd-account-links {
   display: grid;
-
   gap: 5px;
 }
 
-.kd-drawer-nav button {
+.kd-account-links > button {
   width: 100%;
-
   min-height: 62px;
-
   display: grid;
-
-  grid-template-columns:
-    22px
-    minmax(0, 1fr)
-    18px;
-
+  grid-template-columns: 22px minmax(0, 1fr) 18px;
   align-items: center;
-
   gap: 10px;
-
   padding: 10px 11px;
-
-  box-sizing: border-box;
-
   border: 0;
-
   border-radius: 11px;
-
   background: transparent;
-
   color: #30483a;
-
   text-align: left;
-
   cursor: pointer;
 }
 
-.kd-drawer-nav button:hover {
+.kd-account-links > button:hover {
   background: #f2f7f3;
 }
 
-.kd-drawer-nav button > svg:first-child {
+.kd-account-links > button > svg:first-child {
   color: #398151;
 }
 
-.kd-drawer-nav button > span {
+.kd-account-links > button > span {
   min-width: 0;
-
   display: flex;
-
   flex-direction: column;
-
   gap: 2px;
 }
 
-.kd-drawer-nav button strong {
+.kd-account-links strong {
   color: #30483a;
-
   font-size: 14px;
-
-  font-weight: 700;
 }
 
-.kd-drawer-nav button small {
+.kd-account-links small {
   color: #87938b;
-
   font-size: 11px;
-
   line-height: 1.3;
 }
 
-.kd-drawer-nav button > svg:last-child {
+.kd-account-links > button > svg:last-child {
   color: #9aa69e;
 }
 
-
-/* =========================================================
-   LOGOUT
-========================================================= */
-
-.kd-drawer-footer {
+.kd-account-footer {
   flex: 0 0 auto;
-
   padding: 14px 16px 18px;
-
   border-top: 1px solid #e7ece8;
-
   background: #ffffff;
 }
 
-.kd-drawer-logout {
+.kd-logout-button {
   width: 100%;
-
   min-height: 44px;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
   gap: 8px;
-
   padding: 0 15px;
-
   border: 1px solid #f0d7d3;
-
   border-radius: 10px;
-
   background: #fff7f6;
-
   color: #a43f35;
-
   font-size: 14px;
-
   font-weight: 750;
-
   cursor: pointer;
 }
 
-.kd-drawer-logout:hover {
+.kd-logout-button:hover {
   background: #ffefed;
-
-  border-color: #eac4bf;
 }
-
-
-/* =========================================================
-   FLOATING AI
-========================================================= */
-
-.kd-ai-floating {
-  position: fixed;
-
-  right: 24px;
-
-  bottom: 24px;
-
-  z-index: 4000;
-
-  min-height: 44px;
-
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 8px;
-
-  padding: 0 15px;
-
-  border: 0;
-
-  border-radius: 999px;
-
-  background: #176b3a;
-
-  color: #ffffff;
-
-  box-shadow:
-    0 12px 30px
-    rgba(20, 75, 40, 0.22);
-
-  cursor: pointer;
-
-  font-size: 13px;
-
-  font-weight: 750;
-}
-
-.kd-ai-floating:hover {
-  background: #125a30;
-
-  transform:
-    translateY(-1px);
-}
-
-.kd-ai-sparkle {
-  font-size: 17px;
-}
-
 
 /* =========================================================
    TABLET
 ========================================================= */
 
 @media (max-width: 1150px) {
-
   .kd-navbar-inner {
-    gap: 12px;
-
     padding-left: 16px;
     padding-right: 16px;
+    gap: 11px;
   }
 
   .kd-brand-word {
@@ -1174,20 +675,18 @@
     flex-basis: 280px;
   }
 
-  .kd-nav-links > a {
-    padding-left: 7px;
-    padding-right: 7px;
-
+  .kd-desktop-nav > a {
+    padding-left: 6px;
+    padding-right: 6px;
     font-size: 13px;
   }
 
-  .kd-desktop-ai-button span {
+  .kd-ai-nav-button span {
     display: none;
   }
 
-  .kd-desktop-ai-button {
+  .kd-ai-nav-button {
     width: 40px;
-
     padding: 0;
   }
 
@@ -1195,450 +694,299 @@
     display: none;
   }
 
-  .kd-profile-trigger {
+  .kd-profile-button {
     padding-right: 5px;
   }
-
 }
-
-
-/* =========================================================
-   MOBILE / SMALL TABLET
-========================================================= */
-
-@media (max-width: 850px) {
-
-  .kd-navbar-inner {
-    min-height: 64px;
-
-    padding:
-      0 12px;
-
-    gap: 9px;
-  }
-
-
-  /* Search */
-
-  .kd-search {
-    flex: 1 1 auto;
-
-    min-width: 0;
-
-    max-width: none;
-
-    height: 42px;
-  }
-
-
-  /* Hide desktop nav */
-
-  .kd-nav-links {
-    display: none;
-  }
-
-
-  /* Right actions */
-
-  .kd-navbar-actions {
-    margin-left: 0;
-
-    gap: 6px;
-  }
-
-
-  .kd-desktop-ai-button {
-    display: none;
-  }
-
-
-  .kd-nav-icon-button {
-    width: 39px;
-    height: 39px;
-
-    flex-basis: 39px;
-  }
-
-
-  .kd-profile-trigger {
-    width: 40px;
-    height: 40px;
-
-    padding: 2px;
-
-    justify-content: center;
-
-    border-radius: 50%;
-  }
-
-
-  .kd-profile-name {
-    display: none;
-  }
-
-
-  .kd-profile-trigger > svg {
-    display: none;
-  }
-
-
-  .kd-profile-image,
-  .kd-avatar {
-    width: 34px !important;
-    height: 34px !important;
-
-    min-width: 34px !important;
-    max-width: 34px !important;
-
-    min-height: 34px !important;
-    max-height: 34px !important;
-  }
-
-
-  .kd-mobile-menu {
-    display: flex;
-  }
-
-
-  /* Mobile panel */
-
-  .kd-mobile-nav-panel {
-    display: block;
-
-    position: fixed;
-
-    top: 64px;
-    left: 0;
-    right: 0;
-
-    z-index: 4999;
-
-    background: #ffffff;
-
-    border-bottom: 1px solid #e2e9e3;
-
-    box-shadow:
-      0 12px 28px
-      rgba(20, 45, 27, 0.10);
-  }
-
-  .kd-mobile-nav-inner {
-    display: grid;
-
-    gap: 4px;
-
-    padding: 10px 12px 14px;
-  }
-
-  .kd-mobile-nav-inner > a,
-  .kd-mobile-nav-inner > button {
-    width: 100%;
-
-    min-height: 46px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 11px;
-
-    padding: 0 13px;
-
-    box-sizing: border-box;
-
-    border: 0;
-
-    border-radius: 10px;
-
-    background: transparent;
-
-    color: #30483a;
-
-    text-decoration: none;
-
-    text-align: left;
-
-    font-size: 14px;
-
-    font-weight: 650;
-
-    cursor: pointer;
-  }
-
-  .kd-mobile-nav-inner > a:hover,
-  .kd-mobile-nav-inner > button:hover {
-    background: #f1f6f2;
-
-    color: #176b3a;
-  }
-
-}
-
 
 /* =========================================================
    MOBILE
 ========================================================= */
 
-@media (max-width: 600px) {
-
+@media (max-width: 850px) {
   .kd-navbar-inner {
-    min-height: 62px;
-
-    padding:
-      0 9px;
-
-    gap: 7px;
+    min-height: 64px;
+    padding: 0 12px;
+    gap: 8px;
   }
 
+  .kd-desktop-nav {
+    display: none;
+  }
+
+  .kd-search {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+    height: 42px;
+  }
+
+  .kd-navbar-actions {
+    margin-left: 0;
+    gap: 5px;
+  }
+
+  .kd-ai-nav-button {
+    display: none;
+  }
+
+  .kd-profile-button {
+    width: 40px;
+    height: 40px;
+    padding: 2px;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  .kd-profile-name,
+  .kd-profile-button > svg {
+    display: none;
+  }
+
+  .kd-profile-image,
+  .kd-profile-avatar {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+  }
+
+  .kd-mobile-menu-button {
+    display: flex;
+  }
+
+  .kd-mobile-panel {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    z-index: 4999;
+    display: block;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e9e3;
+    box-shadow: 0 12px 28px rgba(20, 45, 27, .10);
+  }
+
+  .kd-mobile-nav {
+    display: grid;
+    gap: 4px;
+    padding: 10px 12px 14px;
+  }
+
+  .kd-mobile-nav > a,
+  .kd-mobile-nav > button {
+    width: 100%;
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 0 13px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #30483a;
+    text-decoration: none;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .kd-mobile-nav > a:hover,
+  .kd-mobile-nav > button:hover {
+    background: #f1f6f2;
+    color: #176b3a;
+  }
+
+  .kd-mobile-signin {
+    color: #176b3a !important;
+  }
+
+  .kd-mobile-avatar-image,
+  .kd-mobile-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    flex: 0 0 32px;
+    border-radius: 50%;
+  }
+
+  .kd-mobile-avatar-image {
+    display: block;
+    object-fit: cover;
+  }
+
+  .kd-mobile-avatar {
+    display: grid;
+    place-items: center;
+    background: #e7f3e9;
+    color: #176b3a;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .kd-notification-popover {
+    position: fixed;
+    top: 70px;
+    right: 8px;
+    width: min(340px, calc(100vw - 16px));
+  }
+
+  .kd-account-drawer {
+    width: min(410px, 94vw);
+  }
+}
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+  .kd-navbar-inner {
+    min-height: 62px;
+    padding: 0 9px;
+    gap: 6px;
+  }
 
   .kd-brand {
     gap: 6px;
   }
 
-
   .kd-brand-mark {
     width: 32px;
     height: 32px;
-
     flex-basis: 32px;
-
     border-radius: 9px;
   }
-
 
   .kd-brand-k {
     font-size: 18px;
   }
 
-
   .kd-brand-word {
     font-size: 16px;
   }
 
-
   .kd-search {
     height: 40px;
-
-    padding:
-      0 9px;
-
+    padding: 0 9px;
     gap: 7px;
-
     border-radius: 10px;
   }
-
 
   .kd-search input {
     font-size: 12px;
   }
 
-
   .kd-search input::placeholder {
-    overflow: hidden;
-
     text-overflow: ellipsis;
-
     white-space: nowrap;
   }
 
-
-  .kd-search-clear {
-    width: 26px;
-    height: 26px;
-
-    flex-basis: 26px;
-  }
-
-
-  .kd-navbar-actions {
-    gap: 4px;
-  }
-
-
-  .kd-nav-icon-button {
+  .kd-icon-button {
     width: 37px;
     height: 37px;
-
     flex-basis: 37px;
   }
 
-
-  .kd-profile-trigger {
+  .kd-profile-button {
     width: 37px;
     height: 37px;
+    flex-basis: 37px;
   }
 
-
   .kd-profile-image,
-  .kd-avatar {
+  .kd-profile-avatar {
     width: 31px !important;
     height: 31px !important;
-
     min-width: 31px !important;
     max-width: 31px !important;
-
     min-height: 31px !important;
     max-height: 31px !important;
   }
 
-
-  .kd-mobile-menu {
+  .kd-mobile-menu-button {
     width: 37px;
     height: 37px;
-
     flex-basis: 37px;
   }
 
-
-  /* Notification */
-
-  .kd-notification-popover {
-    top: 69px;
-
-    right: 8px;
-
-    width:
-      min(
-        340px,
-        calc(100vw - 16px)
-      );
+  .kd-account-drawer {
+    width: min(390px, 94vw);
   }
 
-  .kd-notification-popover::before {
-    right: 63px;
+  .kd-ai-nav-button {
+    display: none;
   }
-
-
-  /* Drawer */
-
-  .kd-drawer {
-    width:
-      min(
-        390px,
-        94vw
-      );
-  }
-
-
-  /* AI */
-
-  .kd-ai-floating {
-    right: 12px;
-
-    bottom: 12px;
-
-    min-height: 42px;
-
-    padding:
-      0 12px;
-  }
-
 }
-
 
 /* =========================================================
    VERY SMALL MOBILE
 ========================================================= */
 
 @media (max-width: 430px) {
-
   .kd-navbar-inner {
-    padding:
-      0 7px;
-
+    padding: 0 7px;
     gap: 5px;
   }
-
-
-  /* Hide brand text */
 
   .kd-brand-word {
     display: none;
   }
 
-
-  .kd-brand-mark {
-    width: 32px;
-    height: 32px;
-
-    flex-basis: 32px;
-  }
-
-
-  /* Search gets maximum room */
-
   .kd-search {
     min-width: 0;
-
-    flex: 1 1 auto;
   }
-
 
   .kd-search input {
     min-width: 0;
-
     font-size: 11px;
   }
 
-
-  /* Hide bell on extremely narrow screens */
-
-  .kd-navbar-actions
-  .kd-notification-button {
-    display: none;
+  .kd-navbar-actions {
+    gap: 4px;
   }
 
-
-  .kd-profile-trigger {
+  .kd-profile-button {
     width: 36px;
     height: 36px;
-
     flex-basis: 36px;
   }
 
-
   .kd-profile-image,
-  .kd-avatar {
+  .kd-profile-avatar {
     width: 30px !important;
     height: 30px !important;
-
     min-width: 30px !important;
     max-width: 30px !important;
-
     min-height: 30px !important;
     max-height: 30px !important;
   }
 
-
-  .kd-mobile-menu {
+  .kd-mobile-menu-button {
     width: 36px;
     height: 36px;
-
     flex-basis: 36px;
   }
 
-
-  .kd-ai-floating {
-    right: 10px;
-
-    bottom: 10px;
-
-    padding:
-      0 11px;
+  .kd-notification-popover {
+    top: 68px;
+    right: 8px;
   }
-
 }
 
-
-/* =========================================================
-   ACCESSIBILITY
-========================================================= */
+/* ---------- Focus ---------- */
 
 .kd-navbar button:focus-visible,
 .kd-navbar a:focus-visible,
-.kd-mobile-nav-panel button:focus-visible,
-.kd-mobile-nav-panel a:focus-visible {
+.kd-mobile-panel button:focus-visible,
+.kd-mobile-panel a:focus-visible,
+.kd-account-overlay button:focus-visible {
   outline: 2px solid #4d9b62;
-
   outline-offset: 2px;
 }

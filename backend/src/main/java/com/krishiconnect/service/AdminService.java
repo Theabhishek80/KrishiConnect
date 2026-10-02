@@ -85,3 +85,12 @@ public class AdminService {
 public Object getAllUsers() {
     return users.findAll();
 }
+@Transactional(readOnly = true)
+public Object getAllUsers() {
+    return users.findAll();
+}
+
+@Transactional(readOnly = true)
+public Object getAllOrders() {
+    return orders.findAll();
+}

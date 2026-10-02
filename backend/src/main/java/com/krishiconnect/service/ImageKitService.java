@@ -21,7 +21,7 @@ public class ImageKitService {
     }
 
     // =========================================================
-    // PRODUCT IMAGE UPLOAD
+    // PRODUCT IMAGE
     // =========================================================
 
     public String uploadProductImage(
@@ -100,7 +100,7 @@ public class ImageKitService {
     }
 
     // =========================================================
-    // PROFILE IMAGE UPLOAD
+    // PROFILE IMAGE
     // =========================================================
 
     public String uploadProfileImage(
@@ -179,7 +179,7 @@ public class ImageKitService {
     }
 
     // =========================================================
-    // ADVERTISEMENT IMAGE UPLOAD
+    // ADVERTISEMENT IMAGE
     // =========================================================
 
     public String uploadAdvertisementImage(

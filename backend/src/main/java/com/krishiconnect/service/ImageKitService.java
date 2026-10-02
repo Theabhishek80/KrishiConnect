@@ -76,7 +76,12 @@ public class ImageKitService {
             FileUploadResponse response =
                     imageKitClient.files().upload(params);
 
-            return response.url();
+            return response.url()
+                    .orElseThrow(() ->
+                            new IllegalStateException(
+                                    "ImageKit did not return an image URL."
+                            )
+                    );
 
         } catch (IOException e) {
 
@@ -89,6 +94,85 @@ public class ImageKitService {
 
             throw new IllegalStateException(
                     "ImageKit upload failed.",
+                    e
+            );
+        }
+    }
+
+    // =========================================================
+    // PROFILE IMAGE UPLOAD
+    // =========================================================
+
+    public String uploadProfileImage(
+            MultipartFile image,
+            Long userId
+    ) {
+
+        if (image == null || image.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Profile image is required."
+            );
+        }
+
+        String contentType = image.getContentType();
+
+        if (contentType == null ||
+                !contentType.startsWith("image/")) {
+
+            throw new IllegalArgumentException(
+                    "Only image files are allowed."
+            );
+        }
+
+        if (image.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException(
+                    "Image size must be 5 MB or less."
+            );
+        }
+
+        String originalName =
+                Objects.requireNonNullElse(
+                        image.getOriginalFilename(),
+                        "profile-image.jpg"
+                );
+
+        String fileName =
+                userId +
+                "-" +
+                System.currentTimeMillis() +
+                "-" +
+                originalName;
+
+        try {
+
+            FileUploadParams params =
+                    FileUploadParams.builder()
+                            .file(image.getBytes())
+                            .fileName(fileName)
+                            .folder("/profiles/" + userId)
+                            .build();
+
+            FileUploadResponse response =
+                    imageKitClient.files().upload(params);
+
+            return response.url()
+                    .orElseThrow(() ->
+                            new IllegalStateException(
+                                    "ImageKit did not return an image URL."
+                            )
+                    );
+
+        } catch (IOException e) {
+
+            throw new IllegalStateException(
+                    "Could not read the uploaded profile image.",
+                    e
+            );
+
+        } catch (Exception e) {
+
+            throw new IllegalStateException(
+                    "Profile image upload failed.",
                     e
             );
         }
@@ -148,7 +232,12 @@ public class ImageKitService {
             FileUploadResponse response =
                     imageKitClient.files().upload(params);
 
-            return response.url();
+            return response.url()
+                    .orElseThrow(() ->
+                            new IllegalStateException(
+                                    "ImageKit did not return an image URL."
+                            )
+                    );
 
         } catch (IOException e) {
 

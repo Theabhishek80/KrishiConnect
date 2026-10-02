@@ -14,13 +14,11 @@ import {
   UserRound,
   LogOut,
   LayoutDashboard,
-  Search,
   ArrowRight,
   ShieldCheck,
   Truck,
   Sprout,
   Star,
-  Menu,
   X,
   Package,
   Plus,
@@ -39,6 +37,9 @@ import VerifyEmail from "./components/Auth/VerifyEmail";
 import ForgotPassword from "./components/Auth/ForgotPassword";
 import ResetPassword from "./components/Auth/ResetPassword";
 import CartPage from "./components/Marketplace/Cart";
+import Navbar from "./components/Navbar/Navbar";
+
+import "./styles/navbar.css";
 
 import {
   signInWithEmailAndPassword,
@@ -70,8 +71,6 @@ function saveSession(data) {
 function Layout({ children }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(getUser());
-const [open, setOpen] = useState(false);
-const [accountSidebarOpen, setAccountSidebarOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   useEffect(() => {
@@ -82,240 +81,75 @@ const [accountSidebarOpen, setAccountSidebarOpen] = useState(false);
     return () => window.removeEventListener("storage", sync);
   }, []);
 
-const logout = async () => {
-  try {
-    await signOut(auth);
+  const logout = async () => {
+    try {
+      await signOut(auth);
 
-    localStorage.removeItem("kc_access");
-    localStorage.removeItem("kc_refresh");
-    localStorage.removeItem("kc_user");
+      localStorage.removeItem("kc_access");
+      localStorage.removeItem("kc_refresh");
+      localStorage.removeItem("kc_user");
 
-    setUser(null);
-    setOpen(false);
-    setAccountSidebarOpen(false);
-    setLogoutConfirmOpen(false);
+      setUser(null);
+      setLogoutConfirmOpen(false);
 
-    navigate("/");
-  } catch (error) {
-    console.error("Logout failed:", error);
-    alert("Logout failed. Please try again.");
-  }
-};
-
- const close = () => {
-  setOpen(false);
-  setAccountSidebarOpen(false);
-};
+      navigate("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      alert("Logout failed. Please try again.");
+    }
+  };
 
   return (
     <div className="app-shell">
 
-      <header className="topbar">
-
-        <Link
-          className="brand"
-          to="/"
-          onClick={close}
-        >
-          <span className="brandmark">
-            <Leaf size={19} />
-          </span>
-
-          <span>
-            Krishi<span>Connect</span>
-          </span>
-        </Link>
-
-
-        <button
-          className="mobile-toggle"
-          onClick={() => setOpen(!open)}
-          aria-label="Toggle menu"
-        >
-          {open ? <X /> : <Menu />}
-        </button>
-
-
-        <nav className={open ? "nav open" : "nav"}>
-
-          <Link to="/" onClick={close}>
-            Marketplace
-          </Link>
-
-
-          {user && (
-            <Link to="/cart" onClick={close}>
-              <ShoppingCart size={17} />
-              Cart
-            </Link>
-          )}
-
-
-          {user?.role === "FARMER" && (
-            <Link to="/farmer" onClick={close}>
-              <Sprout size={17} />
-              Farmer
-            </Link>
-          )}
-
-
-          {user?.role === "ADMIN" && (
-            <Link to="/admin" onClick={close}>
-              <LayoutDashboard size={17} />
-              Admin
-            </Link>
-          )}
-
-
-          {user ? (
-            <button
-              className="nav-user"
-             onClick={() => setAccountSidebarOpen(true)}
-            >
-             {user.profileImageUrl ? (
-  <img
-    className="nav-profile-image"
-    src={user.profileImageUrl}
-    alt="Profile"
-  />
-) : (
-  <span className="avatar">
-    {user.name?.[0]?.toUpperCase()}
-  </span>
-)}
-
-<span className="nav-profile-name">
-  {user.name?.split(" ")[0]}
-</span>
-
-<ChevronRight size={17} />
-            </button>
-          ) : (
-            <Link
-              className="login-link"
-              to="/login"
-              onClick={close}
-            >
-              <UserRound size={17} />
-              Sign in
-            </Link>
-          )}
-
-        </nav>
-
-      </header>
-
-
-            {accountSidebarOpen && (
-        <div className="account-sidebar-overlay">
-          <aside className="account-sidebar">
-            <div className="account-sidebar-header">
-              <div>
-                <p className="eyebrow">Account</p>
-                <h2>My Account</h2>
-              </div>
-
-              <button
-                className="account-sidebar-close"
-                onClick={() => setAccountSidebarOpen(false)}
-                aria-label="Close account menu"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <nav className="account-sidebar-nav">
-              <Link
-                to="/profile"
-                onClick={() => setAccountSidebarOpen(false)}
-              >
-                <UserRound size={18} />
-                My Profile
-              </Link>
-
-              <Link
-                to="/orders"
-                onClick={() => setAccountSidebarOpen(false)}
-              >
-                <Package size={18} />
-                My Orders
-              </Link>
-
-              <Link
-                to="/addresses"
-                onClick={() => setAccountSidebarOpen(false)}
-              >
-                <Truck size={18} />
-                Saved Addresses
-              </Link>
-
-              <Link
-                to="/settings"
-                onClick={() => setAccountSidebarOpen(false)}
-              >
-                <LayoutDashboard size={18} />
-                Settings
-              </Link>
-            </nav>
-
-            <div className="account-sidebar-footer">
-             <button
-  className="account-sidebar-logout"
-  onClick={() => setLogoutConfirmOpen(true)}
->
-  <LogOut size={18} />
-  Logout
-</button>
-            </div>
-          </aside>
-        </div>
-      )}
+      <Navbar
+        user={user}
+        onLogout={() => setLogoutConfirmOpen(true)}
+      />
 
       {logoutConfirmOpen && (
-  <div
-    className="logout-modal-overlay"
-    onClick={() => setLogoutConfirmOpen(false)}
-  >
-    <div
-      className="logout-modal"
-      onClick={e => e.stopPropagation()}
-    >
-      <div className="logout-modal-icon">
-        <LogOut size={22} />
-      </div>
-
-      <h3>Are you sure you want to logout?</h3>
-
-      <p>
-        You will be signed out of your KrishiConnect account.
-      </p>
-
-      <div className="logout-modal-actions">
-
-        <button
-          className="secondary-btn"
+        <div
+          className="logout-modal-overlay"
           onClick={() => setLogoutConfirmOpen(false)}
         >
-          Cancel
-        </button>
+          <div
+            className="logout-modal"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="logout-modal-icon">
+              <LogOut size={22} />
+            </div>
 
-        <button
-          className="primary-btn"
-          onClick={logout}
-        >
-          Yes, Logout
-        </button>
+            <h3>Are you sure you want to logout?</h3>
 
-      </div>
-    </div>
-  </div>
-)}
+            <p>
+              You will be signed out of your KisanDirect account.
+            </p>
 
+            <div className="logout-modal-actions">
+
+              <button
+                className="secondary-btn"
+                onClick={() => setLogoutConfirmOpen(false)}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="primary-btn"
+                onClick={logout}
+              >
+                Yes, Logout
+              </button>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       <main>
         {children}
       </main>
-
 
       <footer>
 
@@ -326,7 +160,7 @@ const logout = async () => {
               <Leaf size={18} />
             </span>
 
-            KrishiConnect
+            KisanDirect
           </div>
 
           <p>
@@ -335,9 +169,8 @@ const logout = async () => {
 
         </div>
 
-
         <div className="footer-note">
-          © {new Date().getFullYear()} KrishiConnect
+          © {new Date().getFullYear()} KisanDirect
         </div>
 
       </footer>
@@ -353,12 +186,21 @@ const logout = async () => {
 
 function Home() {
 
+  const location = useLocation();
+
   const [products, setProducts] = useState([]);
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(
+    new URLSearchParams(location.search).get("q") || ""
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
 
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setQ(params.get("q") || "");
+  }, [location.search]);
 
   useEffect(() => {
 
@@ -490,7 +332,7 @@ return (
               className="secondary-btn"
               to="/register"
             >
-              Join KrishiConnect
+              Join KisanDirect
             </Link>
 
           </div>
@@ -621,27 +463,6 @@ return (
         </div>
 
 
-        <div className="search-modern">
-
-          <Search size={19} />
-
-          <input
-            value={q}
-            onChange={e => setQ(e.target.value)}
-            placeholder="Search tomatoes, rice, fruits, spices…"
-          />
-
-          {q && (
-            <button
-              onClick={() => setQ("")}
-            >
-              Clear
-            </button>
-          )}
-
-        </div>
-
-
         {error && (
           <div className="notice error">
             {error}
@@ -710,6 +531,66 @@ return (
 );
 }
 
+
+
+/* =========================
+   ABOUT
+========================= */
+
+/* =========================
+   KISANDIRECT AI
+========================= */
+
+function KisanDirectAI() {
+  return (
+    <section className="page-section kd-ai-page">
+      <div className="page-heading">
+        <div>
+          <span className="section-kicker">KISANDIRECT AI</span>
+          <h1>Your agriculture assistant.</h1>
+        </div>
+      </div>
+
+      <div className="panel kd-ai-page-card">
+        <div className="kd-ai-page-icon">✦</div>
+        <h2>KisanDirect AI</h2>
+        <p>
+          This is the dedicated AI workspace. The assistant can be
+          connected here next without changing the navigation again.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+
+function About() {
+  return (
+    <section className="page-section kd-simple-page">
+      <div className="page-heading">
+        <div>
+          <span className="section-kicker">ABOUT KISANDIRECT</span>
+          <h1>Built to make agriculture more connected.</h1>
+        </div>
+      </div>
+
+      <div className="panel kd-simple-page-card">
+        <p>
+          KisanDirect is a modern agriculture-focused platform
+          connecting people with products, information and
+          useful digital tools.
+        </p>
+
+        <p>
+          This project combines a responsive React frontend,
+          Spring Boot APIs, secure authentication, PostgreSQL
+          and role-based features in one production-style
+          application.
+        </p>
+      </div>
+    </section>
+  );
+}
 
 /* =========================
    PRODUCT CARD
@@ -840,7 +721,7 @@ function Auth({
             <Leaf size={20} />
           </span>
 
-          KrishiConnect
+          KisanDirect
 
         </div>
 
@@ -877,7 +758,7 @@ function Auth({
               <Leaf size={19} />
             </span>
 
-            KrishiConnect
+            KisanDirect
 
           </div>
 
@@ -2481,6 +2362,16 @@ export default function App() {
         <Route
           path="/"
           element={<Home />}
+        />
+
+        <Route
+          path="/about"
+          element={<About />}
+        />
+
+        <Route
+          path="/kisandirect-ai"
+          element={<KisanDirectAI />}
         />
 
         <Route

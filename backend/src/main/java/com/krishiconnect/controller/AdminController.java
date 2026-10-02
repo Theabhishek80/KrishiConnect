@@ -53,4 +53,14 @@ public Object allUsers() {
     return adminService.getAllUsers();
 }
 
+@GetMapping("/users")
+public Object allUsers() {
+    return adminService.getAllUsers();
+}
+
+@GetMapping("/orders")
+public Object allOrders() {
+    return adminService.getAllOrders();
+}
+
 

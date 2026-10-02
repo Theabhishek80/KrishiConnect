@@ -47,20 +47,14 @@ public class AdminController {
     public void deleteProduct(@PathVariable Long id) {
         adminService.deleteProduct(id);
     }
-}
-@GetMapping("/users")
-public Object allUsers() {
-    return adminService.getAllUsers();
-}
 
-@GetMapping("/users")
-public Object allUsers() {
-    return adminService.getAllUsers();
+    @GetMapping("/users")
+    public Object allUsers() {
+        return adminService.getAllUsers();
+    }
+
+    @GetMapping("/orders")
+    public Object allOrders() {
+        return adminService.getAllOrders();
+    }
 }
-
-@GetMapping("/orders")
-public Object allOrders() {
-    return adminService.getAllOrders();
-}
-
-

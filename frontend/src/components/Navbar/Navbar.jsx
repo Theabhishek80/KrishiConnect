@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   LogOut,
   MapPin,
+  Menu,
   Package,
   Search,
   Settings,
@@ -24,57 +25,171 @@ import {
   X
 } from "lucide-react";
 
-export default function Navbar({ user, onLogout }) {
+
+export default function Navbar({
+  user,
+  onLogout
+}) {
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [search, setSearch] = useState("");
 
-  const isAdmin = user?.role === "ADMIN";
-  const isFarmer = user?.role === "FARMER";
+  /* =====================================================
+     STATE
+  ===================================================== */
+
+  const [mobileOpen, setMobileOpen] =
+    useState(false);
+
+  const [accountOpen, setAccountOpen] =
+    useState(false);
+
+  const [notificationsOpen, setNotificationsOpen] =
+    useState(false);
+
+  const [search, setSearch] =
+    useState("");
+
+
+  /* =====================================================
+     USER ROLES
+  ===================================================== */
+
+  const isAdmin =
+    user?.role === "ADMIN";
+
+  const isFarmer =
+    user?.role === "FARMER";
+
+
+  /* =====================================================
+     CLOSE EVERYTHING
+  ===================================================== */
 
   const closeAll = () => {
+
     setMobileOpen(false);
     setAccountOpen(false);
     setNotificationsOpen(false);
+
   };
 
+
+  /* =====================================================
+     CLOSE MENUS WHEN ROUTE CHANGES
+  ===================================================== */
+
   useEffect(() => {
-    closeAll();
-  }, [location.pathname, location.search]);
+
+    setMobileOpen(false);
+    setAccountOpen(false);
+    setNotificationsOpen(false);
+
+  }, [
+    location.pathname,
+    location.search
+  ]);
+
+
+  /* =====================================================
+     ESCAPE KEY
+  ===================================================== */
 
   useEffect(() => {
 
     const handleKeyDown = event => {
+
       if (event.key === "Escape") {
         closeAll();
       }
+
     };
 
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
 
     return () => {
+
       document.removeEventListener(
         "keydown",
         handleKeyDown
       );
+
     };
 
   }, []);
+
+
+  /* =====================================================
+     NOTIFICATION OUTSIDE CLICK
+  ===================================================== */
+
+  useEffect(() => {
+
+    if (!notificationsOpen) {
+      return;
+    }
+
+    const handleOutsideClick = event => {
+
+      const notification =
+        event.target.closest(
+          ".kd-notification-popover"
+        );
+
+      const notificationButton =
+        event.target.closest(
+          ".kd-notification-button"
+        );
+
+      if (
+        !notification &&
+        !notificationButton
+      ) {
+
+        setNotificationsOpen(false);
+
+      }
+
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
+
+    return () => {
+
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
+
+    };
+
+  }, [notificationsOpen]);
+
+
+  /* =====================================================
+     SEARCH
+  ===================================================== */
 
   const submitSearch = event => {
 
     event.preventDefault();
 
-    const value = search.trim();
+    const value =
+      search.trim();
 
     if (!value) {
+
       navigate("/");
+
       return;
+
     }
 
     closeAll();
@@ -82,44 +197,105 @@ export default function Navbar({ user, onLogout }) {
     navigate(
       `/?q=${encodeURIComponent(value)}`
     );
+
   };
 
+
+  /* =====================================================
+     ACCOUNT
+  ===================================================== */
+
   const openAccount = () => {
+
     setMobileOpen(false);
     setNotificationsOpen(false);
     setAccountOpen(true);
+
   };
 
-  const openNotifications = () => {
+
+  /* =====================================================
+     NOTIFICATIONS
+  ===================================================== */
+
+  const openNotifications = event => {
+
+    event?.stopPropagation();
+
     setMobileOpen(false);
     setAccountOpen(false);
-    setNotificationsOpen(true);
+
+    setNotificationsOpen(
+      value => !value
+    );
+
   };
+
+
+  /* =====================================================
+     ACCOUNT NAVIGATION
+  ===================================================== */
 
   const navigateFromAccount = path => {
+
     closeAll();
+
     navigate(path);
+
   };
 
+
+  /* =====================================================
+     LOGOUT
+  ===================================================== */
+
   const requestLogout = () => {
+
     closeAll();
 
     if (onLogout) {
       onLogout();
     }
+
   };
 
+
+  /* =====================================================
+     USER DISPLAY
+  ===================================================== */
+
+  const userName =
+    user?.name?.trim() ||
+    "Account";
+
+  const firstName =
+    userName
+      .split(" ")[0] ||
+    "Account";
+
+  const userInitial =
+    userName
+      .charAt(0)
+      .toUpperCase() ||
+    "U";
+
+
   return (
+
     <>
-      {/* =====================================================
-          NAVBAR
-      ===================================================== */}
+
+      {/* =================================================
+          MAIN NAVBAR
+      ================================================= */}
 
       <header className="kd-navbar">
 
         <div className="kd-navbar-inner">
 
-          {/* BRAND */}
+
+          {/* ===============================================
+              BRAND
+          =============================================== */}
 
           <Link
             className="kd-brand"
@@ -132,6 +308,7 @@ export default function Navbar({ user, onLogout }) {
               className="kd-brand-mark"
               aria-hidden="true"
             >
+
               <span className="kd-brand-k">
                 K
               </span>
@@ -139,7 +316,9 @@ export default function Navbar({ user, onLogout }) {
               <span className="kd-brand-leaf">
                 ⌁
               </span>
+
             </span>
+
 
             <span className="kd-brand-word">
               Kisan<span>Direct</span>
@@ -148,7 +327,9 @@ export default function Navbar({ user, onLogout }) {
           </Link>
 
 
-          {/* SEARCH */}
+          {/* ===============================================
+              SEARCH
+          =============================================== */}
 
           {!isAdmin && (
 
@@ -163,24 +344,33 @@ export default function Navbar({ user, onLogout }) {
                 aria-hidden="true"
               />
 
+
               <input
+                type="search"
                 value={search}
                 onChange={event =>
-                  setSearch(event.target.value)
+                  setSearch(
+                    event.target.value
+                  )
                 }
                 placeholder="Search products, recipes, mandi rates..."
                 aria-label="Search KisanDirect"
               />
+
 
               {search && (
 
                 <button
                   type="button"
                   className="kd-search-clear"
-                  onClick={() => setSearch("")}
+                  onClick={() =>
+                    setSearch("")
+                  }
                   aria-label="Clear search"
                 >
+
                   <X size={15} />
+
                 </button>
 
               )}
@@ -190,7 +380,9 @@ export default function Navbar({ user, onLogout }) {
           )}
 
 
-          {/* DESKTOP / MOBILE NAV */}
+          {/* ===============================================
+              DESKTOP NAVIGATION
+          =============================================== */}
 
           <nav
             className={
@@ -201,21 +393,36 @@ export default function Navbar({ user, onLogout }) {
             aria-label="Primary navigation"
           >
 
+
+            {/* HOME */}
+
             <Link
               to="/"
               onClick={closeAll}
             >
+
               <Home size={17} />
-              <span>Home</span>
+
+              <span>
+                Home
+              </span>
+
             </Link>
 
+
+            {/* ABOUT */}
 
             <Link
               to="/about"
               onClick={closeAll}
             >
+
               <Info size={17} />
-              <span>About Us</span>
+
+              <span>
+                About Us
+              </span>
+
             </Link>
 
 
@@ -227,8 +434,13 @@ export default function Navbar({ user, onLogout }) {
                 to="/cart"
                 onClick={closeAll}
               >
+
                 <ShoppingCart size={17} />
-                <span>Cart</span>
+
+                <span>
+                  Cart
+                </span>
+
               </Link>
 
             )}
@@ -242,8 +454,13 @@ export default function Navbar({ user, onLogout }) {
                 to="/farmer"
                 onClick={closeAll}
               >
+
                 <Sprout size={17} />
-                <span>Farmer</span>
+
+                <span>
+                  Farmer
+                </span>
+
               </Link>
 
             )}
@@ -257,14 +474,19 @@ export default function Navbar({ user, onLogout }) {
                 to="/admin"
                 onClick={closeAll}
               >
+
                 <LayoutDashboard size={17} />
-                <span>Admin</span>
+
+                <span>
+                  Admin
+                </span>
+
               </Link>
 
             )}
 
 
-            {/* MOBILE PROFILE */}
+            {/* MOBILE ONLY PROFILE */}
 
             {user && (
 
@@ -272,7 +494,9 @@ export default function Navbar({ user, onLogout }) {
                 type="button"
                 className="kd-mobile-profile-link"
                 onClick={() =>
-                  navigateFromAccount("/profile")
+                  navigateFromAccount(
+                    "/profile"
+                  )
                 }
               >
 
@@ -287,7 +511,7 @@ export default function Navbar({ user, onLogout }) {
                 ) : (
 
                   <span className="kd-mobile-profile-avatar">
-                    {user.name?.[0]?.toUpperCase() || "U"}
+                    {userInitial}
                   </span>
 
                 )}
@@ -314,25 +538,69 @@ export default function Navbar({ user, onLogout }) {
                   )
                 }
               >
+
                 <Sparkles size={16} />
-                <span>KisanDirect AI</span>
+
+                <span>
+                  KisanDirect AI
+                </span>
+
               </button>
 
             )}
 
+          </nav>
 
-            {/* NOTIFICATIONS */}
+
+          {/* ===============================================
+              RIGHT SIDE ACTIONS
+          =============================================== */}
+
+          <div className="kd-navbar-actions">
+
+
+            {/* AI */}
 
             {user && !isAdmin && (
 
               <button
                 type="button"
-                className="kd-nav-icon-button"
+                className="kd-desktop-ai-button"
+                onClick={() =>
+                  navigate(
+                    "/kisandirect-ai"
+                  )
+                }
+                aria-label="Open KisanDirect AI"
+              >
+
+                <Sparkles size={18} />
+
+                <span>
+                  KisanDirect AI
+                </span>
+
+              </button>
+
+            )}
+
+
+            {/* NOTIFICATION */}
+
+            {user && !isAdmin && (
+
+              <button
+                type="button"
+                className="kd-nav-icon-button kd-notification-button"
                 onClick={openNotifications}
                 aria-label="Open notifications"
-                title="Notifications"
+                aria-expanded={
+                  notificationsOpen
+                }
               >
+
                 <Bell size={19} />
+
               </button>
 
             )}
@@ -360,16 +628,20 @@ export default function Navbar({ user, onLogout }) {
                 ) : (
 
                   <span className="kd-avatar">
-                    {user.name?.[0]?.toUpperCase() || "U"}
+                    {userInitial}
                   </span>
 
                 )}
 
+
                 <span className="kd-profile-name">
-                  {user.name?.split(" ")[0] || "Account"}
+                  {firstName}
                 </span>
 
-                <ChevronRight size={16} />
+
+                <ChevronRight
+                  size={16}
+                />
 
               </button>
 
@@ -380,50 +652,46 @@ export default function Navbar({ user, onLogout }) {
                 to="/login"
                 onClick={closeAll}
               >
+
                 <UserRound size={17} />
-                <span>Sign in</span>
+
+                <span>
+                  Sign in
+                </span>
+
               </Link>
 
             )}
 
-          </nav>
 
-
-          {/* MOBILE ACTIONS */}
-
-          <div className="kd-mobile-actions">
-
-            {user && !isAdmin && (
-
-              <button
-                type="button"
-                className="kd-nav-icon-button"
-                onClick={openNotifications}
-                aria-label="Open notifications"
-              >
-                <Bell size={19} />
-              </button>
-
-            )}
+            {/* MOBILE MENU */}
 
             <button
               type="button"
               className="kd-mobile-menu"
               onClick={() =>
-                setMobileOpen(value => !value)
+                setMobileOpen(
+                  value => !value
+                )
               }
               aria-label={
                 mobileOpen
                   ? "Close navigation menu"
                   : "Open navigation menu"
               }
-              aria-expanded={mobileOpen}
+              aria-expanded={
+                mobileOpen
+              }
             >
 
               {mobileOpen ? (
-                <X size={23} />
+
+                <X size={22} />
+
               ) : (
-                <span>☰</span>
+
+                <Menu size={22} />
+
               )}
 
             </button>
@@ -435,37 +703,227 @@ export default function Navbar({ user, onLogout }) {
       </header>
 
 
-      {/* =====================================================
-          FLOATING AI
-      ===================================================== */}
+      {/* =================================================
+          MOBILE NAVIGATION PANEL
+      ================================================= */}
 
-      {user && !isAdmin && (
+      {mobileOpen && (
 
-        <button
-          type="button"
-          className="kd-ai-floating"
-          onClick={() =>
-            navigate("/kisandirect-ai")
-          }
-          aria-label="Open KisanDirect AI"
+        <div
+          className="kd-mobile-nav-panel"
         >
 
-          <span className="kd-ai-sparkle">
-            ✦
-          </span>
+          <div className="kd-mobile-nav-inner">
 
-          <span className="kd-ai-floating-text">
-            KisanDirect AI
-          </span>
 
-        </button>
+            <Link
+              to="/"
+              onClick={closeAll}
+            >
+
+              <Home size={18} />
+
+              <span>
+                Home
+              </span>
+
+            </Link>
+
+
+            <Link
+              to="/about"
+              onClick={closeAll}
+            >
+
+              <Info size={18} />
+
+              <span>
+                About Us
+              </span>
+
+            </Link>
+
+
+            {user && !isAdmin && (
+
+              <Link
+                to="/cart"
+                onClick={closeAll}
+              >
+
+                <ShoppingCart size={18} />
+
+                <span>
+                  Cart
+                </span>
+
+              </Link>
+
+            )}
+
+
+            {isFarmer && (
+
+              <Link
+                to="/farmer"
+                onClick={closeAll}
+              >
+
+                <Sprout size={18} />
+
+                <span>
+                  Farmer Dashboard
+                </span>
+
+              </Link>
+
+            )}
+
+
+            {isAdmin && (
+
+              <Link
+                to="/admin"
+                onClick={closeAll}
+              >
+
+                <LayoutDashboard size={18} />
+
+                <span>
+                  Admin Dashboard
+                </span>
+
+              </Link>
+
+            )}
+
+
+            {user && (
+
+              <button
+                type="button"
+                onClick={() =>
+                  navigateFromAccount(
+                    "/profile"
+                  )
+                }
+              >
+
+                <UserRound size={18} />
+
+                <span>
+                  My Profile
+                </span>
+
+              </button>
+
+            )}
+
+
+            {user && !isAdmin && (
+
+              <button
+                type="button"
+                onClick={() =>
+                  navigateFromAccount(
+                    "/kisandirect-ai"
+                  )
+                }
+              >
+
+                <Sparkles size={18} />
+
+                <span>
+                  KisanDirect AI
+                </span>
+
+              </button>
+
+            )}
+
+          </div>
+
+        </div>
 
       )}
 
 
-      {/* =====================================================
+      {/* =================================================
+          NOTIFICATION DROPDOWN
+      ================================================= */}
+
+      {notificationsOpen &&
+        user &&
+        !isAdmin && (
+
+          <div
+            className="kd-notification-popover"
+            role="dialog"
+            aria-label="Notifications"
+            onClick={event =>
+              event.stopPropagation()
+            }
+          >
+
+            <div className="kd-notification-popover-header">
+
+              <div>
+
+                <strong>
+                  Notifications
+                </strong>
+
+                <span>
+                  Latest updates
+                </span>
+
+              </div>
+
+
+              <button
+                type="button"
+                onClick={() =>
+                  setNotificationsOpen(false)
+                }
+                aria-label="Close notifications"
+              >
+
+                <X size={17} />
+
+              </button>
+
+            </div>
+
+
+            <div className="kd-notification-popover-body">
+
+              <div className="kd-notification-empty-icon">
+
+                <Bell size={20} />
+
+              </div>
+
+
+              <strong>
+                You're all caught up
+              </strong>
+
+
+              <p>
+                New order and account updates
+                will appear here.
+              </p>
+
+            </div>
+
+          </div>
+
+        )}
+
+
+      {/* =================================================
           ACCOUNT DRAWER
-      ===================================================== */}
+      ================================================= */}
 
       {accountOpen && user && (
 
@@ -481,11 +939,13 @@ export default function Navbar({ user, onLogout }) {
             }
           >
 
-            {/* HEADER */}
+
+            {/* DRAWER HEADER */}
 
             <div className="kd-drawer-header">
 
               <div className="kd-account-heading">
+
 
                 {user.profileImageUrl ? (
 
@@ -498,24 +958,29 @@ export default function Navbar({ user, onLogout }) {
                 ) : (
 
                   <span className="kd-drawer-avatar">
-                    {user.name?.[0]?.toUpperCase() || "U"}
+                    {userInitial}
                   </span>
 
                 )}
 
+
                 <div className="kd-account-heading-text">
 
                   <span className="kd-drawer-eyebrow">
+
                     {isAdmin
                       ? "ADMIN ACCOUNT"
                       : isFarmer
                       ? "FARMER ACCOUNT"
                       : "ACCOUNT"}
+
                   </span>
 
+
                   <h2>
-                    {user.name || "My Account"}
+                    {userName}
                   </h2>
+
 
                   <p>
                     {user.email}
@@ -525,38 +990,48 @@ export default function Navbar({ user, onLogout }) {
 
               </div>
 
+
               <button
                 type="button"
                 className="kd-drawer-close"
                 onClick={closeAll}
                 aria-label="Close account menu"
               >
+
                 <X size={20} />
+
               </button>
 
             </div>
 
 
-            {/* CONTENT */}
+            {/* DRAWER CONTENT */}
 
             <div className="kd-drawer-scroll">
 
-              {/* ADMIN */}
 
               {isAdmin ? (
 
                 <div className="kd-drawer-nav">
 
+
+                  {/* ADMIN DASHBOARD */}
+
                   <button
                     type="button"
                     onClick={() =>
-                      navigateFromAccount("/admin")
+                      navigateFromAccount(
+                        "/admin"
+                      )
                     }
                   >
 
-                    <LayoutDashboard size={18} />
+                    <LayoutDashboard
+                      size={18}
+                    />
 
                     <span>
+
                       <strong>
                         Admin Dashboard
                       </strong>
@@ -564,23 +1039,33 @@ export default function Navbar({ user, onLogout }) {
                       <small>
                         Manage KisanDirect
                       </small>
+
                     </span>
 
-                    <ChevronRight size={17} />
+                    <ChevronRight
+                      size={17}
+                    />
 
                   </button>
 
 
+                  {/* PROFILE */}
+
                   <button
                     type="button"
                     onClick={() =>
-                      navigateFromAccount("/profile")
+                      navigateFromAccount(
+                        "/profile"
+                      )
                     }
                   >
 
-                    <UserRound size={18} />
+                    <UserRound
+                      size={18}
+                    />
 
                     <span>
+
                       <strong>
                         My Profile
                       </strong>
@@ -588,23 +1073,33 @@ export default function Navbar({ user, onLogout }) {
                       <small>
                         View and edit your profile
                       </small>
+
                     </span>
 
-                    <ChevronRight size={17} />
+                    <ChevronRight
+                      size={17}
+                    />
 
                   </button>
 
 
+                  {/* SETTINGS */}
+
                   <button
                     type="button"
                     onClick={() =>
-                      navigateFromAccount("/settings")
+                      navigateFromAccount(
+                        "/settings"
+                      )
                     }
                   >
 
-                    <Settings size={18} />
+                    <Settings
+                      size={18}
+                    />
 
                     <span>
+
                       <strong>
                         Settings
                       </strong>
@@ -612,9 +1107,12 @@ export default function Navbar({ user, onLogout }) {
                       <small>
                         Account preferences
                       </small>
+
                     </span>
 
-                    <ChevronRight size={17} />
+                    <ChevronRight
+                      size={17}
+                    />
 
                   </button>
 
@@ -622,20 +1120,26 @@ export default function Navbar({ user, onLogout }) {
 
               ) : (
 
-                /* CONSUMER / FARMER */
-
                 <div className="kd-drawer-nav">
+
+
+                  {/* PROFILE */}
 
                   <button
                     type="button"
                     onClick={() =>
-                      navigateFromAccount("/profile")
+                      navigateFromAccount(
+                        "/profile"
+                      )
                     }
                   >
 
-                    <UserRound size={18} />
+                    <UserRound
+                      size={18}
+                    />
 
                     <span>
+
                       <strong>
                         My Profile
                       </strong>
@@ -643,25 +1147,35 @@ export default function Navbar({ user, onLogout }) {
                       <small>
                         View and edit your profile
                       </small>
+
                     </span>
 
-                    <ChevronRight size={17} />
+                    <ChevronRight
+                      size={17}
+                    />
 
                   </button>
 
+
+                  {/* FARMER DASHBOARD */}
 
                   {isFarmer && (
 
                     <button
                       type="button"
                       onClick={() =>
-                        navigateFromAccount("/farmer")
+                        navigateFromAccount(
+                          "/farmer"
+                        )
                       }
                     >
 
-                      <Sprout size={18} />
+                      <Sprout
+                        size={18}
+                      />
 
                       <span>
+
                         <strong>
                           Farmer Dashboard
                         </strong>
@@ -669,25 +1183,35 @@ export default function Navbar({ user, onLogout }) {
                         <small>
                           Manage your products
                         </small>
+
                       </span>
 
-                      <ChevronRight size={17} />
+                      <ChevronRight
+                        size={17}
+                      />
 
                     </button>
 
                   )}
 
 
+                  {/* ORDERS */}
+
                   <button
                     type="button"
                     onClick={() =>
-                      navigateFromAccount("/orders")
+                      navigateFromAccount(
+                        "/orders"
+                      )
                     }
                   >
 
-                    <Package size={18} />
+                    <Package
+                      size={18}
+                    />
 
                     <span>
+
                       <strong>
                         My Orders
                       </strong>
@@ -695,23 +1219,33 @@ export default function Navbar({ user, onLogout }) {
                       <small>
                         View your order history
                       </small>
+
                     </span>
 
-                    <ChevronRight size={17} />
+                    <ChevronRight
+                      size={17}
+                    />
 
                   </button>
 
 
+                  {/* ADDRESSES */}
+
                   <button
                     type="button"
                     onClick={() =>
-                      navigateFromAccount("/addresses")
+                      navigateFromAccount(
+                        "/addresses"
+                      )
                     }
                   >
 
-                    <MapPin size={18} />
+                    <MapPin
+                      size={18}
+                    />
 
                     <span>
+
                       <strong>
                         Saved Addresses
                       </strong>
@@ -719,23 +1253,33 @@ export default function Navbar({ user, onLogout }) {
                       <small>
                         Manage delivery addresses
                       </small>
+
                     </span>
 
-                    <ChevronRight size={17} />
+                    <ChevronRight
+                      size={17}
+                    />
 
                   </button>
 
 
+                  {/* SETTINGS */}
+
                   <button
                     type="button"
                     onClick={() =>
-                      navigateFromAccount("/settings")
+                      navigateFromAccount(
+                        "/settings"
+                      )
                     }
                   >
 
-                    <Settings size={18} />
+                    <Settings
+                      size={18}
+                    />
 
                     <span>
+
                       <strong>
                         Settings
                       </strong>
@@ -743,9 +1287,12 @@ export default function Navbar({ user, onLogout }) {
                       <small>
                         Account and preferences
                       </small>
+
                     </span>
 
-                    <ChevronRight size={17} />
+                    <ChevronRight
+                      size={17}
+                    />
 
                   </button>
 
@@ -756,7 +1303,7 @@ export default function Navbar({ user, onLogout }) {
             </div>
 
 
-            {/* LOGOUT — ALWAYS VISIBLE */}
+            {/* LOGOUT */}
 
             <div className="kd-drawer-footer">
 
@@ -766,7 +1313,9 @@ export default function Navbar({ user, onLogout }) {
                 onClick={requestLogout}
               >
 
-                <LogOut size={18} />
+                <LogOut
+                  size={18}
+                />
 
                 <span>
                   Log out
@@ -782,63 +1331,8 @@ export default function Navbar({ user, onLogout }) {
 
       )}
 
+    </>
 
-{/* =====================================================
-    NOTIFICATION DROPDOWN
-===================================================== */}
+  );
 
-{notificationsOpen &&
-  user &&
-  !isAdmin && (
-
-    <div
-      className="kd-notification-popover"
-      role="dialog"
-      aria-label="Notifications"
-      onClick={event =>
-        event.stopPropagation()
-      }
-    >
-
-      <div className="kd-notification-popover-header">
-
-        <div>
-          <strong>
-            Notifications
-          </strong>
-
-          <span>
-            Latest updates
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={closeAll}
-          aria-label="Close notifications"
-        >
-          <X size={17} />
-        </button>
-
-      </div>
-
-      <div className="kd-notification-popover-body">
-
-        <div className="kd-notification-empty-icon">
-          <Bell size={20} />
-        </div>
-
-        <strong>
-          You're all caught up
-        </strong>
-
-        <p>
-          New order and account updates
-          will appear here.
-        </p>
-
-      </div>
-
-    </div>
-
-)}
+}

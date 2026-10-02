@@ -12,6 +12,7 @@ import {
   Home,
   Info,
   LayoutDashboard,
+  LogOut,
   MapPin,
   Package,
   Search,
@@ -23,7 +24,6 @@ import {
   X
 } from "lucide-react";
 
-
 export default function Navbar({ user, onLogout }) {
 
   const navigate = useNavigate();
@@ -34,10 +34,8 @@ export default function Navbar({ user, onLogout }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-
   const isAdmin = user?.role === "ADMIN";
   const isFarmer = user?.role === "FARMER";
-
 
   const closeAll = () => {
     setMobileOpen(false);
@@ -45,26 +43,19 @@ export default function Navbar({ user, onLogout }) {
     setNotificationsOpen(false);
   };
 
-
   useEffect(() => {
     closeAll();
   }, [location.pathname, location.search]);
 
-
   useEffect(() => {
 
     const handleKeyDown = event => {
-
       if (event.key === "Escape") {
         closeAll();
       }
-
     };
 
-    document.addEventListener(
-      "keydown",
-      handleKeyDown
-    );
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
       document.removeEventListener(
@@ -74,7 +65,6 @@ export default function Navbar({ user, onLogout }) {
     };
 
   }, []);
-
 
   const submitSearch = event => {
 
@@ -87,59 +77,49 @@ export default function Navbar({ user, onLogout }) {
       return;
     }
 
+    closeAll();
+
     navigate(
       `/?q=${encodeURIComponent(value)}`
     );
-
   };
-
 
   const openAccount = () => {
-
-    setNotificationsOpen(false);
     setMobileOpen(false);
+    setNotificationsOpen(false);
     setAccountOpen(true);
-
   };
-
 
   const openNotifications = () => {
-
-    setAccountOpen(false);
     setMobileOpen(false);
+    setAccountOpen(false);
     setNotificationsOpen(true);
-
   };
-
 
   const navigateFromAccount = path => {
-
     closeAll();
     navigate(path);
-
   };
 
-
   const requestLogout = () => {
-
     closeAll();
 
     if (onLogout) {
       onLogout();
     }
-
   };
-
 
   return (
     <>
+      {/* =====================================================
+          NAVBAR
+      ===================================================== */}
+
       <header className="kd-navbar">
 
         <div className="kd-navbar-inner">
 
-          {/* =========================
-              BRAND
-          ========================= */}
+          {/* BRAND */}
 
           <Link
             className="kd-brand"
@@ -168,12 +148,10 @@ export default function Navbar({ user, onLogout }) {
           </Link>
 
 
-          {/* =========================
-              SEARCH
-              Hide for admin
-          ========================= */}
+          {/* SEARCH */}
 
           {!isAdmin && (
+
             <form
               className="kd-search"
               onSubmit={submitSearch}
@@ -195,6 +173,7 @@ export default function Navbar({ user, onLogout }) {
               />
 
               {search && (
+
                 <button
                   type="button"
                   className="kd-search-clear"
@@ -203,15 +182,15 @@ export default function Navbar({ user, onLogout }) {
                 >
                   <X size={15} />
                 </button>
+
               )}
 
             </form>
+
           )}
 
 
-          {/* =========================
-              NAVIGATION
-          ========================= */}
+          {/* DESKTOP / MOBILE NAV */}
 
           <nav
             className={
@@ -222,8 +201,6 @@ export default function Navbar({ user, onLogout }) {
             aria-label="Primary navigation"
           >
 
-            {/* HOME */}
-
             <Link
               to="/"
               onClick={closeAll}
@@ -232,8 +209,6 @@ export default function Navbar({ user, onLogout }) {
               <span>Home</span>
             </Link>
 
-
-            {/* ABOUT */}
 
             <Link
               to="/about"
@@ -244,11 +219,10 @@ export default function Navbar({ user, onLogout }) {
             </Link>
 
 
-            {/* =========================
-                CONSUMER CART
-            ========================= */}
+            {/* CART */}
 
             {user && !isAdmin && (
+
               <Link
                 to="/cart"
                 onClick={closeAll}
@@ -256,14 +230,14 @@ export default function Navbar({ user, onLogout }) {
                 <ShoppingCart size={17} />
                 <span>Cart</span>
               </Link>
+
             )}
 
 
-            {/* =========================
-                FARMER
-            ========================= */}
+            {/* FARMER */}
 
             {isFarmer && (
+
               <Link
                 to="/farmer"
                 onClick={closeAll}
@@ -271,14 +245,14 @@ export default function Navbar({ user, onLogout }) {
                 <Sprout size={17} />
                 <span>Farmer</span>
               </Link>
+
             )}
 
 
-            {/* =========================
-                ADMIN
-            ========================= */}
+            {/* ADMIN */}
 
             {isAdmin && (
+
               <Link
                 to="/admin"
                 onClick={closeAll}
@@ -286,15 +260,51 @@ export default function Navbar({ user, onLogout }) {
                 <LayoutDashboard size={17} />
                 <span>Admin</span>
               </Link>
+
             )}
 
 
-            {/* =========================
-                KISANDIRECT AI
-                Not needed for admin
-            ========================= */}
+            {/* MOBILE PROFILE */}
+
+            {user && (
+
+              <button
+                type="button"
+                className="kd-mobile-profile-link"
+                onClick={() =>
+                  navigateFromAccount("/profile")
+                }
+              >
+
+                {user.profileImageUrl ? (
+
+                  <img
+                    src={user.profileImageUrl}
+                    alt="Profile"
+                    className="kd-mobile-profile-image"
+                  />
+
+                ) : (
+
+                  <span className="kd-mobile-profile-avatar">
+                    {user.name?.[0]?.toUpperCase() || "U"}
+                  </span>
+
+                )}
+
+                <span>
+                  My Profile
+                </span>
+
+              </button>
+
+            )}
+
+
+            {/* MOBILE AI */}
 
             {user && !isAdmin && (
+
               <button
                 type="button"
                 className="kd-mobile-ai"
@@ -307,15 +317,14 @@ export default function Navbar({ user, onLogout }) {
                 <Sparkles size={16} />
                 <span>KisanDirect AI</span>
               </button>
+
             )}
 
 
-            {/* =========================
-                NOTIFICATIONS
-                Not needed for admin
-            ========================= */}
+            {/* NOTIFICATIONS */}
 
             {user && !isAdmin && (
+
               <button
                 type="button"
                 className="kd-nav-icon-button"
@@ -325,12 +334,11 @@ export default function Navbar({ user, onLogout }) {
               >
                 <Bell size={19} />
               </button>
+
             )}
 
 
-            {/* =========================
-                PROFILE
-            ========================= */}
+            {/* PROFILE */}
 
             {user ? (
 
@@ -358,8 +366,7 @@ export default function Navbar({ user, onLogout }) {
                 )}
 
                 <span className="kd-profile-name">
-                  {user.name?.split(" ")[0] ||
-                    "Account"}
+                  {user.name?.split(" ")[0] || "Account"}
                 </span>
 
                 <ChevronRight size={16} />
@@ -382,13 +389,12 @@ export default function Navbar({ user, onLogout }) {
           </nav>
 
 
-          {/* =========================
-              MOBILE ACTIONS
-          ========================= */}
+          {/* MOBILE ACTIONS */}
 
           <div className="kd-mobile-actions">
 
             {user && !isAdmin && (
+
               <button
                 type="button"
                 className="kd-nav-icon-button"
@@ -397,8 +403,8 @@ export default function Navbar({ user, onLogout }) {
               >
                 <Bell size={19} />
               </button>
-            )}
 
+            )}
 
             <button
               type="button"
@@ -413,11 +419,13 @@ export default function Navbar({ user, onLogout }) {
               }
               aria-expanded={mobileOpen}
             >
+
               {mobileOpen ? (
                 <X size={23} />
               ) : (
                 <span>☰</span>
               )}
+
             </button>
 
           </div>
@@ -427,12 +435,12 @@ export default function Navbar({ user, onLogout }) {
       </header>
 
 
-      {/* =========================
+      {/* =====================================================
           FLOATING AI
-          Hide for admin
-      ========================= */}
+      ===================================================== */}
 
       {user && !isAdmin && (
+
         <button
           type="button"
           className="kd-ai-floating"
@@ -451,12 +459,13 @@ export default function Navbar({ user, onLogout }) {
           </span>
 
         </button>
+
       )}
 
 
-      {/* =========================
+      {/* =====================================================
           ACCOUNT DRAWER
-      ========================= */}
+      ===================================================== */}
 
       {accountOpen && user && (
 
@@ -489,13 +498,12 @@ export default function Navbar({ user, onLogout }) {
                 ) : (
 
                   <span className="kd-drawer-avatar">
-                    {user.name?.[0]?.toUpperCase() ||
-                      "U"}
+                    {user.name?.[0]?.toUpperCase() || "U"}
                   </span>
 
                 )}
 
-                <div>
+                <div className="kd-account-heading-text">
 
                   <span className="kd-drawer-eyebrow">
                     {isAdmin
@@ -517,7 +525,6 @@ export default function Navbar({ user, onLogout }) {
 
               </div>
 
-
               <button
                 type="button"
                 className="kd-drawer-close"
@@ -530,147 +537,32 @@ export default function Navbar({ user, onLogout }) {
             </div>
 
 
-            {/* =========================
-                ADMIN MENU
-            ========================= */}
+            {/* CONTENT */}
 
-            {isAdmin ? (
+            <div className="kd-drawer-scroll">
 
-              <div className="kd-drawer-nav">
+              {/* ADMIN */}
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigateFromAccount(
-                      "/admin"
-                    )
-                  }
-                >
+              {isAdmin ? (
 
-                  <LayoutDashboard size={18} />
-
-                  <span>
-                    <strong>
-                      Admin Panel
-                    </strong>
-
-                    <small>
-                      Manage KisanDirect
-                    </small>
-                  </span>
-
-                  <ChevronRight size={17} />
-
-                </button>
-
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigateFromAccount(
-                      "/profile"
-                    )
-                  }
-                >
-
-                  <UserRound size={18} />
-
-                  <span>
-                    <strong>
-                      My Profile
-                    </strong>
-
-                    <small>
-                      View and edit your profile
-                    </small>
-                  </span>
-
-                  <ChevronRight size={17} />
-
-                </button>
-
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigateFromAccount(
-                      "/settings"
-                    )
-                  }
-                >
-
-                  <Settings size={18} />
-
-                  <span>
-                    <strong>
-                      Settings
-                    </strong>
-
-                    <small>
-                      Account preferences
-                    </small>
-                  </span>
-
-                  <ChevronRight size={17} />
-
-                </button>
-
-              </div>
-
-            ) : (
-
-              /* =========================
-                 FARMER / CONSUMER MENU
-              ========================= */
-
-              <div className="kd-drawer-nav">
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigateFromAccount(
-                      "/profile"
-                    )
-                  }
-                >
-
-                  <UserRound size={18} />
-
-                  <span>
-                    <strong>
-                      My Profile
-                    </strong>
-
-                    <small>
-                      View and edit your profile
-                    </small>
-                  </span>
-
-                  <ChevronRight size={17} />
-
-                </button>
-
-
-                {isFarmer && (
+                <div className="kd-drawer-nav">
 
                   <button
                     type="button"
                     onClick={() =>
-                      navigateFromAccount(
-                        "/farmer"
-                      )
+                      navigateFromAccount("/admin")
                     }
                   >
 
-                    <Sprout size={18} />
+                    <LayoutDashboard size={18} />
 
                     <span>
                       <strong>
-                        Farmer Dashboard
+                        Admin Dashboard
                       </strong>
 
                       <small>
-                        Manage your products
+                        Manage KisanDirect
                       </small>
                     </span>
 
@@ -678,94 +570,193 @@ export default function Navbar({ user, onLogout }) {
 
                   </button>
 
-                )}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigateFromAccount("/profile")
+                    }
+                  >
+
+                    <UserRound size={18} />
+
+                    <span>
+                      <strong>
+                        My Profile
+                      </strong>
+
+                      <small>
+                        View and edit your profile
+                      </small>
+                    </span>
+
+                    <ChevronRight size={17} />
+
+                  </button>
 
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigateFromAccount(
-                      "/orders"
-                    )
-                  }
-                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigateFromAccount("/settings")
+                    }
+                  >
 
-                  <Package size={18} />
+                    <Settings size={18} />
 
-                  <span>
-                    <strong>
-                      My Orders
-                    </strong>
+                    <span>
+                      <strong>
+                        Settings
+                      </strong>
 
-                    <small>
-                      View your order history
-                    </small>
-                  </span>
+                      <small>
+                        Account preferences
+                      </small>
+                    </span>
 
-                  <ChevronRight size={17} />
+                    <ChevronRight size={17} />
 
-                </button>
+                  </button>
 
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigateFromAccount(
-                      "/addresses"
-                    )
-                  }
-                >
+              ) : (
 
-                  <MapPin size={18} />
+                /* CONSUMER / FARMER */
 
-                  <span>
-                    <strong>
-                      Saved Addresses
-                    </strong>
+                <div className="kd-drawer-nav">
 
-                    <small>
-                      Manage delivery addresses
-                    </small>
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigateFromAccount("/profile")
+                    }
+                  >
 
-                  <ChevronRight size={17} />
+                    <UserRound size={18} />
 
-                </button>
+                    <span>
+                      <strong>
+                        My Profile
+                      </strong>
 
+                      <small>
+                        View and edit your profile
+                      </small>
+                    </span>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigateFromAccount(
-                      "/settings"
-                    )
-                  }
-                >
+                    <ChevronRight size={17} />
 
-                  <Settings size={18} />
-
-                  <span>
-                    <strong>
-                      Settings
-                    </strong>
-
-                    <small>
-                      Account and preferences
-                    </small>
-                  </span>
-
-                  <ChevronRight size={17} />
-
-                </button>
-
-              </div>
-
-            )}
+                  </button>
 
 
-            {/* =========================
-                LOGOUT
-            ========================= */}
+                  {isFarmer && (
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigateFromAccount("/farmer")
+                      }
+                    >
+
+                      <Sprout size={18} />
+
+                      <span>
+                        <strong>
+                          Farmer Dashboard
+                        </strong>
+
+                        <small>
+                          Manage your products
+                        </small>
+                      </span>
+
+                      <ChevronRight size={17} />
+
+                    </button>
+
+                  )}
+
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigateFromAccount("/orders")
+                    }
+                  >
+
+                    <Package size={18} />
+
+                    <span>
+                      <strong>
+                        My Orders
+                      </strong>
+
+                      <small>
+                        View your order history
+                      </small>
+                    </span>
+
+                    <ChevronRight size={17} />
+
+                  </button>
+
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigateFromAccount("/addresses")
+                    }
+                  >
+
+                    <MapPin size={18} />
+
+                    <span>
+                      <strong>
+                        Saved Addresses
+                      </strong>
+
+                      <small>
+                        Manage delivery addresses
+                      </small>
+                    </span>
+
+                    <ChevronRight size={17} />
+
+                  </button>
+
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigateFromAccount("/settings")
+                    }
+                  >
+
+                    <Settings size={18} />
+
+                    <span>
+                      <strong>
+                        Settings
+                      </strong>
+
+                      <small>
+                        Account and preferences
+                      </small>
+                    </span>
+
+                    <ChevronRight size={17} />
+
+                  </button>
+
+                </div>
+
+              )}
+
+            </div>
+
+
+            {/* LOGOUT — ALWAYS VISIBLE */}
 
             <div className="kd-drawer-footer">
 
@@ -774,9 +765,13 @@ export default function Navbar({ user, onLogout }) {
                 className="kd-drawer-logout"
                 onClick={requestLogout}
               >
+
+                <LogOut size={18} />
+
                 <span>
                   Log out
                 </span>
+
               </button>
 
             </div>
@@ -788,10 +783,9 @@ export default function Navbar({ user, onLogout }) {
       )}
 
 
-      {/* =========================
+      {/* =====================================================
           NOTIFICATIONS
-          Only consumer/farmer
-      ========================= */}
+      ===================================================== */}
 
       {notificationsOpen &&
         user &&
@@ -827,7 +821,6 @@ export default function Navbar({ user, onLogout }) {
 
                 </div>
 
-
                 <button
                   type="button"
                   className="kd-drawer-close"
@@ -838,7 +831,6 @@ export default function Navbar({ user, onLogout }) {
                 </button>
 
               </div>
-
 
               <div className="kd-notification-empty">
 
@@ -861,6 +853,11 @@ export default function Navbar({ user, onLogout }) {
 
           </div>
 
+        )}
+
+    </>
+  );
+}
         )}
 
     </>

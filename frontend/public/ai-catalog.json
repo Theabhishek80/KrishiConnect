@@ -1,0 +1,14 @@
+{
+  "name": "KisanDirect",
+  "url": "https://kisandirect.online/",
+  "description": "Agriculture marketplace connecting farmers and buyers with mandi insights, recipes and a future-ready AI assistant.",
+  "public_pages": [
+    {"name":"Marketplace","path":"/"},
+    {"name":"Mandi","path":"/mandi"},
+    {"name":"Recipes","path":"/recipes"},
+    {"name":"KisanDirect AI","path":"/kisandirect-ai"},
+    {"name":"About","path":"/about"}
+  ],
+  "authentication": "Firebase identity with KisanDirect application JWT sessions",
+  "brand": "KisanDirect"
+}

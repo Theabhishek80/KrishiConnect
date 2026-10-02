@@ -1,0 +1,9 @@
+{
+  "name":"KisanDirect",
+  "short_name":"KisanDirect",
+  "start_url":"/",
+  "display":"standalone",
+  "background_color":"#f6f8f3",
+  "theme_color":"#176b3a",
+  "description":"Agriculture marketplace connecting farmers and buyers."
+}

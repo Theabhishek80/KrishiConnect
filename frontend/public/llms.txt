@@ -1,0 +1,16 @@
+# KisanDirect
+
+KisanDirect is an agriculture-focused marketplace connecting farmers and buyers.
+
+## Public sections
+- Marketplace: /
+- Mandi: /mandi
+- Recipes: /recipes
+- KisanDirect AI: /kisandirect-ai
+- About: /about
+
+## Product and account areas
+Authentication is required for cart, profile, orders, addresses, farmer tools and administration.
+
+## Brand
+The current product name is KisanDirect. Older references to KrishiConnect should not be used as the public brand name.

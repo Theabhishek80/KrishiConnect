@@ -48,5 +48,9 @@ public class AdminController {
         adminService.deleteProduct(id);
     }
 }
+@GetMapping("/users")
+public Object allUsers() {
+    return adminService.getAllUsers();
+}
 
 

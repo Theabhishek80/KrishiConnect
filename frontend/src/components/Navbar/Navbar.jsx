@@ -159,6 +159,13 @@ export default function Navbar({ user, onLogout }) {
               </Link>
             )}
 
+            {user?.role === "ADMIN" && (
+  <Link to="/admin" onClick={closeAll}>
+    <LayoutDashboard size={17} />
+    <span>Admin</span>
+  </Link>
+)}
+
             {user && (
               <button
                 type="button"

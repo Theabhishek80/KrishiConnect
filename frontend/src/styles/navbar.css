@@ -931,3 +931,22 @@
     height: 32px;
   }
 }
+/* =========================================================
+   MOBILE-ONLY NAV ITEMS
+========================================================= */
+
+/* Never show mobile profile inside desktop navigation */
+.kd-mobile-profile-link,
+.kd-mobile-ai {
+  display: none;
+}
+
+/* Show them only when mobile menu is opened */
+@media (max-width: 850px) {
+
+  .kd-nav-links.kd-nav-open .kd-mobile-profile-link,
+  .kd-nav-links.kd-nav-open .kd-mobile-ai {
+    display: flex;
+  }
+
+}

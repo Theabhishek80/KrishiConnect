@@ -783,9 +783,10 @@ export default function Navbar({ user, onLogout }) {
       )}
 
 
-      {/* =====================================================
+         {/* =========================
           NOTIFICATIONS
-      ===================================================== */}
+          Only consumer/farmer
+      ========================= */}
 
       {notificationsOpen &&
         user &&
@@ -853,11 +854,6 @@ export default function Navbar({ user, onLogout }) {
 
           </div>
 
-        )}
-
-    </>
-  );
-}
         )}
 
     </>

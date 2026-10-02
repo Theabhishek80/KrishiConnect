@@ -2357,6 +2357,43 @@ function Admin() {
 }
 
 /* =========================
+   ACCOUNT PLACEHOLDER PAGES
+========================= */
+
+function AccountPlaceholder({
+  title,
+  description
+}) {
+  return (
+    <section className="page-section kd-simple-page">
+
+      <div className="page-heading">
+
+        <div>
+          <span className="section-kicker">
+            KISANDIRECT
+          </span>
+
+          <h1>
+            {title}
+          </h1>
+        </div>
+
+      </div>
+
+      <div className="panel kd-simple-page-card">
+
+        <p>
+          {description}
+        </p>
+
+      </div>
+
+    </section>
+  );
+}
+
+/* =========================
    APP ROUTES
 ========================= */
 
@@ -2366,70 +2403,121 @@ export default function App() {
 
     <Layout>
 
-      <Routes>
+    <Routes>
 
-        <Route
-          path="/"
-          element={<Home />}
-        />
+  {/* =========================
+      PUBLIC
+  ========================= */}
 
-        <Route
-          path="/about"
-          element={<About />}
-        />
+  <Route
+    path="/"
+    element={<Home />}
+  />
 
-        <Route
-          path="/kisandirect-ai"
-          element={<KisanDirectAI />}
-        />
+  <Route
+    path="/about"
+    element={<About />}
+  />
 
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+  <Route
+    path="/kisandirect-ai"
+    element={<KisanDirectAI />}
+  />
 
-        <Route
-          path="/register"
-          element={<Register />}
-        />
 
-        <Route
-  path="/verify-email"
-  element={<VerifyEmail />}
-/>
+  {/* =========================
+      AUTH
+  ========================= */}
 
-        <Route
-          path="/forgot-password"
-          element={<ForgotPassword />}
-        />
+  <Route
+    path="/login"
+    element={<Login />}
+  />
 
-        <Route
-          path="/reset-password"
-          element={<ResetPassword />}
-        />
+  <Route
+    path="/register"
+    element={<Register />}
+  />
 
-      <Route
-  path="/cart"
-  element={<CartPage />}
-/>
+  <Route
+    path="/verify-email"
+    element={<VerifyEmail />}
+  />
 
-        <Route
-  path="/profile"
-  element={<Profile />}
-/>
+  <Route
+    path="/forgot-password"
+    element={<ForgotPassword />}
+  />
 
-        <Route
-          path="/farmer"
-          element={<Farmer />}
-        />
+  <Route
+    path="/reset-password"
+    element={<ResetPassword />}
+  />
 
-        <Route
-          path="/admin"
-          element={<Admin />}
-        />
 
-      </Routes>
+  {/* =========================
+      CONSUMER ACCOUNT
+  ========================= */}
 
-    </Layout>
-  );
-}
+  <Route
+    path="/cart"
+    element={<CartPage />}
+  />
+
+  <Route
+    path="/profile"
+    element={<Profile />}
+  />
+
+  <Route
+    path="/orders"
+    element={
+      <AccountPlaceholder
+        title="My Orders"
+        description="Your order history will appear here."
+      />
+    }
+  />
+
+  <Route
+    path="/addresses"
+    element={
+      <AccountPlaceholder
+        title="Saved Addresses"
+        description="Your saved delivery addresses will appear here."
+      />
+    }
+  />
+
+  <Route
+    path="/settings"
+    element={
+      <AccountPlaceholder
+        title="Settings"
+        description="Your account preferences will appear here."
+      />
+    }
+  />
+
+
+  {/* =========================
+      FARMER
+      KEEP FOR FUTURE
+  ========================= */}
+
+  <Route
+    path="/farmer"
+    element={<Farmer />}
+  />
+
+
+  {/* =========================
+      ADMIN
+  ========================= */}
+
+  <Route
+    path="/admin"
+    element={<Admin />}
+  />
+
+</Routes>

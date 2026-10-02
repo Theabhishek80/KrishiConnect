@@ -80,3 +80,8 @@ public class AdminService {
         products.deleteById(id);
     }
 }
+
+@Transactional(readOnly = true)
+public Object getAllUsers() {
+    return users.findAll();
+}

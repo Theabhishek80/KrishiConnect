@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /admin
-Disallow: /profile
-Disallow: /settings
-Disallow: /addresses
-Disallow: /orders
-Disallow: /cart
-Sitemap: https://kisandirect.online/sitemap.xml

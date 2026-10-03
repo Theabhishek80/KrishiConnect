@@ -1,0 +1,17 @@
+# KrishiConnect
+
+> KrishiConnect is a farmer-to-consumer marketplace that connects customers directly with farmers and helps users discover fresh farm products.
+
+## Main Pages
+
+- [Marketplace](https://www.kisandirect.online/): Browse fresh farm products available from farmers.
+- [Login](https://www.kisandirect.online/login): Sign in to a KrishiConnect account.
+- [Register](https://www.kisandirect.online/register): Create a KrishiConnect account.
+
+## About
+
+KrishiConnect provides an online marketplace connecting consumers and farmers.
+
+## Website
+
+- [Homepage](https://www.kisandirect.online/): Main KrishiConnect marketplace.

@@ -1,0 +1,183 @@
+import React from "react";
+import { Link, useParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  ChefHat,
+  Clock,
+  BookOpen,
+  Users,
+  Gauge
+} from "lucide-react";
+
+import { BLOGS, RECIPES, getBlog, getRecipe } from "../../data/content";
+
+/* =========================
+   LIST PAGES  (/blog , /recipes)
+========================= */
+
+export function ContentList({ kind }) {
+  const isRecipe = kind === "recipe";
+  const items = isRecipe ? RECIPES : BLOGS;
+  const base = isRecipe ? "/recipes" : "/blog";
+
+  return (
+    <section className="page-section kd-content-page">
+
+      <div className="page-heading">
+        <div>
+          <span className="section-kicker">
+            {isRecipe ? "FARM TO KITCHEN" : "KISANDIRECT BLOG"}
+          </span>
+          <h1>
+            {isRecipe
+              ? "Fresh recipes for every meal."
+              : "Stories, tips and farming knowledge."}
+          </h1>
+        </div>
+
+        <Link to="/">
+          <ArrowLeft size={16} /> Back home
+        </Link>
+      </div>
+
+      <div className="kd-grid">
+        {items.map(item => (
+          <Link
+            key={item.slug}
+            to={`${base}/${item.slug}`}
+            className="kd-card"
+          >
+            <div className={`kd-card-art tone-${item.tone}`}>
+              <span className="kd-card-emoji" aria-hidden="true">
+                {item.emoji}
+              </span>
+              <span className="kd-card-tag">{item.category}</span>
+            </div>
+
+            <div className="kd-card-body">
+              <h3>{item.title}</h3>
+              <p>{item.excerpt}</p>
+
+              <div className="kd-card-meta">
+                <span><Clock size={14} />{item.readTime}</span>
+                {isRecipe && <span><Users size={14} />{item.serves}</span>}
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+    </section>
+  );
+}
+
+/* =========================
+   DETAIL PAGES  (/blog/:slug , /recipes/:slug)
+========================= */
+
+function NotFound({ backTo, label }) {
+  return (
+    <section className="page-section">
+      <div className="empty-state">
+        <h3>We couldn't find that {label}</h3>
+        <p>It may have been moved or removed.</p>
+        <Link className="primary-btn" to={backTo}>
+          Browse all
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+export function BlogDetail() {
+  const { slug } = useParams();
+  const post = getBlog(slug);
+
+  if (!post) return <NotFound backTo="/blog" label="article" />;
+
+  return (
+    <article className="page-section kd-article">
+
+      <Link className="kd-back" to="/blog">
+        <ArrowLeft size={16} /> All articles
+      </Link>
+
+      <div className={`kd-article-hero tone-${post.tone}`}>
+        <span className="kd-article-emoji" aria-hidden="true">{post.emoji}</span>
+      </div>
+
+      <div className="kd-article-head">
+        <span className="kd-card-tag solid">{post.category}</span>
+        <h1>{post.title}</h1>
+        <div className="kd-article-meta">
+          <span><BookOpen size={15} />{post.readTime}</span>
+        </div>
+      </div>
+
+      <div className="kd-article-body">
+        {post.body.map((paragraph, i) => (
+          <p key={i}>{paragraph}</p>
+        ))}
+      </div>
+
+    </article>
+  );
+}
+
+export function RecipeDetail() {
+  const { slug } = useParams();
+  const recipe = getRecipe(slug);
+
+  if (!recipe) return <NotFound backTo="/recipes" label="recipe" />;
+
+  return (
+    <article className="page-section kd-article">
+
+      <Link className="kd-back" to="/recipes">
+        <ArrowLeft size={16} /> All recipes
+      </Link>
+
+      <div className={`kd-article-hero tone-${recipe.tone}`}>
+        <span className="kd-article-emoji" aria-hidden="true">{recipe.emoji}</span>
+      </div>
+
+      <div className="kd-article-head">
+        <span className="kd-card-tag solid">{recipe.category}</span>
+        <h1>{recipe.title}</h1>
+        <p className="kd-article-lead">{recipe.excerpt}</p>
+
+        <div className="kd-article-meta">
+          <span><Clock size={15} />{recipe.readTime}</span>
+          <span><Users size={15} />{recipe.serves}</span>
+          <span><Gauge size={15} />{recipe.level}</span>
+        </div>
+      </div>
+
+      <div className="kd-recipe-layout">
+
+        <aside className="kd-recipe-box">
+          <h2><ChefHat size={18} /> Ingredients</h2>
+          <ul>
+            {recipe.ingredients.map((ingredient, i) => (
+              <li key={i}>{ingredient}</li>
+            ))}
+          </ul>
+        </aside>
+
+        <div className="kd-recipe-box">
+          <h2>Method</h2>
+          <ol className="kd-steps">
+            {recipe.steps.map((step, i) => (
+              <li key={i}>
+                <span>{i + 1}</span>
+                <p>{step}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+      </div>
+
+    </article>
+  );
+}

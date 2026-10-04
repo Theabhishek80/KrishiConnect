@@ -196,29 +196,7 @@ function Layout({ children }) {
         {children}
       </main>
 
-      <footer>
-
-        <div>
-
-          <div className="brand footer-brand">
-            <span className="brandmark">
-              <Leaf size={18} />
-            </span>
-
-            KisanDirect
-          </div>
-
-          <p>
-            Better food, fairer trade, stronger farms.
-          </p>
-
-        </div>
-
-        <div className="footer-note">
-          © {new Date().getFullYear()} KisanDirect
-        </div>
-
-      </footer>
+     
 
     </div>
   );

@@ -1,0 +1,14 @@
+.env
+.env.local
+*.env.local
+frontend/.env
+*.log
+target/
+node_modules/
+dist/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+uploads/
+firebase-service-account*.json

@@ -1876,8 +1876,9 @@ export default function App() {
           element={<NotFoundPage />}
         />
 
-      </Routes>
+          </Routes>
 
+      <Footer />
     </Layout>
   );
 }

@@ -1,0 +1,182 @@
+export default async function handler(req, res) {
+  const railway = process.env.PRIMARY_BACKEND_URL;
+  const render = process.env.BACKUP_BACKEND_URL;
+
+  if (!railway || !render) {
+    return res.status(500).json({
+      message: "Backend URLs are not configured"
+    });
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      message: "Method not allowed"
+    });
+  }
+
+  const path = "/api/auth/firebase/onboard";
+
+  const headers = new Headers();
+
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (!value) continue;
+
+    const lower = key.toLowerCase();
+
+    if (
+      lower === "host" ||
+      lower === "content-length" ||
+      lower === "connection" ||
+      lower === "origin"
+    ) {
+      continue;
+    }
+
+    headers.set(
+      key,
+      Array.isArray(value)
+        ? value.join(",")
+        : value
+    );
+  }
+
+  let body;
+
+  try {
+    const chunks = [];
+
+    for await (const chunk of req) {
+      chunks.push(
+        Buffer.isBuffer(chunk)
+          ? chunk
+          : Buffer.from(chunk)
+      );
+    }
+
+    body = Buffer.concat(chunks);
+  } catch (error) {
+    console.error("Failed to read request body:", error);
+
+    return res.status(400).json({
+      message: "Invalid request body"
+    });
+  }
+
+  async function callBackend(baseUrl, timeoutMs) {
+    const url =
+      `${baseUrl.replace(/\/$/, "")}${path}`;
+
+    console.log(`Calling backend: ${url}`);
+
+    const controller = new AbortController();
+
+    const timeout = setTimeout(
+      () => controller.abort(),
+      timeoutMs
+    );
+
+    try {
+      return await fetch(url, {
+        method: "POST",
+        headers,
+        body,
+        redirect: "manual",
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async function sendResponse(response) {
+    response.headers.forEach((value, key) => {
+      const lower = key.toLowerCase();
+
+      if (
+        lower !== "content-length" &&
+        lower !== "content-encoding" &&
+        lower !== "transfer-encoding" &&
+        lower !== "connection"
+      ) {
+        res.setHeader(key, value);
+      }
+    });
+
+    const buffer = Buffer.from(
+      await response.arrayBuffer()
+    );
+
+    return res
+      .status(response.status)
+      .send(buffer);
+  }
+
+  try {
+    // -----------------------------------------
+    // PRIMARY: RAILWAY
+    // -----------------------------------------
+    let response = await callBackend(
+      railway,
+      8000
+    );
+
+    // If Railway responds normally, return it.
+    if (
+      ![502, 503, 504].includes(
+        response.status
+      )
+    ) {
+      return await sendResponse(response);
+    }
+
+    // -----------------------------------------
+    // BACKUP: RENDER
+    // -----------------------------------------
+    console.log(
+      `Railway returned ${response.status}. Trying Render...`
+    );
+
+    response = await callBackend(
+      render,
+      50000
+    );
+
+    return await sendResponse(response);
+
+  } catch (error) {
+
+    console.error(
+      "Railway onboarding request failed:",
+      error
+    );
+
+    // -----------------------------------------
+    // RENDER BACKUP
+    // -----------------------------------------
+    try {
+
+      console.log(
+        "Trying Render backup..."
+      );
+
+      const response = await callBackend(
+        render,
+        50000
+      );
+
+      return await sendResponse(response);
+
+    } catch (backupError) {
+
+      console.error(
+        "Both backend servers failed:",
+        backupError
+      );
+
+      return res.status(503).json({
+        message:
+          "Both backend servers are currently unavailable"
+      });
+    }
+  }
+}

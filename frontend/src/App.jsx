@@ -41,6 +41,7 @@ import CartPage from "./components/Marketplace/Cart";
 import Navbar from "./components/Navbar/Navbar";
 import AdvertisementSlider from "./components/Advertisement/AdvertisementSlider";
 import AIAssistant from "./components/AI/AIAssistant";
+import Footer from "./components/Footer";
 import {
   MandiPage,
   ComingSoon,

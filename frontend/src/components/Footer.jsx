@@ -1,127 +1,83 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import "./Footer.css";
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-950 text-white">
-      <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
+    <footer className="kd-footer">
+      <div className="kd-footer-container">
 
-        {/* Main Footer */}
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="kd-footer-grid">
 
           {/* Brand */}
-          <div>
-            <Link
-              to="/"
-              className="text-2xl font-bold tracking-tight"
-            >
-              Kisan<span className="text-green-500">Direct</span>
-            </Link>
+          <div className="kd-footer-brand">
+            <h2>
+              Kisan<span>Direct</span>
+            </h2>
 
-            <p className="mt-4 max-w-sm text-sm leading-6 text-gray-400">
+            <p>
               Fresh farm products directly from farmers.
               Discover quality products, support farmers,
               and make better choices with KisanDirect.
             </p>
 
-            <p className="mt-4 text-sm text-gray-500">
+            <p>
               Connecting farmers and customers across India.
             </p>
           </div>
 
           {/* Quick Links */}
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
-              Quick Links
-            </h3>
+          <div className="kd-footer-column">
+            <h3>Quick Links</h3>
 
-            <ul className="mt-4 space-y-3 text-sm">
+            <ul>
               <li>
-                <Link
-                  to="/"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
-                  Home
-                </Link>
+                <Link to="/">Home</Link>
               </li>
 
               <li>
-                <Link
-                  to="/products"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
-                  Products
-                </Link>
+                <Link to="/about">About Us</Link>
               </li>
 
               <li>
-                <Link
-                  to="/mandi"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
-                  Mandi
-                </Link>
+                <Link to="/blog">Blogs</Link>
               </li>
 
               <li>
-                <Link
-                  to="/recipes"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
-                  Recipes
-                </Link>
+                <Link to="/recipes">Recipes</Link>
               </li>
 
               <li>
-                <Link
-                  to="/blogs"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
-                  Blogs
-                </Link>
+                <Link to="/mandi">Mandi</Link>
               </li>
 
               <li>
-                <Link
-                  to="/kisandirect-ai"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
+                <Link to="/kisandirect-ai">
                   KisanDirect AI
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Farmers */}
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
-              For Farmers
-            </h3>
+          {/* For Farmers */}
+          <div className="kd-footer-column">
+            <h3>For Farmers</h3>
 
-            <ul className="mt-4 space-y-3 text-sm">
+            <ul>
               <li>
-                <Link
-                  to="/farmer/register"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
-                  Join as a Farmer
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  to="/farmer/dashboard"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
+                <Link to="/farmer">
                   Farmer Dashboard
                 </Link>
               </li>
 
               <li>
-                <Link
-                  to="/products"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
+                <Link to="/register">
+                  Join KisanDirect
+                </Link>
+              </li>
+
+              <li>
+                <Link to="/farmer">
                   Sell Products
                 </Link>
               </li>
@@ -129,66 +85,45 @@ export default function Footer() {
           </div>
 
           {/* Support */}
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
-              Support
-            </h3>
+          <div className="kd-footer-column">
+            <h3>Support</h3>
 
-            <ul className="mt-4 space-y-3 text-sm">
+            <ul>
               <li>
-                <Link
-                  to="/about"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
-                  About Us
-                </Link>
+                <Link to="/about">About Us</Link>
               </li>
 
               <li>
-                <Link
-                  to="/contact"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
-                  Contact Us
-                </Link>
+                <Link to="/login">Login</Link>
               </li>
 
               <li>
-                <Link
-                  to="/privacy-policy"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
-                  Privacy Policy
-                </Link>
+                <Link to="/register">Register</Link>
               </li>
 
               <li>
-                <Link
-                  to="/terms"
-                  className="text-gray-400 transition hover:text-green-400"
-                >
-                  Terms & Conditions
-                </Link>
+                <Link to="/settings">Settings</Link>
               </li>
             </ul>
           </div>
+
         </div>
 
-        {/* Divider */}
-        <div className="my-10 border-t border-gray-800" />
+        <div className="kd-footer-divider" />
 
-        {/* Bottom */}
-        <div className="flex flex-col gap-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="kd-footer-bottom">
 
-          <p className="text-gray-500">
-            © {new Date().getFullYear()} KisanDirect. All rights reserved.
+          <p>
+            © {new Date().getFullYear()} KisanDirect.
+            All rights reserved.
           </p>
 
-          <p className="text-gray-500">
+          <p className="kd-footer-india">
             Made for farmers and customers in India 🇮🇳
           </p>
 
         </div>
+
       </div>
     </footer>
   );

@@ -66,6 +66,9 @@ app:
     api-key: ${OPENROUTER_API_KEY:}
     model: ${OPENROUTER_MODEL:openrouter/free}
 
+     mandi:
+    api-key: ${MANDI_API_KEY:}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

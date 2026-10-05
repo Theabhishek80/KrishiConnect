@@ -25,20 +25,12 @@ import java.util.List;
 /**
  * Single authentication filter for the whole API.
  *
- * Every request may carry "Authorization: Bearer <token>". The token is one of:
+ * Supports:
  *
- *  1. A backend-issued JWT (POST /api/auth/login). Used by the admin account
- *     created from ADMIN_EMAIL / ADMIN_PASSWORD and by any legacy
- *     password account.
- *  2. A Firebase ID token (email/password sign-up and "Sign in with Google").
+ *  1. Backend-issued JWT
+ *  2. Firebase ID token
  *
- * The backend JWT is tried first because it is a cheap local signature check;
- * anything else is verified with Firebase.
- *
- * NOTE: the old JwtAuthFilter was a separate servlet filter that ran AFTER
- * Spring Security had already rejected the request, so backend-JWT logins
- * never actually worked. Both token types are handled here, inside the
- * security chain, instead.
+ * Public endpoints are allowed to pass through without authentication.
  */
 @Component
 public class FirebaseAuthFilter extends OncePerRequestFilter {
@@ -61,8 +53,28 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
             FilterChain chain
     ) throws IOException, ServletException {
 
+        /*
+         * ============================================================
+         * PUBLIC ENDPOINTS
+         * ============================================================
+         *
+         * These endpoints do NOT require login.
+         *
+         * Mandi is intentionally public so visitors can see mandi
+         * prices without signing in.
+         */
+        if (isPublicEndpoint(req)) {
+            chain.doFilter(req, res);
+            return;
+        }
+
         String header = req.getHeader("Authorization");
 
+        /*
+         * ============================================================
+         * AUTHENTICATION
+         * ============================================================
+         */
         if (header != null
                 && header.startsWith("Bearer ")
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -70,13 +82,27 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
             String token = header.substring(7).trim();
 
             try {
+
+                /*
+                 * First try our own backend JWT.
+                 */
                 if (!authenticateWithBackendJwt(token)) {
+
+                    /*
+                     * If it isn't our JWT, try Firebase.
+                     */
                     authenticateWithFirebase(token);
                 }
+
             } catch (Exception e) {
-                // Never let an auth problem become a 500 - the request simply
-                // continues unauthenticated and Spring Security answers 401.
+
+                /*
+                 * Authentication failure should not become a 500.
+                 * Spring Security will decide whether the endpoint
+                 * requires authentication.
+                 */
                 log.warn("Authentication failed: {}", e.getMessage());
+
                 SecurityContextHolder.clearContext();
             }
         }
@@ -84,19 +110,105 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
         chain.doFilter(req, res);
     }
 
+    /**
+     * Determines whether a request is publicly accessible.
+     *
+     * IMPORTANT:
+     * Mandi is public.
+     */
+    private boolean isPublicEndpoint(HttpServletRequest req) {
+
+        String path = req.getServletPath();
+        String method = req.getMethod();
+
+        /*
+         * CORS preflight
+         */
+        if ("OPTIONS".equalsIgnoreCase(method)) {
+            return true;
+        }
+
+        /*
+         * Health / system status
+         */
+        if (path.equals("/api/status")) {
+            return true;
+        }
+
+        /*
+         * Authentication endpoints
+         */
+        if (path.equals("/api/auth/login")
+                || path.equals("/api/auth/refresh")
+                || path.equals("/api/auth/forgot-password")
+                || path.equals("/api/auth/reset-password")) {
+            return true;
+        }
+
+        /*
+         * Public categories
+         */
+        if (path.startsWith("/api/categories/")) {
+            return true;
+        }
+
+        /*
+         * Public advertisements
+         */
+        if (path.equals("/api/advertisements")) {
+            return true;
+        }
+
+        /*
+         * Public recipes
+         */
+        if (path.equals("/api/recipes")
+                || path.startsWith("/api/recipes/")) {
+            return true;
+        }
+
+        /*
+         * ============================================================
+         * MANDI RATES
+         * ============================================================
+         *
+         * PUBLIC
+         *
+         * Visitors do NOT need to log in to view mandi prices.
+         */
+        if (path.equals("/api/mandi")
+                || path.startsWith("/api/mandi/")) {
+            return true;
+        }
+
+        /*
+         * Everything else can go through authentication.
+         */
+        return false;
+    }
+
     // ------------------------------------------------------------------
     // 1. Backend JWT
     // ------------------------------------------------------------------
 
-    /** @return true if the token was a valid backend JWT (even if the user is unusable). */
+    /**
+     * @return true if the token was a valid backend JWT
+     */
     private boolean authenticateWithBackendJwt(String token) {
 
         io.jsonwebtoken.Claims claims;
 
         try {
+
             claims = jwt.parse(token);
+
         } catch (Exception notOurs) {
-            return false; // not a backend JWT (probably a Firebase token)
+
+            /*
+             * Not our JWT.
+             * It may be a Firebase token.
+             */
+            return false;
         }
 
         Object uid = claims.get("uid");
@@ -105,9 +217,10 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
             return true;
         }
 
-        Long userId = uid instanceof Number n
-                ? n.longValue()
-                : Long.valueOf(uid.toString());
+        Long userId =
+                uid instanceof Number n
+                        ? n.longValue()
+                        : Long.valueOf(uid.toString());
 
         User user = users.findById(userId).orElse(null);
 
@@ -116,6 +229,7 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
         }
 
         setAuthentication(user);
+
         return true;
     }
 
@@ -126,63 +240,101 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
     private void authenticateWithFirebase(String token) throws Exception {
 
         if (FirebaseApp.getApps().isEmpty()) {
-            log.warn("Firebase is not configured (FIREBASE_SERVICE_ACCOUNT_JSON missing); "
-                    + "cannot verify Firebase token.");
+
+            log.warn(
+                    "Firebase is not configured (FIREBASE_SERVICE_ACCOUNT_JSON missing); "
+                            + "cannot verify Firebase token."
+            );
+
             return;
         }
 
-        FirebaseToken decoded = FirebaseAuth.getInstance().verifyIdToken(token);
+        FirebaseToken decoded =
+                FirebaseAuth.getInstance().verifyIdToken(token);
 
         String firebaseUid = decoded.getUid();
+
         String email = decoded.getEmail();
+
         boolean emailVerified = decoded.isEmailVerified();
 
         if (email == null || email.isBlank()) {
             return;
         }
 
-        User user = users.findByFirebaseUid(firebaseUid).orElse(null);
+        User user =
+                users.findByFirebaseUid(firebaseUid).orElse(null);
 
-        // First time this Firebase account is seen: attach it to an existing
-        // application account with the same e-mail - but ONLY when Firebase
-        // says the e-mail is verified. Otherwise anyone could sign up with
-        // admin@... (unverified) and take over that account.
+        /*
+         * First time this Firebase account is seen:
+         *
+         * Attach it to an existing application account with
+         * the same email only when Firebase says the email
+         * is verified.
+         */
         if (user == null && emailVerified) {
-            User byEmail = users.findByEmailIgnoreCase(email).orElse(null);
+
+            User byEmail =
+                    users.findByEmailIgnoreCase(email).orElse(null);
 
             if (byEmail != null
                     && (byEmail.getFirebaseUid() == null
-                        || byEmail.getFirebaseUid().isBlank())) {
+                    || byEmail.getFirebaseUid().isBlank())) {
+
                 byEmail.setFirebaseUid(firebaseUid);
+
                 byEmail.setEmailVerified(true);
+
                 user = users.save(byEmail);
             }
         }
 
-        // Valid Firebase identity, but no application profile yet.
-        // /api/auth/firebase/onboard will create it.
+        /*
+         * Valid Firebase identity but no application profile yet.
+         *
+         * /api/auth/firebase/onboard can create the profile.
+         */
         if (user == null) {
+
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             email,
                             null,
-                            List.of(new SimpleGrantedAuthority("ROLE_FIREBASE_USER"))
+                            List.of(
+                                    new SimpleGrantedAuthority(
+                                            "ROLE_FIREBASE_USER"
+                                    )
+                            )
                     );
 
             authentication.setDetails(
-                    new FirebaseIdentity(firebaseUid, emailVerified)
+                    new FirebaseIdentity(
+                            firebaseUid,
+                            emailVerified
+                    )
             );
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            SecurityContextHolder
+                    .getContext()
+                    .setAuthentication(authentication);
+
             return;
         }
 
+        /*
+         * Account disabled.
+         */
         if (!user.isEnabled()) {
             return;
         }
 
+        /*
+         * Keep application email verification status synchronized.
+         */
         if (user.isEmailVerified() != emailVerified) {
+
             user.setEmailVerified(emailVerified);
+
             user = users.save(user);
         }
 
@@ -197,13 +349,20 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
                 new UsernamePasswordAuthenticationToken(
                         user.getEmail(),
                         null,
-                        List.of(new SimpleGrantedAuthority(
-                                "ROLE_" + user.getRole().name()))
+                        List.of(
+                                new SimpleGrantedAuthority(
+                                        "ROLE_" + user.getRole().name()
+                                )
+                        )
                 );
 
-        // AuthContext reads the PostgreSQL user id from here.
+        /*
+         * AuthContext reads the PostgreSQL user ID from here.
+         */
         authentication.setDetails(user.getId());
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        SecurityContextHolder
+                .getContext()
+                .setAuthentication(authentication);
     }
 }

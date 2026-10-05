@@ -88,6 +88,7 @@ public class SecurityConfig {
                         // Public catalogue content
                         .requestMatchers("/api/categories/**").permitAll()
                         .requestMatchers("/api/advertisements").permitAll()
+                        .requestMatchers("/api/mandi/**").permitAll()              
                         .requestMatchers(HttpMethod.GET,
                                 "/api/recipes", "/api/recipes/**").permitAll()
 

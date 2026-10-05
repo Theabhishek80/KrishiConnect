@@ -29,7 +29,11 @@ const SUGGESTIONS = [
 
 const NOT_CONNECTED_MESSAGE =
   "KisanDirect AI is almost ready. The assistant isn't connected to its " +
-  "service yet, so I can't answer right now. Please check back soon!";
+  "service yet, so I can't answer right now. Please check back soon.";
+
+// Only send recent messages to Gemini.
+// The complete conversation is still kept in the UI.
+const MAX_AI_MESSAGES = 8;
 
 export default function AIAssistant() {
   const user = getStoredUser();
@@ -41,31 +45,55 @@ export default function AIAssistant() {
   const endRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Keep the latest message visible.
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    endRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end"
+    });
   }, [messages, busy]);
 
-  // Auto-grow the textarea
+  // Auto-grow textarea.
   useEffect(() => {
     const el = inputRef.current;
+
     if (!el) return;
+
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
   }, [input]);
 
   const send = async text => {
     const content = (text ?? input).trim();
+
     if (!content || busy) return;
 
-    const next = [...messages, { role: "user", content }];
+    const userMessage = {
+      role: "user",
+      content
+    };
+
+    // Keep the complete conversation for the UI.
+    const next = [...messages, userMessage];
 
     setMessages(next);
     setInput("");
     setBusy(true);
 
     try {
-      const reply = await askKisanAI(next);
-      setMessages([...next, { role: "assistant", content: reply }]);
+      // Send only recent conversation to Gemini.
+      // This reduces request size and can improve response time.
+      const recentMessages = next.slice(-MAX_AI_MESSAGES);
+
+      const reply = await askKisanAI(recentMessages);
+
+      setMessages([
+        ...next,
+        {
+          role: "assistant",
+          content: reply
+        }
+      ]);
 
     } catch (error) {
       const notReady = error?.message === AI_NOT_CONFIGURED;
@@ -114,6 +142,7 @@ export default function AIAssistant() {
               KisanDirect AI
               <span className="kd-ai-beta">Beta</span>
             </h1>
+
             <p>Your friendly agriculture assistant</p>
           </div>
         </header>
@@ -122,11 +151,13 @@ export default function AIAssistant() {
 
           {empty && (
             <div className="kd-ai-welcome">
+
               <h2>
                 {user?.name
                   ? `Hello, ${user.name.split(" ")[0]} 👋`
                   : "Hello 👋"}
               </h2>
+
               <p>
                 Ask me about crops, pests, soil, irrigation, storage or
                 government schemes.
@@ -138,48 +169,68 @@ export default function AIAssistant() {
                     key={text}
                     type="button"
                     onClick={() => send(text)}
-                    disabled={!user}
+                    disabled={!user || busy}
                   >
                     <Icon size={18} />
                     <span>{text}</span>
                   </button>
                 ))}
               </div>
+
             </div>
           )}
 
           {messages.map((message, i) => (
             <div
-              key={i}
-              className={`kd-msg ${message.role}${message.error ? " error" : ""}`}
+              key={`${message.role}-${i}`}
+              className={`kd-msg ${message.role}${
+                message.error ? " error" : ""
+              }`}
             >
               {message.role === "assistant" && (
-                <span className="kd-msg-avatar" aria-hidden="true">
+                <span
+                  className="kd-msg-avatar"
+                  aria-hidden="true"
+                >
                   <Sparkles size={15} />
                 </span>
               )}
 
-              <div className="kd-msg-bubble">{message.content}</div>
+              <div className="kd-msg-bubble">
+                {message.content}
+              </div>
             </div>
           ))}
 
           {busy && (
             <div className="kd-msg assistant">
-              <span className="kd-msg-avatar" aria-hidden="true">
+
+              <span
+                className="kd-msg-avatar"
+                aria-hidden="true"
+              >
                 <Sparkles size={15} />
               </span>
 
-              <div className="kd-msg-bubble kd-typing" aria-label="Thinking">
-                <i /><i /><i />
+              <div
+                className="kd-msg-bubble kd-typing"
+                aria-label="KisanDirect AI is thinking"
+              >
+                <i />
+                <i />
+                <i />
               </div>
+
             </div>
           )}
 
           <div ref={endRef} />
+
         </div>
 
         {user ? (
           <div className="kd-ai-composer">
+
             <textarea
               ref={inputRef}
               rows={1}
@@ -188,6 +239,7 @@ export default function AIAssistant() {
               onKeyDown={onKeyDown}
               placeholder="Ask anything about farming…"
               aria-label="Message KisanDirect AI"
+              disabled={busy}
             />
 
             <button
@@ -198,11 +250,22 @@ export default function AIAssistant() {
             >
               <ArrowUp size={20} />
             </button>
+
           </div>
         ) : (
           <div className="kd-ai-signin">
-            <p>Please sign in to chat with KisanDirect AI.</p>
-            <Link className="primary-btn" to="/login">Sign in</Link>
+
+            <p>
+              Please sign in to chat with KisanDirect AI.
+            </p>
+
+            <Link
+              className="primary-btn"
+              to="/login"
+            >
+              Sign in
+            </Link>
+
           </div>
         )}
 

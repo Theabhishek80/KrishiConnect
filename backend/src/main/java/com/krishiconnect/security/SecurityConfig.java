@@ -155,6 +155,22 @@ public class SecurityConfig {
 
 
                         // ------------------------------------------------
+                        // SPRING BOOT ERROR PAGE
+                        // ------------------------------------------------
+                        //
+                        // When a controller throws an exception that is
+                        // not handled, Spring forwards the request to
+                        // /error. If /error is not public, the REAL error
+                        // (500) is replaced by an empty 403 Forbidden.
+                        // That is exactly what was happening on /api/mandi.
+                        //
+
+                        .requestMatchers(
+                                "/error"
+                        ).permitAll()
+
+
+                        // ------------------------------------------------
                         // HEALTH
                         // ------------------------------------------------
 
@@ -318,3 +334,4 @@ public class SecurityConfig {
         return source;
     }
 }
+

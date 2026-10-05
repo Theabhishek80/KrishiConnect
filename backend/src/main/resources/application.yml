@@ -2,18 +2,27 @@ spring:
   application:
     name: krishiconnect
 
-  # Loads secrets from local ".env" files during local development.
-  # Railway / Render environment variables take precedence.
+  # =========================================================
+  # LOCAL ENVIRONMENT FILES
+  # =========================================================
+  # Loads secrets from local .env files during development.
+  # Railway / Render environment variables are used in production.
   config:
     import:
       - optional:file:.env[.properties]
       - optional:file:../.env[.properties]
 
+  # =========================================================
+  # DATABASE
+  # =========================================================
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/krishiconnect}
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:postgres}
 
+  # =========================================================
+  # JPA / HIBERNATE
+  # =========================================================
   jpa:
     open-in-view: false
     hibernate:
@@ -22,9 +31,15 @@ spring:
       hibernate:
         jdbc.time_zone: UTC
 
+  # =========================================================
+  # FLYWAY
+  # =========================================================
   flyway:
     enabled: true
 
+  # =========================================================
+  # EMAIL
+  # =========================================================
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}
@@ -37,38 +52,69 @@ spring:
           starttls:
             enable: ${MAIL_SMTP_STARTTLS:false}
 
+  # =========================================================
+  # FILE UPLOAD LIMITS
+  # =========================================================
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
 
+
+# ===========================================================
+# SERVER
+# ===========================================================
 server:
   port: ${PORT:8080}
 
+
+# ===========================================================
+# APPLICATION CONFIGURATION
+# ===========================================================
 app:
+
+  # =========================================================
+  # JWT AUTHENTICATION
+  # =========================================================
   jwt:
     secret: ${JWT_SECRET:change-this-development-secret-please}
     access-minutes: 30
     refresh-days: 14
 
+  # =========================================================
+  # FRONTEND
+  # =========================================================
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
 
+  # =========================================================
+  # EMAIL SENDER
+  # =========================================================
   mail-from: ${MAIL_FROM:noreply@krishiconnect.local}
 
+  # =========================================================
+  # ADMIN
+  # =========================================================
   admin:
     email: ${ADMIN_EMAIL:admin@krishiconnect.local}
     password: ${ADMIN_PASSWORD:ChangeMe123!}
 
-  # =========================
+  # =========================================================
   # OPENROUTER AI
-  # =========================
+  # =========================================================
   openrouter:
     api-key: ${OPENROUTER_API_KEY:}
     model: ${OPENROUTER_MODEL:openrouter/free}
 
-     mandi:
+  # =========================================================
+  # MANDI RATES
+  # =========================================================
+  mandi:
     api-key: ${MANDI_API_KEY:}
 
+
+# ===========================================================
+# SPRINGDOC / SWAGGER
+# ===========================================================
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

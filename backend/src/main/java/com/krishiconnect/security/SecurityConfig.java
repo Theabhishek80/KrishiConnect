@@ -9,6 +9,9 @@ import org.springframework.http.HttpStatus;
 
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -25,6 +28,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
+@EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
@@ -37,9 +41,7 @@ public class SecurityConfig {
     }
 
     /**
-     * FirebaseAuthFilter is a @Component, so Spring Boot would also register
-     * it as a plain servlet filter (outside the security chain). It belongs in
-     * the security chain only.
+     * FirebaseAuthFilter should ONLY run inside Spring Security.
      */
     @Bean
     FilterRegistrationBean<FirebaseAuthFilter> firebaseAuthFilterRegistration(
@@ -47,8 +49,32 @@ public class SecurityConfig {
     ) {
         FilterRegistrationBean<FirebaseAuthFilter> registration =
                 new FilterRegistrationBean<>(filter);
+
         registration.setEnabled(false);
+
         return registration;
+    }
+
+    /**
+     * ============================================================
+     * PUBLIC MANDI
+     * ============================================================
+     *
+     * Completely bypass Spring Security for Mandi API.
+     *
+     * This means:
+     *
+     * /api/mandi
+     * /api/mandi/**
+     *
+     * do NOT require Firebase/JWT authentication.
+     */
+    @Bean
+    WebSecurityCustomizer webSecurityCustomizer() {
+        return web -> web.ignoring().requestMatchers(
+                "/api/mandi",
+                "/api/mandi/**"
+        );
     }
 
     @Bean
@@ -58,26 +84,39 @@ public class SecurityConfig {
     ) throws Exception {
 
         return http
-                .csrf(c -> c.disable())
-                .cors(c -> c.configurationSource(cors()))
-                .sessionManagement(s ->
-                        s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Unauthenticated -> 401 (not the default 403) so the frontend
-                // can tell "please sign in" from "you may not do this".
-                .exceptionHandling(e -> e
-                        .authenticationEntryPoint(
-                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .csrf(c -> c.disable())
+
+                .cors(c -> c.configurationSource(cors()))
+
+                .sessionManagement(s ->
+                        s.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
+
+                .exceptionHandling(e ->
+                        e.authenticationEntryPoint(
+                                new HttpStatusEntryPoint(
+                                        HttpStatus.UNAUTHORIZED
+                                )
+                        )
+                )
 
                 .authorizeHttpRequests(a -> a
 
-                        // CORS pre-flight
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // CORS
+                        .requestMatchers(
+                                HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
 
-                        // Health / diagnostics
-                        .requestMatchers("/api/status").permitAll()
+                        // Health
+                        .requestMatchers(
+                                "/api/status"
+                        ).permitAll()
 
-                        // Backend-JWT login (admin / legacy) and token refresh
+                        // Authentication
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/refresh",
@@ -85,12 +124,22 @@ public class SecurityConfig {
                                 "/api/auth/reset-password"
                         ).permitAll()
 
-                        // Public catalogue content
-                        .requestMatchers("/api/categories/**").permitAll()
-                        .requestMatchers("/api/advertisements").permitAll()
-                        .requestMatchers("/api/mandi/**").permitAll()              
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/recipes", "/api/recipes/**").permitAll()
+                        // Public categories
+                        .requestMatchers(
+                                "/api/categories/**"
+                        ).permitAll()
+
+                        // Public advertisements
+                        .requestMatchers(
+                                "/api/advertisements"
+                        ).permitAll()
+
+                        // Public recipes
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/recipes",
+                                "/api/recipes/**"
+                        ).permitAll()
 
                         // Swagger
                         .requestMatchers(
@@ -99,23 +148,30 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // Firebase onboarding / profile
-                        .requestMatchers("/api/auth/firebase/**").authenticated()
+                        // Firebase onboarding
+                        .requestMatchers(
+                                "/api/auth/firebase/**"
+                        ).authenticated()
 
-                        // Farmer product management
+                        // Farmer
                         .requestMatchers(
                                 "/api/products/farmer",
                                 "/api/products/farmer/**"
                         ).hasRole("FARMER")
 
-                        // Public product catalogue (GET only; writes need a login)
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/products", "/api/products/**").permitAll()
+                        // Public product catalogue
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/products",
+                                "/api/products/**"
+                        ).permitAll()
 
                         // Admin
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(
+                                "/api/admin/**"
+                        ).hasRole("ADMIN")
 
-                        // Everything else (cart, orders, profile, AI, ...)
+                        // Everything else
                         .anyRequest().authenticated()
                 )
 
@@ -132,23 +188,39 @@ public class SecurityConfig {
 
         CorsConfiguration c = new CorsConfiguration();
 
-        // FRONTEND_URL may hold several comma-separated origins, e.g.
-        // https://kisandirect.online,https://www.kisandirect.online
         c.setAllowedOrigins(
-                java.util.Arrays.stream(frontendUrl.split(","))
+                java.util.Arrays.stream(
+                                frontendUrl.split(",")
+                        )
                         .map(String::trim)
                         .filter(v -> !v.isEmpty())
                         .toList()
         );
 
-        c.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        c.setAllowedHeaders(List.of("*"));
+        c.setAllowedMethods(
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE",
+                        "OPTIONS"
+                )
+        );
+
+        c.setAllowedHeaders(
+                List.of("*")
+        );
+
         c.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration("/**", c);
+        source.registerCorsConfiguration(
+                "/**",
+                c
+        );
 
         return source;
     }

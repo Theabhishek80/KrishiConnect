@@ -65,10 +65,19 @@ export default async function handler(req, res) {
           };
         }
       } else {
+        // Hosting providers return HTML pages (e.g. "Service Suspended").
+        // Never show raw HTML to the user.
+        const looksLikeHtml = /^\s*</.test(text);
+
         data = {
           error:
-            text ||
-            `Backend returned HTTP ${response.status}.`,
+            !text
+              ? `Backend returned HTTP ${response.status}.`
+              : looksLikeHtml
+                ? response.status >= 500
+                  ? "The Mandi server is temporarily unavailable. Please try again later."
+                  : `Backend returned HTTP ${response.status}.`
+                : text,
         };
       }
 

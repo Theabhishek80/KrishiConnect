@@ -116,16 +116,10 @@ export default function AdvertisementManager() {
     }
   };
 
+  // Delete immediately without browser confirmation alert
   const remove = async id => {
-    if (
-      !window.confirm(
-        "Delete this advertisement?"
-      )
-    ) {
-      return;
-    }
-
     setError("");
+    setMessage("");
 
     try {
       await api.delete(
@@ -133,6 +127,10 @@ export default function AdvertisementManager() {
       );
 
       await load();
+
+      setMessage(
+        "Advertisement deleted successfully."
+      );
 
     } catch (e) {
       setError(

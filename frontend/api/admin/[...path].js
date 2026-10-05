@@ -1,5 +1,11 @@
 export const config = {
   maxDuration: 60,
+
+  // IMPORTANT:
+  // Keep multipart/form-data as a raw request body.
+  api: {
+    bodyParser: false,
+  },
 };
 
 export default async function handler(req, res) {
@@ -8,7 +14,7 @@ export default async function handler(req, res) {
 
   const backends = [primary, backup]
     .filter(Boolean)
-    .map((url) => url.replace(/\/+$/, ""));
+    .map(url => url.replace(/\/+$/, ""));
 
   if (!backends.length) {
     return res.status(500).json({
@@ -16,7 +22,6 @@ export default async function handler(req, res) {
     });
   }
 
-  // IMPORTANT:
   // Keep the complete original /api/... path.
   const path = req.url || "/api/status";
 
@@ -27,6 +32,7 @@ export default async function handler(req, res) {
 
     const lower = key.toLowerCase();
 
+    // Let fetch/Vercel generate these correctly.
     if (
       lower === "host" ||
       lower === "content-length" ||
@@ -38,12 +44,15 @@ export default async function handler(req, res) {
 
     headers.set(
       key,
-      Array.isArray(value) ? value.join(",") : value
+      Array.isArray(value)
+        ? value.join(",")
+        : value
     );
   }
 
   let body;
 
+  // Read the raw request body.
   if (!["GET", "HEAD"].includes(req.method)) {
     const chunks = [];
 
@@ -107,6 +116,15 @@ export default async function handler(req, res) {
     "OPTIONS",
   ].includes(req.method);
 
+  /*
+   * Only fail over POST requests where retrying is safe.
+   *
+   * IMPORTANT:
+   * Do NOT automatically retry image uploads.
+   * Otherwise an upload could reach the primary,
+   * succeed in ImageKit, and then be uploaded again
+   * to the backup after a timeout.
+   */
   const retryableAuthWrite =
     req.method === "POST" &&
     (

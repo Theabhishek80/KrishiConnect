@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Compass,
@@ -13,6 +13,7 @@ import {
   CalendarDays,
   IndianRupee,
   Filter,
+  Navigation,
   X
 } from "lucide-react";
 
@@ -67,31 +68,192 @@ export function NotFoundPage() {
   );
 }
 
+/* ---------------------------------------------------------
+   LOCATION HELPERS
+   State names use the spelling of the government data set
+   (data.gov.in), e.g. "Chattisgarh" and "Uttrakhand".
+--------------------------------------------------------- */
+
+const LOCATION_KEY = "kd_mandi_location";
+const LOCATION_SKIPPED_KEY = "kd_mandi_location_skipped";
+
+const INDIAN_STATES = [
+  "Andaman and Nicobar",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chandigarh",
+  "Chattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "NCT of Delhi",
+  "Nagaland",
+  "Odisha",
+  "Puducherry",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttrakhand",
+  "West Bengal"
+];
+
+const STATE_ALIASES = {
+  chhattisgarh: "Chattisgarh",
+  uttarakhand: "Uttrakhand",
+  delhi: "NCT of Delhi",
+  "national capital territory of delhi": "NCT of Delhi",
+  "andaman and nicobar islands": "Andaman and Nicobar",
+  pondicherry: "Puducherry",
+  orissa: "Odisha"
+};
+
+function normalizeState(name) {
+  const clean = String(name || "").trim();
+
+  if (!clean) return "";
+
+  const lower = clean.toLowerCase();
+
+  if (STATE_ALIASES[lower]) return STATE_ALIASES[lower];
+
+  const match = INDIAN_STATES.find(
+    state => state.toLowerCase() === lower
+  );
+
+  return match || clean;
+}
+
+function readSavedLocation() {
+  try {
+    const raw = localStorage.getItem(LOCATION_KEY);
+
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+
+    return parsed && parsed.state ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function wasLocationSkipped() {
+  try {
+    return localStorage.getItem(LOCATION_SKIPPED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+async function reverseGeocode(latitude, longitude) {
+  const url =
+    "https://nominatim.openstreetmap.org/reverse" +
+    `?format=jsonv2&addressdetails=1&zoom=10&accept-language=en` +
+    `&lat=${latitude}&lon=${longitude}`;
+
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" }
+  });
+
+  if (!response.ok) {
+    throw new Error("Reverse geocoding failed");
+  }
+
+  const data = await response.json();
+  const address = data.address || {};
+
+  const district = String(
+    address.state_district ||
+      address.county ||
+      address.city_district ||
+      address.city ||
+      ""
+  )
+    .replace(/\s+district$/i, "")
+    .trim();
+
+  return {
+    state: normalizeState(address.state),
+    district
+  };
+}
+
 /* =========================================================
    MANDI RATES
 ========================================================= */
 
 export function MandiPage() {
+  const [initialLocation] = useState(readSavedLocation);
+
   const [rates, setRates] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [search, setSearch] = useState("");
 
   const [filters, setFilters] = useState({
-    state: "",
-    district: "",
+    state: initialLocation?.state || "",
+    district: initialLocation?.district || "",
     market: "",
     commodity: ""
   });
 
   /* -------------------------------------------------------
+     LOCATION STATE
+  ------------------------------------------------------- */
+
+  const [location, setLocation] = useState(initialLocation);
+
+  // Ask for location the first time (unless the user skipped before)
+  const [showLocationPicker, setShowLocationPicker] = useState(
+    () => !initialLocation && !wasLocationSkipped()
+  );
+
+  const [pickerMode, setPickerMode] = useState("choose");
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
+
+  const [manual, setManual] = useState({
+    state: "",
+    district: ""
+  });
+
+  // Used to ignore slow, outdated responses
+  const requestId = useRef(0);
+
+  /* -------------------------------------------------------
      LOAD RATES
   ------------------------------------------------------- */
 
+  const fetchRates = async params => {
+    const response = await api.get("/mandi/rates", { params });
+
+    return Array.isArray(response.data) ? response.data : [];
+  };
+
   const loadRates = async (showRefresh = false) => {
+    const id = ++requestId.current;
+
     try {
       if (showRefresh) {
         setRefreshing(true);
@@ -100,6 +262,7 @@ export function MandiPage() {
       }
 
       setError("");
+      setNotice("");
 
       const params = {
         limit: 100
@@ -121,16 +284,34 @@ export function MandiPage() {
         params.commodity = filters.commodity.trim();
       }
 
-      const response = await api.get("/mandi/rates", {
-        params
-      });
+      let data = await fetchRates(params);
 
-      const data = Array.isArray(response.data)
-        ? response.data
-        : [];
+      // District spelling from GPS / typing often differs from the
+      // government data. If the district has no rates, fall back to
+      // the whole state so the page is never empty for no reason.
+      if (!data.length && params.district) {
+        const { district, ...withoutDistrict } = params;
+
+        const fallback = await fetchRates(withoutDistrict);
+
+        if (fallback.length) {
+          data = fallback;
+
+          setNotice(
+            `No rates found for ${district} today. ` +
+              (params.state
+                ? `Showing other markets in ${params.state}.`
+                : "Showing markets from all over India.")
+          );
+        }
+      }
+
+      if (id !== requestId.current) return;
 
       setRates(data);
     } catch (err) {
+      if (id !== requestId.current) return;
+
       console.error("Mandi rates error:", err);
 
       const message =
@@ -141,17 +322,23 @@ export function MandiPage() {
       setError(message);
       setRates([]);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (id === requestId.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   };
 
   /* -------------------------------------------------------
-     INITIAL / FILTER LOAD
+     INITIAL / FILTER LOAD (debounced while typing)
   ------------------------------------------------------- */
 
   useEffect(() => {
-    loadRates();
+    const timer = setTimeout(() => {
+      loadRates();
+    }, 400);
+
+    return () => clearTimeout(timer);
   }, [
     filters.state,
     filters.district,
@@ -179,6 +366,131 @@ export function MandiPage() {
     });
 
     setSearch("");
+    setLocation(null);
+
+    try {
+      localStorage.removeItem(LOCATION_KEY);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  /* -------------------------------------------------------
+     LOCATION HANDLERS
+  ------------------------------------------------------- */
+
+  const openLocationPicker = () => {
+    setPickerMode("choose");
+    setLocationError("");
+    setShowLocationPicker(true);
+  };
+
+  const skipLocation = () => {
+    try {
+      localStorage.setItem(LOCATION_SKIPPED_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+
+    setShowLocationPicker(false);
+  };
+
+  const applyLocation = place => {
+    const next = {
+      state: place.state || "",
+      district: place.district || "",
+      source: place.source
+    };
+
+    setLocation(next);
+
+    try {
+      localStorage.setItem(LOCATION_KEY, JSON.stringify(next));
+      localStorage.removeItem(LOCATION_SKIPPED_KEY);
+    } catch {
+      /* ignore */
+    }
+
+    setFilters(prev => ({
+      ...prev,
+      state: next.state,
+      district: next.district,
+      market: ""
+    }));
+
+    setLocationError("");
+    setShowLocationPicker(false);
+  };
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError(
+        "Your browser does not support automatic location. " +
+          "Please choose your location manually."
+      );
+      setPickerMode("manual");
+      return;
+    }
+
+    setLocating(true);
+    setLocationError("");
+
+    navigator.geolocation.getCurrentPosition(
+      async position => {
+        try {
+          const place = await reverseGeocode(
+            position.coords.latitude,
+            position.coords.longitude
+          );
+
+          if (!place.state) {
+            throw new Error("State not found");
+          }
+
+          applyLocation({ ...place, source: "auto" });
+        } catch {
+          setLocationError(
+            "We found you, but could not work out your state. " +
+              "Please choose it manually."
+          );
+          setPickerMode("manual");
+        } finally {
+          setLocating(false);
+        }
+      },
+      geoError => {
+        setLocating(false);
+
+        setLocationError(
+          geoError.code === 1
+            ? "Location permission was denied. Allow it in your " +
+                "browser settings, or choose manually."
+            : "Could not detect your location. Please choose it manually."
+        );
+
+        setPickerMode("manual");
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 12000,
+        maximumAge: 600000
+      }
+    );
+  };
+
+  const submitManualLocation = event => {
+    event.preventDefault();
+
+    if (!manual.state) {
+      setLocationError("Please select your state.");
+      return;
+    }
+
+    applyLocation({
+      state: manual.state,
+      district: manual.district.trim(),
+      source: "manual"
+    });
   };
 
   /* -------------------------------------------------------
@@ -212,16 +524,6 @@ export function MandiPage() {
   /* -------------------------------------------------------
      UNIQUE VALUES
   ------------------------------------------------------- */
-
-  const states = useMemo(() => {
-    return [
-      ...new Set(
-        rates
-          .map(rate => rate.state)
-          .filter(Boolean)
-      )
-    ].sort();
-  }, [rates]);
 
   const commodities = useMemo(() => {
     return [
@@ -700,6 +1002,152 @@ export function MandiPage() {
             width: 100%;
           }
         }
+
+        /* ---------- LOCATION BAR ---------- */
+
+        .kd-mandi-location {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          flex-wrap: wrap;
+          background: #f0f8f3;
+          border: 1px solid #cfe5d7;
+          border-radius: 14px;
+          padding: 12px 16px;
+          margin-bottom: 14px;
+          color: #24503a;
+          font-size: 14px;
+        }
+
+        .kd-mandi-location-text {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .kd-mandi-notice {
+          background: #fff8e6;
+          border: 1px solid #f0dca4;
+          color: #7a5b00;
+          border-radius: 12px;
+          padding: 11px 14px;
+          margin-bottom: 14px;
+          font-size: 13px;
+        }
+
+        /* ---------- LOCATION POPUP ---------- */
+
+        .kd-loc-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 2000;
+          background: rgba(15, 30, 20, 0.55);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+        }
+
+        .kd-loc-modal {
+          position: relative;
+          width: 100%;
+          max-width: 440px;
+          background: #fff;
+          border-radius: 20px;
+          padding: 28px 24px 22px;
+          text-align: center;
+          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+        }
+
+        .kd-loc-close {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          border: 0;
+          background: transparent;
+          color: #657065;
+          cursor: pointer;
+          padding: 6px;
+        }
+
+        .kd-loc-icon {
+          width: 54px;
+          height: 54px;
+          margin: 0 auto 12px;
+          border-radius: 50%;
+          background: #e6f4ec;
+          color: #24794a;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .kd-loc-modal h3 {
+          margin: 0 0 6px;
+          font-size: 20px;
+          color: #1d2b1f;
+        }
+
+        .kd-loc-modal p {
+          margin: 0 0 16px;
+          color: #657065;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        .kd-loc-error {
+          background: #fdecec;
+          border: 1px solid #f3c5c5;
+          color: #a02525;
+          border-radius: 10px;
+          padding: 10px 12px;
+          font-size: 13px;
+          margin-bottom: 14px;
+          text-align: left;
+        }
+
+        .kd-loc-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .kd-loc-form {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          text-align: left;
+        }
+
+        .kd-loc-form label {
+          display: block;
+          font-size: 12px;
+          font-weight: 700;
+          color: #4d5d4d;
+          margin-bottom: 5px;
+        }
+
+        .kd-loc-form select,
+        .kd-loc-form input {
+          width: 100%;
+          box-sizing: border-box;
+          border: 1px solid #dfe5df;
+          border-radius: 11px;
+          padding: 11px 12px;
+          font-size: 14px;
+          background: #fff;
+        }
+
+        .kd-loc-skip {
+          margin-top: 14px;
+          border: 0;
+          background: transparent;
+          color: #657065;
+          font-size: 13px;
+          text-decoration: underline;
+          cursor: pointer;
+        }
       `}</style>
 
       {/* =====================================================
@@ -743,6 +1191,42 @@ export function MandiPage() {
 
           </div>
         </div>
+      </div>
+
+      {/* =====================================================
+          LOCATION BAR
+      ===================================================== */}
+
+      <div className="kd-mandi-location">
+
+        <div className="kd-mandi-location-text">
+          <MapPin size={16} />
+
+          {location ? (
+            <span>
+              Showing prices near{" "}
+              <strong>
+                {[location.district, location.state]
+                  .filter(Boolean)
+                  .join(", ")}
+              </strong>
+            </span>
+          ) : (
+            <span>
+              Set your location to see nearby mandi prices
+            </span>
+          )}
+        </div>
+
+        <button
+          type="button"
+          className="kd-mandi-btn"
+          onClick={openLocationPicker}
+        >
+          <Navigation size={16} />
+          {location ? "Change location" : "Set location"}
+        </button>
+
       </div>
 
       {/* =====================================================
@@ -803,20 +1287,27 @@ export function MandiPage() {
         <div className="kd-mandi-field">
           <label>State</label>
 
-          <input
-            list="mandi-states"
+          <select
             value={filters.state}
             onChange={e =>
               updateFilter("state", e.target.value)
             }
-            placeholder="e.g. Madhya Pradesh"
-          />
+          >
+            <option value="">All states</option>
 
-          <datalist id="mandi-states">
-            {states.map(state => (
-              <option key={state} value={state} />
+            {filters.state &&
+              !INDIAN_STATES.includes(filters.state) && (
+                <option value={filters.state}>
+                  {filters.state}
+                </option>
+              )}
+
+            {INDIAN_STATES.map(state => (
+              <option key={state} value={state}>
+                {state}
+              </option>
             ))}
-          </datalist>
+          </select>
         </div>
 
         <div className="kd-mandi-field">
@@ -869,6 +1360,10 @@ export function MandiPage() {
         </div>
 
       </div>
+
+      {notice && !error && (
+        <div className="kd-mandi-notice">{notice}</div>
+      )}
 
       {/* =====================================================
           ERROR
@@ -1155,6 +1650,155 @@ export function MandiPage() {
         respective market before making trading
         decisions.
       </div>
+
+
+      {/* =====================================================
+          LOCATION POPUP
+      ===================================================== */}
+
+      {showLocationPicker && (
+        <div
+          className="kd-loc-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="kd-loc-title"
+        >
+          <div className="kd-loc-modal">
+
+            <button
+              type="button"
+              className="kd-loc-close"
+              onClick={skipLocation}
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="kd-loc-icon">
+              <MapPin size={26} />
+            </div>
+
+            <h3 id="kd-loc-title">
+              Where do you want mandi prices from?
+            </h3>
+
+            <p>
+              Choose your location to see prices from
+              markets near you.
+            </p>
+
+            {locationError && (
+              <div className="kd-loc-error">
+                {locationError}
+              </div>
+            )}
+
+            {pickerMode === "choose" ? (
+              <div className="kd-loc-actions">
+
+                <button
+                  type="button"
+                  className="kd-mandi-btn primary"
+                  onClick={useCurrentLocation}
+                  disabled={locating}
+                >
+                  <Navigation
+                    size={16}
+                    className={locating ? "kd-spin" : ""}
+                  />
+                  {locating
+                    ? "Detecting location..."
+                    : "Use my current location"}
+                </button>
+
+                <button
+                  type="button"
+                  className="kd-mandi-btn"
+                  onClick={() => {
+                    setLocationError("");
+                    setPickerMode("manual");
+                  }}
+                >
+                  Enter location manually
+                </button>
+
+              </div>
+            ) : (
+              <form
+                className="kd-loc-form"
+                onSubmit={submitManualLocation}
+              >
+
+                <div>
+                  <label>State</label>
+
+                  <select
+                    value={manual.state}
+                    onChange={e =>
+                      setManual(prev => ({
+                        ...prev,
+                        state: e.target.value
+                      }))
+                    }
+                  >
+                    <option value="">Select state</option>
+
+                    {INDIAN_STATES.map(state => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label>District (optional)</label>
+
+                  <input
+                    value={manual.district}
+                    onChange={e =>
+                      setManual(prev => ({
+                        ...prev,
+                        district: e.target.value
+                      }))
+                    }
+                    placeholder="e.g. Durg"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="kd-mandi-btn primary"
+                >
+                  Save location
+                </button>
+
+                <button
+                  type="button"
+                  className="kd-mandi-btn"
+                  onClick={useCurrentLocation}
+                  disabled={locating}
+                >
+                  <Navigation size={16} />
+                  {locating
+                    ? "Detecting location..."
+                    : "Use my current location instead"}
+                </button>
+
+              </form>
+            )}
+
+            <button
+              type="button"
+              className="kd-loc-skip"
+              onClick={skipLocation}
+            >
+              Skip for now — show all India
+            </button>
+
+          </div>
+        </div>
+      )}
 
     </section>
   );

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.krishiconnect.dto.MandiRateDto;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -51,40 +50,45 @@ public class MandiService {
                 .uri(uriBuilder -> {
 
                     uriBuilder
-                            .path(API_URL)
+                            .scheme("https")
+                            .host("api.data.gov.in")
+                            .path("/resource/" + RESOURCE_ID)
                             .queryParam("api-key", apiKey)
                             .queryParam("format", "json")
                             .queryParam("limit", safeLimit)
                             .queryParam("offset", 0);
 
                     if (state != null && !state.isBlank()) {
-                        uriBuilder.queryParam("filters[state]", state);
+                        uriBuilder.queryParam(
+                                "filters[state]",
+                                state
+                        );
                     }
 
                     if (district != null && !district.isBlank()) {
-                        uriBuilder.queryParam("filters[district]", district);
+                        uriBuilder.queryParam(
+                                "filters[district]",
+                                district
+                        );
                     }
 
                     if (market != null && !market.isBlank()) {
-                        uriBuilder.queryParam("filters[market]", market);
+                        uriBuilder.queryParam(
+                                "filters[market]",
+                                market
+                        );
                     }
 
                     if (commodity != null && !commodity.isBlank()) {
-                        uriBuilder.queryParam("filters[commodity]", commodity);
+                        uriBuilder.queryParam(
+                                "filters[commodity]",
+                                commodity
+                        );
                     }
 
                     return uriBuilder.build();
                 })
                 .retrieve()
-                .onStatus(
-                        HttpStatusCode::isError,
-                        (request, response1) -> {
-                            throw new IllegalStateException(
-                                    "Mandi API returned HTTP "
-                                            + response1.getStatusCode()
-                            );
-                        }
-                )
                 .body(String.class);
 
         return parseResponse(response);
@@ -93,11 +97,15 @@ public class MandiService {
     private List<MandiRateDto> parseResponse(String response) {
 
         try {
-            JsonNode root = objectMapper.readTree(response);
 
-            JsonNode records = root.path("records");
+            JsonNode root =
+                    objectMapper.readTree(response);
 
-            List<MandiRateDto> result = new ArrayList<>();
+            JsonNode records =
+                    root.path("records");
+
+            List<MandiRateDto> result =
+                    new ArrayList<>();
 
             if (!records.isArray()) {
                 return result;
@@ -124,6 +132,7 @@ public class MandiService {
             return result;
 
         } catch (Exception e) {
+
             throw new IllegalStateException(
                     "Unable to parse Mandi API response.",
                     e
@@ -131,7 +140,11 @@ public class MandiService {
         }
     }
 
-    private String text(JsonNode node, String field) {
+    private String text(
+            JsonNode node,
+            String field
+    ) {
+
         JsonNode value = node.get(field);
 
         if (value == null || value.isNull()) {

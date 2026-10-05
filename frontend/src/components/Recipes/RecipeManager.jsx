@@ -7,13 +7,13 @@ import {
   Plus,
   Save,
   Trash2,
-  X
+  X,
 } from "lucide-react";
 
 import api from "../../api";
 import { clearRecipeCache } from "../../services/recipeService";
 
-const EMPTY = {
+const EMPTY_FORM = {
   title: "",
   excerpt: "",
   category: "Main Course",
@@ -23,34 +23,47 @@ const EMPTY = {
   emoji: "🍲",
   ingredients: "",
   steps: "",
-  published: true
+  published: true,
 };
 
-const errorText = (e, fallback) =>
-  e?.response?.data?.error ||
-  e?.response?.data?.message ||
+const errorText = (error, fallback) =>
+  error?.response?.data?.error ||
+  error?.response?.data?.message ||
   fallback;
 
 export default function RecipeManager() {
   const [recipes, setRecipes] = useState([]);
-  const [form, setForm] = useState(EMPTY);
+  const [form, setForm] = useState(EMPTY_FORM);
+
   const [editingId, setEditingId] = useState(null);
   const [existingImage, setExistingImage] = useState("");
   const [removeImage, setRemoveImage] = useState(false);
   const [file, setFile] = useState(null);
+
   const [busy, setBusy] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   const fileInput = useRef(null);
   const formTop = useRef(null);
 
+  // -----------------------------------------
+  // LOAD RECIPES
+  // -----------------------------------------
   const load = async () => {
     try {
+      setError("");
+
       const { data } = await api.get("/admin/recipes");
+
       setRecipes(Array.isArray(data) ? data : []);
     } catch (e) {
-      setError(errorText(e, "Could not load recipes."));
+      setError(
+        errorText(e, "Could not load recipes.")
+      );
     }
   };
 
@@ -58,11 +71,22 @@ export default function RecipeManager() {
     load();
   }, []);
 
-  const set = (key, value) =>
-    setForm(f => ({ ...f, [key]: value }));
+  // -----------------------------------------
+  // FORM HELPER
+  // -----------------------------------------
+  const set = (key, value) => {
+    setForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  };
 
+  // -----------------------------------------
+  // RESET FORM
+  // -----------------------------------------
   const reset = () => {
-    setForm(EMPTY);
+    setForm(EMPTY_FORM);
+
     setEditingId(null);
     setExistingImage("");
     setRemoveImage(false);
@@ -73,11 +97,16 @@ export default function RecipeManager() {
     }
   };
 
-  const startEdit = recipe => {
+  // -----------------------------------------
+  // START EDIT
+  // -----------------------------------------
+  const startEdit = (recipe) => {
     setEditingId(recipe.id);
+
     setExistingImage(recipe.imageUrl || "");
     setRemoveImage(false);
     setFile(null);
+
     setMessage("");
     setError("");
 
@@ -87,39 +116,60 @@ export default function RecipeManager() {
       category: recipe.category || "",
       readTime: recipe.readTime || "",
       serves: recipe.serves || "",
-      level: recipe.level || "",
+      level: recipe.level || "Easy",
       emoji: recipe.emoji || "🍲",
-      ingredients: (recipe.ingredients || []).join("\n"),
-      steps: (recipe.steps || []).join("\n"),
-      published: recipe.published
+      ingredients: Array.isArray(recipe.ingredients)
+        ? recipe.ingredients.join("\n")
+        : "",
+      steps: Array.isArray(recipe.steps)
+        ? recipe.steps.join("\n")
+        : "",
+      published: Boolean(recipe.published),
     });
 
-    formTop.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
+    if (fileInput.current) {
+      fileInput.current.value = "";
+    }
+
+    requestAnimationFrame(() => {
+      formTop.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     });
   };
 
-  const submit = async event => {
+  // -----------------------------------------
+  // SUBMIT / CREATE / UPDATE
+  // -----------------------------------------
+  const submit = async (event) => {
     event.preventDefault();
 
     setMessage("");
     setError("");
 
     if (!form.title.trim()) {
-      return setError("Please enter a recipe title.");
+      setError("Please enter a recipe title.");
+      return;
     }
 
     if (!form.ingredients.trim()) {
-      return setError("Add at least one ingredient (one per line).");
+      setError(
+        "Add at least one ingredient (one per line)."
+      );
+      return;
     }
 
     if (!form.steps.trim()) {
-      return setError("Add at least one step (one per line).");
+      setError(
+        "Add at least one step (one per line)."
+      );
+      return;
     }
 
     if (file && file.size > 5 * 1024 * 1024) {
-      return setError("Recipe image must be 5 MB or less.");
+      setError("Recipe image must be 5 MB or less.");
+      return;
     }
 
     setBusy(true);
@@ -133,70 +183,108 @@ export default function RecipeManager() {
       data.append("readTime", form.readTime.trim());
       data.append("serves", form.serves.trim());
       data.append("level", form.level.trim());
-      data.append("emoji", form.emoji.trim() || "🍲");
+      data.append(
+        "emoji",
+        form.emoji.trim() || "🍲"
+      );
       data.append("ingredients", form.ingredients);
       data.append("steps", form.steps);
-      data.append("published", String(form.published));
+      data.append(
+        "published",
+        String(form.published)
+      );
 
       if (file) {
         data.append("image", file);
       }
 
       if (editingId) {
-        data.append("removeImage", String(removeImage));
+        data.append(
+          "removeImage",
+          String(removeImage)
+        );
 
-        await api.put(`/admin/recipes/${editingId}`, data);
+        await api.put(
+          `/admin/recipes/${editingId}`,
+          data
+        );
 
-        setMessage("Recipe updated.");
+        setMessage("Recipe updated successfully.");
       } else {
-        await api.post("/admin/recipes", data);
+        await api.post(
+          "/admin/recipes",
+          data
+        );
 
         setMessage(
-          "Recipe published. It now appears on the website."
+          "Recipe published successfully."
         );
       }
 
       clearRecipeCache();
-      reset();
-      await load();
 
+      reset();
+
+      await load();
     } catch (e) {
       setError(
-        errorText(e, "Could not save the recipe.")
+        errorText(
+          e,
+          editingId
+            ? "Could not update the recipe."
+            : "Could not publish the recipe."
+        )
       );
-
     } finally {
       setBusy(false);
     }
   };
 
-  const toggle = async id => {
+  // -----------------------------------------
+  // HIDE / SHOW
+  // -----------------------------------------
+  const toggle = async (id) => {
     setError("");
+    setMessage("");
+    setTogglingId(id);
 
     try {
-      await api.patch(`/admin/recipes/${id}/toggle`);
+      await api.patch(
+        `/admin/recipes/${id}/toggle`
+      );
 
       clearRecipeCache();
+
       await load();
 
+      setMessage(
+        "Recipe visibility updated successfully."
+      );
     } catch (e) {
       setError(
-        errorText(e, "Could not change visibility.")
+        errorText(
+          e,
+          "Could not change recipe visibility."
+        )
       );
+    } finally {
+      setTogglingId(null);
     }
   };
 
-  /*
-   * DELETE RECIPE
-   * No browser confirmation alert.
-   * Clicking Delete immediately sends the delete request.
-   */
-  const remove = async recipe => {
+  // -----------------------------------------
+  // DELETE
+  // No browser confirmation alert
+  // -----------------------------------------
+  const remove = async (recipe) => {
     setError("");
     setMessage("");
+    setDeletingId(recipe.id);
 
     try {
-      await api.delete(`/admin/recipes/${recipe.id}`);
+      await api.delete(
+        `/admin/recipes/${recipe.id}`
+      );
 
       clearRecipeCache();
 
@@ -206,18 +294,74 @@ export default function RecipeManager() {
 
       await load();
 
-      setMessage("Recipe deleted successfully.");
-
+      setMessage(
+        "Recipe deleted successfully."
+      );
     } catch (e) {
       setError(
-        errorText(e, "Could not delete the recipe.")
+        errorText(
+          e,
+          "Could not delete the recipe."
+        )
       );
+    } finally {
+      setDeletingId(null);
     }
+  };
+
+  // -----------------------------------------
+  // CURRENT IMAGE REMOVE / KEEP
+  // -----------------------------------------
+  const toggleRemoveImage = () => {
+    setRemoveImage((current) => !current);
+  };
+
+  // -----------------------------------------
+  // FILE SELECT
+  // -----------------------------------------
+  const handleFileChange = (event) => {
+    const selectedFile =
+      event.target.files?.[0] || null;
+
+    if (selectedFile) {
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        setFile(null);
+        setError(
+          "Recipe image must be 5 MB or less."
+        );
+
+        if (fileInput.current) {
+          fileInput.current.value = "";
+        }
+
+        return;
+      }
+
+      if (!selectedFile.type.startsWith("image/")) {
+        setFile(null);
+        setError(
+          "Please select a valid image file."
+        );
+
+        if (fileInput.current) {
+          fileInput.current.value = "";
+        }
+
+        return;
+      }
+    }
+
+    setError("");
+    setFile(selectedFile);
+    setRemoveImage(false);
   };
 
   return (
     <section className="kd-recipe-admin panel">
 
+      {/* -----------------------------------------
+          HEADER
+      ----------------------------------------- */}
       <div
         className="sectionhead"
         ref={formTop}
@@ -234,8 +378,9 @@ export default function RecipeManager() {
           </h2>
 
           <p>
-            Recipes you post here show up on the home page
-            slider and on the Recipes page straight away.
+            Recipes you post here show up on the
+            home page slider and on the Recipes page
+            straight away.
           </p>
         </div>
 
@@ -244,18 +389,30 @@ export default function RecipeManager() {
         </span>
       </div>
 
+      {/* -----------------------------------------
+          MESSAGES
+      ----------------------------------------- */}
       {error && (
-        <div className="notice error">
+        <div
+          className="notice error"
+          role="alert"
+        >
           {error}
         </div>
       )}
 
       {message && (
-        <div className="notice success">
+        <div
+          className="notice success"
+          role="status"
+        >
           {message}
         </div>
       )}
 
+      {/* -----------------------------------------
+          RECIPE FORM
+      ----------------------------------------- */}
       <form
         className="kd-recipe-form"
         onSubmit={submit}
@@ -263,13 +420,18 @@ export default function RecipeManager() {
 
         <div className="kd-recipe-grid">
 
+          {/* TITLE */}
           <label className="kd-recipe-wide">
             Title
 
             <input
+              type="text"
               value={form.title}
-              onChange={e =>
-                set("title", e.target.value)
+              onChange={(event) =>
+                set(
+                  "title",
+                  event.target.value
+                )
               }
               placeholder="e.g. Palak Paneer"
               maxLength={160}
@@ -277,66 +439,90 @@ export default function RecipeManager() {
             />
           </label>
 
+          {/* DESCRIPTION */}
           <label className="kd-recipe-wide">
             Short description{" "}
             <span>optional</span>
 
             <input
+              type="text"
               value={form.excerpt}
-              onChange={e =>
-                set("excerpt", e.target.value)
+              onChange={(event) =>
+                set(
+                  "excerpt",
+                  event.target.value
+                )
               }
               placeholder="One line shown on the recipe card"
               maxLength={500}
             />
           </label>
 
+          {/* CATEGORY */}
           <label>
             Category
 
             <input
+              type="text"
               value={form.category}
-              onChange={e =>
-                set("category", e.target.value)
+              onChange={(event) =>
+                set(
+                  "category",
+                  event.target.value
+                )
               }
               placeholder="Main Course"
               maxLength={60}
             />
           </label>
 
+          {/* TIME */}
           <label>
             Time
 
             <input
+              type="text"
               value={form.readTime}
-              onChange={e =>
-                set("readTime", e.target.value)
+              onChange={(event) =>
+                set(
+                  "readTime",
+                  event.target.value
+                )
               }
               placeholder="30 min"
               maxLength={40}
             />
           </label>
 
+          {/* SERVES */}
           <label>
             Serves
 
             <input
+              type="text"
               value={form.serves}
-              onChange={e =>
-                set("serves", e.target.value)
+              onChange={(event) =>
+                set(
+                  "serves",
+                  event.target.value
+                )
               }
               placeholder="4 servings"
               maxLength={40}
             />
           </label>
 
+          {/* LEVEL */}
           <label>
             Level
 
             <select
               value={form.level}
-              onChange={e =>
-                set("level", e.target.value)
+              onChange={(event) =>
+                set(
+                  "level",
+                  event.target.value
+                )
               }
             >
               <option value="Easy">
@@ -353,6 +539,7 @@ export default function RecipeManager() {
             </select>
           </label>
 
+          {/* EMOJI */}
           <label>
             Emoji{" "}
             <span>
@@ -360,21 +547,27 @@ export default function RecipeManager() {
             </span>
 
             <input
+              type="text"
               value={form.emoji}
-              onChange={e =>
-                set("emoji", e.target.value)
+              onChange={(event) =>
+                set(
+                  "emoji",
+                  event.target.value
+                )
               }
               maxLength={8}
             />
           </label>
 
+          {/* IMAGE */}
           <label className="kd-recipe-photo">
             <ImagePlus size={18} />
 
             <strong>
               {file
                 ? file.name
-                : existingImage && !removeImage
+                : existingImage &&
+                    !removeImage
                   ? "Replace photo"
                   : "Add photo (optional)"}
             </strong>
@@ -383,18 +576,15 @@ export default function RecipeManager() {
               ref={fileInput}
               type="file"
               accept="image/*"
-              onChange={e => {
-                setFile(
-                  e.target.files?.[0] || null
-                );
-
-                setRemoveImage(false);
-              }}
+              onChange={handleFileChange}
             />
           </label>
 
         </div>
 
+        {/* -----------------------------------------
+            CURRENT IMAGE
+        ----------------------------------------- */}
         {editingId &&
           existingImage &&
           !file && (
@@ -403,16 +593,15 @@ export default function RecipeManager() {
               {!removeImage && (
                 <img
                   src={existingImage}
-                  alt="Current"
+                  alt="Current recipe"
                 />
               )}
 
               <button
                 type="button"
                 className="secondary-btn"
-                onClick={() =>
-                  setRemoveImage(v => !v)
-                }
+                onClick={toggleRemoveImage}
+                disabled={busy}
               >
                 {removeImage
                   ? "Keep current photo"
@@ -422,6 +611,9 @@ export default function RecipeManager() {
             </div>
           )}
 
+        {/* -----------------------------------------
+            INGREDIENTS
+        ----------------------------------------- */}
         <label>
           Ingredients{" "}
           <span>one per line</span>
@@ -429,8 +621,11 @@ export default function RecipeManager() {
           <textarea
             rows={7}
             value={form.ingredients}
-            onChange={e =>
-              set("ingredients", e.target.value)
+            onChange={(event) =>
+              set(
+                "ingredients",
+                event.target.value
+              )
             }
             placeholder={
               "2 medium potatoes, cubed\n1 onion, chopped\nSalt to taste"
@@ -439,6 +634,9 @@ export default function RecipeManager() {
           />
         </label>
 
+        {/* -----------------------------------------
+            METHOD
+        ----------------------------------------- */}
         <label>
           Method{" "}
           <span>one step per line</span>
@@ -446,8 +644,11 @@ export default function RecipeManager() {
           <textarea
             rows={7}
             value={form.steps}
-            onChange={e =>
-              set("steps", e.target.value)
+            onChange={(event) =>
+              set(
+                "steps",
+                event.target.value
+              )
             }
             placeholder={
               "Heat oil and add cumin seeds.\nAdd the onion and cook until golden."
@@ -456,21 +657,29 @@ export default function RecipeManager() {
           />
         </label>
 
+        {/* -----------------------------------------
+            PUBLISHED
+        ----------------------------------------- */}
         <label className="kd-ad-checkbox">
+
           <input
             type="checkbox"
             checked={form.published}
-            onChange={e =>
+            onChange={(event) =>
               set(
                 "published",
-                e.target.checked
+                event.target.checked
               )
             }
           />
 
           Visible on the website
+
         </label>
 
+        {/* -----------------------------------------
+            FORM ACTIONS
+        ----------------------------------------- */}
         <div className="kd-recipe-actions">
 
           <button
@@ -507,6 +716,9 @@ export default function RecipeManager() {
 
       </form>
 
+      {/* -----------------------------------------
+          RECIPE LIST
+      ----------------------------------------- */}
       <div className="kd-recipe-list">
 
         {!recipes.length ? (
@@ -514,26 +726,29 @@ export default function RecipeManager() {
             No recipes yet.
           </div>
         ) : (
-          recipes.map(recipe => (
+          recipes.map((recipe) => (
             <article
               className="kd-recipe-row"
               key={recipe.id}
             >
 
+              {/* IMAGE */}
               {recipe.imageUrl ? (
                 <img
                   src={recipe.imageUrl}
                   alt={recipe.title}
+                  loading="lazy"
                 />
               ) : (
                 <span
                   className="kd-recipe-row-emoji"
                   aria-hidden="true"
                 >
-                  {recipe.emoji}
+                  {recipe.emoji || "🍲"}
                 </span>
               )}
 
+              {/* INFO */}
               <div className="kd-recipe-row-info">
 
                 <strong>
@@ -541,7 +756,7 @@ export default function RecipeManager() {
                 </strong>
 
                 <span>
-                  {recipe.category}
+                  {recipe.category || "Recipe"}
 
                   {recipe.readTime
                     ? ` · ${recipe.readTime}`
@@ -556,19 +771,27 @@ export default function RecipeManager() {
 
               </div>
 
+              {/* ACTIONS */}
               <div className="kd-recipe-row-actions">
 
+                {/* EDIT */}
                 <button
                   type="button"
                   onClick={() =>
                     startEdit(recipe)
                   }
-                  title="Edit"
+                  title="Edit recipe"
+                  disabled={
+                    busy ||
+                    deletingId !== null ||
+                    togglingId !== null
+                  }
                 >
                   <Pencil size={16} />
                   Edit
                 </button>
 
+                {/* HIDE / SHOW */}
                 <button
                   type="button"
                   onClick={() =>
@@ -576,31 +799,54 @@ export default function RecipeManager() {
                   }
                   title={
                     recipe.published
-                      ? "Hide"
-                      : "Show"
+                      ? "Hide recipe"
+                      : "Show recipe"
+                  }
+                  disabled={
+                    busy ||
+                    deletingId !== null ||
+                    togglingId !== null
                   }
                 >
-                  {recipe.published ? (
-                    <EyeOff size={16} />
+                  {togglingId === recipe.id ? (
+                    "Updating…"
                   ) : (
-                    <Eye size={16} />
-                  )}
+                    <>
+                      {recipe.published ? (
+                        <EyeOff size={16} />
+                      ) : (
+                        <Eye size={16} />
+                      )}
 
-                  {recipe.published
-                    ? "Hide"
-                    : "Show"}
+                      {recipe.published
+                        ? "Hide"
+                        : "Show"}
+                    </>
+                  )}
                 </button>
 
+                {/* DELETE */}
                 <button
                   type="button"
                   className="danger"
                   onClick={() =>
                     remove(recipe)
                   }
-                  title="Delete"
+                  title="Delete recipe"
+                  disabled={
+                    busy ||
+                    deletingId !== null ||
+                    togglingId !== null
+                  }
                 >
-                  <Trash2 size={16} />
-                  Delete
+                  {deletingId === recipe.id ? (
+                    "Deleting…"
+                  ) : (
+                    <>
+                      <Trash2 size={16} />
+                      Delete
+                    </>
+                  )}
                 </button>
 
               </div>
@@ -608,12 +854,6 @@ export default function RecipeManager() {
             </article>
           ))
         )}
-
-      </div>
-
-    </section>
-  );
-}
 
       </div>
 

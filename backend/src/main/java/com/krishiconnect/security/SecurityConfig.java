@@ -4,21 +4,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import org.springframework.web.cors.CorsConfiguration;
@@ -28,95 +25,148 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
-@EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
+
+    // ============================================================
+    // PASSWORD ENCODER
+    // ============================================================
+
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
     }
 
-    /**
-     * FirebaseAuthFilter should ONLY run inside Spring Security.
-     */
+
+    // ============================================================
+    // FIREBASE FILTER
+    // ============================================================
+
     @Bean
     FilterRegistrationBean<FirebaseAuthFilter> firebaseAuthFilterRegistration(
             FirebaseAuthFilter filter
     ) {
+
         FilterRegistrationBean<FirebaseAuthFilter> registration =
                 new FilterRegistrationBean<>(filter);
 
+        /*
+         * FirebaseAuthFilter is used ONLY inside Spring Security.
+         * Prevent Spring Boot from registering it separately.
+         */
         registration.setEnabled(false);
 
         return registration;
     }
 
-    /**
-     * ============================================================
-     * PUBLIC MANDI
-     * ============================================================
-     *
-     * Completely bypass Spring Security for Mandi API.
-     *
-     * This means:
-     *
-     * /api/mandi
-     * /api/mandi/**
-     *
-     * do NOT require Firebase/JWT authentication.
-     */
-    @Bean
-    WebSecurityCustomizer webSecurityCustomizer() {
-        return web -> web.ignoring().requestMatchers(
-                "/api/mandi",
-                "/api/mandi/**"
-        );
-    }
+
+    // ============================================================
+    // 1. PUBLIC MANDI SECURITY CHAIN
+    // ============================================================
+    //
+    // This chain matches ONLY:
+    //
+    //     /api/mandi
+    //     /api/mandi/**
+    //
+    // FirebaseAuthFilter is NOT added here.
+    //
+    // Therefore Mandi does not require:
+    //
+    //     Firebase token
+    //     JWT
+    //     Login
+    //
+    // ============================================================
 
     @Bean
+    @Order(1)
+    SecurityFilterChain mandiSecurityChain(
+            HttpSecurity http
+    ) throws Exception {
+
+        http
+                .securityMatcher(
+                        "/api/mandi",
+                        "/api/mandi/**"
+                )
+
+                .csrf(csrf -> csrf.disable())
+
+                .cors(cors ->
+                        cors.configurationSource(cors())
+                )
+
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
+
+                .authorizeHttpRequests(auth ->
+                        auth.anyRequest().permitAll()
+                );
+
+        return http.build();
+    }
+
+
+    // ============================================================
+    // 2. MAIN SECURITY CHAIN
+    // ============================================================
+
+    @Bean
+    @Order(2)
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             FirebaseAuthFilter authFilter
     ) throws Exception {
 
-        return http
+        http
 
-                .csrf(c -> c.disable())
+                .csrf(csrf ->
+                        csrf.disable()
+                )
 
-                .cors(c -> c.configurationSource(cors()))
+                .cors(cors ->
+                        cors.configurationSource(cors())
+                )
 
-                .sessionManagement(s ->
-                        s.sessionCreationPolicy(
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
-                .exceptionHandling(e ->
-                        e.authenticationEntryPoint(
-                                new HttpStatusEntryPoint(
-                                        HttpStatus.UNAUTHORIZED
-                                )
-                        )
-                )
+                .authorizeHttpRequests(auth -> auth
 
-                .authorizeHttpRequests(a -> a
-
+                        // ------------------------------------------------
                         // CORS
+                        // ------------------------------------------------
+
                         .requestMatchers(
                                 HttpMethod.OPTIONS,
                                 "/**"
                         ).permitAll()
 
-                        // Health
+
+                        // ------------------------------------------------
+                        // HEALTH
+                        // ------------------------------------------------
+
                         .requestMatchers(
                                 "/api/status"
                         ).permitAll()
 
-                        // Authentication
+
+                        // ------------------------------------------------
+                        // AUTH
+                        // ------------------------------------------------
+
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/refresh",
@@ -124,69 +174,112 @@ public class SecurityConfig {
                                 "/api/auth/reset-password"
                         ).permitAll()
 
-                        // Public categories
+
+                        // ------------------------------------------------
+                        // PUBLIC CATALOGUE
+                        // ------------------------------------------------
+
                         .requestMatchers(
                                 "/api/categories/**"
                         ).permitAll()
 
-                        // Public advertisements
                         .requestMatchers(
                                 "/api/advertisements"
                         ).permitAll()
 
-                        // Public recipes
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/recipes",
                                 "/api/recipes/**"
                         ).permitAll()
 
-                        // Swagger
+
+                        // ------------------------------------------------
+                        // SWAGGER
+                        // ------------------------------------------------
+
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // Firebase onboarding
+
+                        // ------------------------------------------------
+                        // FIREBASE ONBOARDING
+                        // ------------------------------------------------
+
                         .requestMatchers(
                                 "/api/auth/firebase/**"
                         ).authenticated()
 
-                        // Farmer
+
+                        // ------------------------------------------------
+                        // FARMER
+                        // ------------------------------------------------
+
                         .requestMatchers(
                                 "/api/products/farmer",
                                 "/api/products/farmer/**"
                         ).hasRole("FARMER")
 
-                        // Public product catalogue
+
+                        // ------------------------------------------------
+                        // PUBLIC PRODUCTS
+                        // ------------------------------------------------
+
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/products",
                                 "/api/products/**"
                         ).permitAll()
 
-                        // Admin
+
+                        // ------------------------------------------------
+                        // ADMIN
+                        // ------------------------------------------------
+
                         .requestMatchers(
                                 "/api/admin/**"
                         ).hasRole("ADMIN")
 
-                        // Everything else
+
+                        // ------------------------------------------------
+                        // EVERYTHING ELSE
+                        // ------------------------------------------------
+
                         .anyRequest().authenticated()
                 )
 
+
+                // Firebase/JWT authentication is ONLY in the
+                // main authenticated chain.
                 .addFilterBefore(
                         authFilter,
                         UsernamePasswordAuthenticationFilter.class
-                )
+                );
 
-                .build();
+
+        return http.build();
     }
+
+
+    // ============================================================
+    // CORS
+    // ============================================================
 
     @Bean
     CorsConfigurationSource cors() {
 
-        CorsConfiguration c = new CorsConfiguration();
+        CorsConfiguration c =
+                new CorsConfiguration();
+
+        /*
+         * FRONTEND_URL can contain:
+         *
+         * https://kisandirect.online,
+         * https://www.kisandirect.online
+         */
 
         c.setAllowedOrigins(
                 java.util.Arrays.stream(

@@ -36,24 +36,17 @@ export default async function handler(req, res) {
       const target =
         `${base}/api/mandi/rates${query}`;
 
-      const headers = {
-        Accept: "application/json",
-      };
-
       /*
-       * Forward Authorization if the browser sent one.
-       * Mandi is public, so it is not required,
-       * but forwarding it keeps the proxy consistent
-       * with the rest of the application.
+       * Mandi rates are PUBLIC.
+       *
+       * Do NOT forward the browser's Firebase
+       * Authorization header to this endpoint.
        */
-      if (req.headers.authorization) {
-        headers.Authorization =
-          req.headers.authorization;
-      }
-
       const response = await fetch(target, {
         method: "GET",
-        headers,
+        headers: {
+          Accept: "application/json",
+        },
       });
 
       const contentType =
@@ -80,7 +73,7 @@ export default async function handler(req, res) {
       }
 
       /*
-       * If Railway returns a server error, try the backup.
+       * Try backup only for backend/server failures.
        */
       if (response.status >= 500) {
         lastError = data;
@@ -88,6 +81,7 @@ export default async function handler(req, res) {
       }
 
       return res.status(response.status).json(data);
+
     } catch (error) {
       console.error(
         "Mandi proxy error:",

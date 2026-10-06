@@ -1,4 +1,16 @@
 User-agent: *
 Allow: /
 
+Disallow: /admin
+Disallow: /profile
+Disallow: /settings
+Disallow: /cart
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /system-status
+
+Disallow: /api/
+
 Sitemap: https://www.kisandirect.online/sitemap.xml

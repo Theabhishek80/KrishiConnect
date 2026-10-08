@@ -17,6 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -44,7 +45,6 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size
     ) {
-
         return service.publicProducts(
                 q,
                 page,
@@ -58,7 +58,7 @@ public class ProductController {
 
     @PostMapping("/farmer")
     @PreAuthorize("hasRole('FARMER')")
-    public ResponseEntity<Product> create(
+    public ResponseEntity<Map<String, Object>> create(
             Authentication authentication,
             @Valid @RequestBody CreateRequest request
     ) {
@@ -72,17 +72,32 @@ public class ProductController {
                         request
                 );
 
-        /*
-         * Product is created as:
-         *
-         * PENDING_APPROVAL
-         *
-         * It will NOT appear in the public marketplace
-         * until an admin approves it.
-         */
+        Map<String, Object> response =
+                new LinkedHashMap<>();
+
+        response.put(
+                "id",
+                product.getId()
+        );
+
+        response.put(
+                "name",
+                product.getName()
+        );
+
+        response.put(
+                "status",
+                product.getStatus()
+        );
+
+        response.put(
+                "message",
+                "Product submitted for admin approval."
+        );
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(product);
+                .body(response);
     }
 
     // ============================================================
@@ -94,7 +109,7 @@ public class ProductController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     @PreAuthorize("hasRole('FARMER')")
-    public ResponseEntity<ProductImage> uploadImage(
+    public ResponseEntity<Map<String, Object>> uploadImage(
             Authentication authentication,
             @PathVariable Long productId,
             @RequestParam("image") MultipartFile image
@@ -112,7 +127,21 @@ public class ProductController {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(savedImage);
+                .body(
+                        Map.of(
+                                "id",
+                                savedImage.getId(),
+
+                                "productId",
+                                productId,
+
+                                "url",
+                                savedImage.getUrl(),
+
+                                "message",
+                                "Product image uploaded successfully."
+                        )
+                );
     }
 
     // ============================================================

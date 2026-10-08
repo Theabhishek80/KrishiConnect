@@ -1,10 +1,12 @@
 package com.krishiconnect.service;
 
 import org.springframework.web.multipart.MultipartFile;
+
 import com.krishiconnect.domain.ProductStatus;
 import com.krishiconnect.dto.ProductDtos.*;
 import com.krishiconnect.entity.*;
 import com.krishiconnect.repository.*;
+
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,8 @@ public class ProductService {
     private final CategoryRepository categories;
     private final InventoryRepository inventory;
     private final ProductImageRepository productImages;
+    private final CartItemRepository cartItems;
+    private final OrderItemRepository orderItems;
     private final ImageKitService imageKitService;
 
     public ProductService(
@@ -25,6 +29,8 @@ public class ProductService {
             CategoryRepository c,
             InventoryRepository i,
             ProductImageRepository pi,
+            CartItemRepository ci,
+            OrderItemRepository oi,
             ImageKitService ik
     ) {
         products = p;
@@ -32,10 +38,13 @@ public class ProductService {
         categories = c;
         inventory = i;
         productImages = pi;
+        cartItems = ci;
+        orderItems = oi;
         imageKitService = ik;
     }
 
     public Page<Product> publicProducts(String q, int page, int size) {
+
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 50);
 
@@ -45,13 +54,18 @@ public class ProductService {
                 Sort.by("createdAt").descending()
         );
 
-        return (q == null || q.isBlank())
-                ? products.findByStatus(ProductStatus.APPROVED, pageable)
-                : products.findByStatusAndNameContainingIgnoreCase(
-                        ProductStatus.APPROVED,
-                        q.trim(),
-                        pageable
-                );
+        if (q == null || q.isBlank()) {
+            return products.findByStatus(
+                    ProductStatus.APPROVED,
+                    pageable
+            );
+        }
+
+        return products.findByStatusAndNameContainingIgnoreCase(
+                ProductStatus.APPROVED,
+                q.trim(),
+                pageable
+        );
     }
 
     @Transactional
@@ -74,7 +88,11 @@ public class ProductService {
 
         p.setFarmer(farmer);
         p.setName(r.name().trim());
-        p.setDescription(r.description().trim());
+        p.setDescription(
+                r.description() == null
+                        ? ""
+                        : r.description().trim()
+        );
         p.setPrice(r.price());
         p.setUnit(r.unit().trim());
 
@@ -87,6 +105,12 @@ public class ProductService {
                         )
         );
 
+        /*
+         * New farmer products should not immediately appear
+         * in the public marketplace.
+         *
+         * They first go to admin approval.
+         */
         p.setStatus(ProductStatus.PENDING_APPROVAL);
 
         products.save(p);
@@ -121,7 +145,10 @@ public class ProductService {
         }
 
         String imageUrl =
-                imageKitService.uploadProductImage(image, productId);
+                imageKitService.uploadProductImage(
+                        image,
+                        productId
+                );
 
         ProductImage productImage = new ProductImage();
 
@@ -132,9 +159,24 @@ public class ProductService {
         return productImages.save(productImage);
     }
 
-    // DELETE PRODUCT - FARMER CAN DELETE ONLY THEIR OWN PRODUCT
+    /*
+     * ============================================================
+     * FARMER PRODUCT DELETE
+     * ============================================================
+     *
+     * Farmer can delete only their own product.
+     *
+     * Before deleting:
+     * 1. Remove the product from customers' carts.
+     * 2. Check whether the product exists in order history.
+     * 3. If it has order history, archive it instead of deleting it.
+     * 4. Otherwise permanently delete it.
+     */
     @Transactional
-    public void deleteProduct(Long farmerId, Long productId) {
+    public String deleteProduct(
+            Long farmerId,
+            Long productId
+    ) {
 
         Product product = products.findById(productId)
                 .orElseThrow(() ->
@@ -143,17 +185,89 @@ public class ProductService {
                         )
                 );
 
-        if (!product.getFarmer().getId().equals(farmerId)) {
+        if (product.getFarmer() == null ||
+                !product.getFarmer().getId().equals(farmerId)) {
+
             throw new IllegalArgumentException(
                     "You can only delete your own products."
             );
         }
 
-        products.delete(product);
+        return deleteProductSafely(product);
     }
 
-    // GET PRODUCTS CREATED BY THE LOGGED-IN FARMER
+    /*
+     * ============================================================
+     * ADMIN PRODUCT DELETE
+     * ============================================================
+     */
+    @Transactional
+    public String deleteProductAsAdmin(Long productId) {
+
+        Product product = products.findById(productId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Product not found."
+                        )
+                );
+
+        return deleteProductSafely(product);
+    }
+
+    /*
+     * ============================================================
+     * SAFE DELETE LOGIC
+     * ============================================================
+     */
+    private String deleteProductSafely(Product product) {
+
+        Long productId = product.getId();
+
+        /*
+         * IMPORTANT:
+         *
+         * A product can exist inside a customer's cart.
+         * Delete those cart rows first so the database
+         * foreign-key constraint does not stop deletion.
+         */
+        cartItems.deleteByProductId(productId);
+
+        /*
+         * IMPORTANT:
+         *
+         * If this product has already been purchased,
+         * DO NOT physically delete it.
+         *
+         * Existing orders may reference this product.
+         *
+         * Instead mark it INACTIVE.
+         */
+        if (orderItems.existsByProductId(productId)) {
+
+            product.setStatus(ProductStatus.INACTIVE);
+
+            products.save(product);
+
+            return "Product archived because it has order history.";
+        }
+
+        /*
+         * No order history:
+         *
+         * Product can safely be permanently deleted.
+         */
+        products.delete(product);
+
+        return "Product deleted successfully.";
+    }
+
+    /*
+     * ============================================================
+     * FARMER PRODUCTS
+     * ============================================================
+     */
     public Page<Product> farmerProducts(Long farmerId) {
+
         return products.findByFarmerId(
                 farmerId,
                 PageRequest.of(

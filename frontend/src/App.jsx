@@ -1135,234 +1135,165 @@ function Farmer() {
     quantity: 10
   });
 
+
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
 
   const [categories, setCategories] = useState([]);
-  const [message, setMessage] = useState("");
-  const [busy, setBusy] = useState(false);
 
+  const [message, setMessage] = useState("");
+
+  const [busy, setBusy] = useState(false);
   const [myProducts, setMyProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
-  /* =========================
-     LOAD FARMER PRODUCTS
-  ========================= */
 
   const loadMyProducts = async () => {
+
     try {
+
       setLoadingProducts(true);
 
-      const response = await api.get(
+      const r = await api.get(
         "/products/farmer/my-products"
       );
 
-      const data = response.data;
+      setMyProducts(
+        r.data.content || []
+      );
 
-      if (Array.isArray(data)) {
-        setMyProducts(data);
-      } else if (Array.isArray(data?.content)) {
-        setMyProducts(data.content);
-      } else if (Array.isArray(data?.data)) {
-        setMyProducts(data.data);
-      } else {
-        setMyProducts([]);
-      }
+    } catch (e) {
 
-    } catch (error) {
       console.error(
-        "Could not load farmer products:",
-        error
+        "Could not load farmer products",
+        e
       );
 
       setMyProducts([]);
+
     } finally {
+
       setLoadingProducts(false);
+
     }
   };
 
-  /* =========================
-     LOAD CATEGORIES
-  ========================= */
-
-  const loadCategories = async () => {
-    try {
-      const response = await api.get("/categories");
-
-      const data = response.data;
-
-      /*
-       * Backend currently returns List<Category>.
-       * These fallbacks also keep the frontend compatible
-       * if the API is wrapped in {content: []} or {data: []}.
-       */
-      let list = [];
-
-      if (Array.isArray(data)) {
-        list = data;
-      } else if (Array.isArray(data?.content)) {
-        list = data.content;
-      } else if (Array.isArray(data?.data)) {
-        list = data.data;
-      }
-
-      setCategories(list);
-
-      if (!list.length) {
-        console.warn(
-          "Categories API returned no categories:",
-          data
-        );
-      }
-
-    } catch (error) {
-      console.error(
-        "Could not load categories:",
-        error
-      );
-
-      setCategories([]);
-
-      const apiMessage =
-        error?.response?.data?.message ||
-        error?.response?.data?.error;
-
-      setMessage(
-        apiMessage ||
-        "Could not load categories. Please refresh the page."
-      );
-    }
-  };
 
   useEffect(() => {
-    loadCategories();
+
+    api
+      .get("/categories")
+      .then(r => setCategories(r.data))
+      .catch(() => {
+        setCategories([]);
+      });
+
     loadMyProducts();
+
   }, []);
 
-  /* =========================
-     IMAGE
-  ========================= */
 
-  const handleImageChange = event => {
-    const file = event.target.files?.[0] || null;
+  const handleImageChange = e => {
 
-    if (!file) {
-      setImage(null);
-      setImagePreview("");
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      setMessage("Please select a valid image file.");
-      event.target.value = "";
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setMessage("Image must be smaller than 5 MB.");
-      event.target.value = "";
-      return;
-    }
+    const file = e.target.files?.[0] || null;
 
     setImage(file);
-    setImagePreview(URL.createObjectURL(file));
-    setMessage("");
+
+
+    if (file) {
+
+      const previewUrl =
+        URL.createObjectURL(file);
+
+      setImagePreview(previewUrl);
+
+    } else {
+
+      setImagePreview("");
+
+    }
   };
 
-  /* =========================
-     CREATE PRODUCT
-  ========================= */
 
-  const create = async event => {
-    event.preventDefault();
+  const create = async e => {
+
+    e.preventDefault();
+
     setMessage("");
 
-    const name = form.name.trim();
-    const description = form.description.trim();
-    const unit = form.unit.trim();
-    const price = Number(form.price);
-    const quantity = Number(form.quantity);
-    const categoryId = Number(form.categoryId);
 
-    if (!name) {
-      setMessage("Product name is required.");
+    if (!form.categoryId) {
+
+      setMessage(
+        "Please select a category."
+      );
+
       return;
     }
 
-    if (!description) {
-      setMessage("Product description is required.");
-      return;
-    }
-
-    if (!Number.isFinite(price) || price < 0) {
-      setMessage("Please enter a valid price.");
-      return;
-    }
-
-    if (!unit) {
-      setMessage("Product unit is required.");
-      return;
-    }
-
-    if (!form.categoryId || !Number.isFinite(categoryId)) {
-      setMessage("Please select a category.");
-      return;
-    }
-
-    if (!Number.isInteger(quantity) || quantity < 0) {
-      setMessage("Initial stock must be 0 or more.");
-      return;
-    }
 
     setBusy(true);
 
+
     try {
-      /* STEP 1: CREATE PRODUCT */
 
-      const productResponse = await api.post(
-        "/products/farmer",
-        {
-          name,
-          description,
-          price,
-          unit,
-          categoryId,
-          quantity
-        }
-      );
+      /* -------------------------
+         STEP 1: CREATE PRODUCT
+      ------------------------- */
 
-      const productId = productResponse.data?.id;
-
-      if (!productId) {
-        throw new Error(
-          "Product was created but no product ID was returned."
+      const productResponse =
+        await api.post(
+          "/products/farmer",
+          {
+            ...form,
+            price: Number(form.price),
+            categoryId: Number(form.categoryId),
+            quantity: Number(form.quantity)
+          }
         );
-      }
 
-      /* STEP 2: UPLOAD IMAGE */
 
-      let imageUploadFailed = false;
+      const productId =
+        productResponse.data.id;
+
+
+      /* -------------------------
+         STEP 2: UPLOAD IMAGE
+      ------------------------- */
 
       if (image) {
-        try {
-          const formData = new FormData();
-          formData.append("image", image);
 
-          await api.post(
-            `/products/farmer/${productId}/images`,
-            formData
-          );
-        } catch (imageError) {
-          console.error(
-            "Product image upload failed:",
-            imageError
-          );
+        setMessage(
+          "Product created. Uploading image…"
+        );
 
-          imageUploadFailed = true;
-        }
+
+        const formData = new FormData();
+
+        formData.append(
+          "image",
+          image
+        );
+
+
+        await api.post(
+          `/products/farmer/${productId}/images`,
+          formData
+        );
+
       }
 
-      /* SUCCESS */
+
+      /* -------------------------
+         SUCCESS
+      ------------------------- */
+
+      setMessage(
+        image
+          ? "Product and image uploaded successfully. Waiting for admin approval."
+          : "Product submitted for admin approval."
+      );
+
 
       setForm({
         name: "",
@@ -1373,57 +1304,59 @@ function Farmer() {
         quantity: 10
       });
 
+
       setImage(null);
       setImagePreview("");
 
+      await loadMyProducts();
+
+
+      /* Reset file input */
+
       const fileInput =
-        document.getElementById("product-image");
+        document.getElementById(
+          "product-image"
+        );
 
       if (fileInput) {
         fileInput.value = "";
       }
 
-      await loadMyProducts();
 
-      if (imageUploadFailed) {
-        setMessage(
-          "Product submitted for admin approval, but the image could not be uploaded."
-        );
-      } else {
-        setMessage(
-          image
-            ? "Product and image uploaded successfully. Waiting for admin approval."
-            : "Product submitted for admin approval."
-        );
-      }
-
-    } catch (error) {
-      console.error(
-        "Create product failed:",
-        error
-      );
-
-      const apiMessage =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.response?.data?.detail;
+    } catch (e) {
 
       setMessage(
-        apiMessage ||
-        error?.message ||
-        "Could not create product. Please try again."
+        e.response?.data?.error ||
+        "Could not create product."
       );
 
     } finally {
+
       setBusy(false);
+
     }
   };
 
-  /* =========================
-     DELETE PRODUCT
-  ========================= */
+
+  /*
+   * =========================
+   * DELETE FARMER PRODUCT
+   * =========================
+   *
+   * Uses the backend safe-delete endpoint.
+   *
+   * If the product has never been ordered:
+   * -> permanently deleted
+   *
+   * If the product has order history:
+   * -> archived/inactive
+   *
+   * If it exists in a customer's cart:
+   * -> cart reference is removed by backend
+   */
 
   const deleteProduct = async productId => {
+
     const product = myProducts.find(
       p => p.id === productId
     );
@@ -1431,53 +1364,72 @@ function Farmer() {
     const productName =
       product?.name || "this product";
 
+
     const confirmed = window.confirm(
       `Are you sure you want to delete "${productName}"?\n\n` +
       "If this product has already been ordered, " +
       "it will be archived instead of permanently deleted."
     );
 
+
     if (!confirmed) return;
 
-    try {
-      setBusy(true);
-      setMessage("Deleting product...");
 
-      const response = await api.delete(
-        `/products/farmer/${productId}`
-      );
+    try {
 
       setMessage(
-        response.data?.message ||
-        "Product deleted successfully."
+        "Deleting product..."
       );
+
+
+      const response =
+        await api.delete(
+          `/products/farmer/${productId}`
+        );
+
+
+      const responseMessage =
+        response.data?.message ||
+        "Product deleted successfully.";
+
+
+      setMessage(
+        responseMessage
+      );
+
 
       await loadMyProducts();
 
-    } catch (error) {
+
+    } catch (e) {
+
       console.error(
         "Delete product failed:",
-        error
+        e
       );
 
-      const apiMessage =
-        error?.response?.data?.message ||
-        error?.response?.data?.error;
+
+      const errorMessage =
+        e.response?.data?.error ||
+        e.response?.data?.message ||
+        "Could not delete product. Please try again.";
+
 
       setMessage(
-        apiMessage ||
-        "Could not delete product. Please try again."
+        errorMessage
       );
-    } finally {
-      setBusy(false);
     }
   };
 
+
   return (
+
     <section className="page-section">
 
       <div className="page-heading">
+
         <div>
+
           <span className="section-kicker">
             FARMER STUDIO
           </span>
@@ -1485,44 +1437,70 @@ function Farmer() {
           <h1>
             Your farm dashboard
           </h1>
+
         </div>
+
 
         <span className="status-chip">
           ● Account active
         </span>
+
       </div>
+
 
       <div className="stats modern-stats">
 
         <div>
+
           <Sprout />
-          <b>List produce</b>
+
+          <b>
+            List produce
+          </b>
+
           <span>
             Publish fresh products for customers.
           </span>
+
         </div>
 
+
         <div>
+
           <Package />
-          <b>Manage stock</b>
+
+          <b>
+            Manage stock
+          </b>
+
           <span>
             Keep inventory quantities accurate.
           </span>
+
         </div>
 
+
         <div>
+
           <Truck />
-          <b>Fulfil orders</b>
+
+          <b>
+            Fulfil orders
+          </b>
+
           <span>
             Track the journey after checkout.
           </span>
+
         </div>
 
       </div>
 
+
       <div className="panel formpanel modern-form">
 
         <div>
+
           <span className="section-kicker">
             NEW LISTING
           </span>
@@ -1535,7 +1513,9 @@ function Farmer() {
             Products go through admin approval
             before appearing publicly.
           </p>
+
         </div>
+
 
         <form onSubmit={create}>
 
@@ -1551,10 +1531,11 @@ function Farmer() {
                 })
               }
               placeholder="e.g. Fresh tomatoes"
-              disabled={busy}
               required
             />
+
           </label>
+
 
           <label>
             Description
@@ -1568,10 +1549,11 @@ function Farmer() {
                 })
               }
               placeholder="Tell customers about freshness, quality or harvest."
-              disabled={busy}
               required
             />
+
           </label>
+
 
           <div className="formrow">
 
@@ -1590,10 +1572,11 @@ function Farmer() {
                   })
                 }
                 placeholder="0.00"
-                disabled={busy}
                 required
               />
+
             </label>
+
 
             <label>
               Unit
@@ -1607,12 +1590,13 @@ function Farmer() {
                   })
                 }
                 placeholder="kg, dozen…"
-                disabled={busy}
                 required
               />
+
             </label>
 
           </div>
+
 
           <div className="formrow">
 
@@ -1627,7 +1611,6 @@ function Farmer() {
                     categoryId: e.target.value
                   })
                 }
-                disabled={busy}
                 required
               >
 
@@ -1635,17 +1618,22 @@ function Farmer() {
                   Select category
                 </option>
 
-                {categories.map(category => (
+
+                {categories.map(c => (
+
                   <option
-                    key={category.id}
-                    value={category.id}
+                    key={c.id}
+                    value={c.id}
                   >
-                    {category.name}
+                    {c.name}
                   </option>
+
                 ))}
 
               </select>
+
             </label>
+
 
             <label>
               Initial stock
@@ -1653,7 +1641,6 @@ function Farmer() {
               <input
                 type="number"
                 min="0"
-                step="1"
                 value={form.quantity}
                 onChange={e =>
                   setForm({
@@ -1661,11 +1648,14 @@ function Farmer() {
                     quantity: e.target.value
                   })
                 }
-                disabled={busy}
               />
+
             </label>
 
           </div>
+
+
+          {/* PRODUCT IMAGE */}
 
           <label>
             Product image
@@ -1673,23 +1663,26 @@ function Farmer() {
             <input
               id="product-image"
               type="file"
-              accept="image/png,image/jpeg,image/jpg,image/webp"
+              accept="image/*"
               onChange={handleImageChange}
-              disabled={busy}
             />
 
             <small>
               Optional · Maximum 5 MB
             </small>
+
           </label>
 
+
           {imagePreview && (
+
             <div
               style={{
                 marginTop: "12px",
                 marginBottom: "12px"
               }}
             >
+
               <img
                 src={imagePreview}
                 alt="Product preview"
@@ -1701,35 +1694,56 @@ function Farmer() {
                   display: "block"
                 }}
               />
+
             </div>
+
           )}
+
 
           {image && (
+
             <div className="notice success">
-              Selected: {image.name}
+
+              Selected:
+              {" "}
+              {image.name}
+
             </div>
+
           )}
 
+
           {message && (
+
             <div className="notice success">
               {message}
             </div>
+
           )}
+
 
           <button
             className="primary-btn"
             type="submit"
             disabled={busy}
           >
+
             <Plus size={17} />
 
             {busy
               ? "Submitting…"
               : "Submit listing"}
+
           </button>
 
         </form>
+
       </div>
+
+
+      {/* =========================
+          MY PRODUCTS
+      ========================= */}
 
       <div
         className="panel admin-panel"
@@ -1739,6 +1753,7 @@ function Farmer() {
         <div className="sectionhead">
 
           <div>
+
             <span className="section-kicker">
               MY PRODUCTS
             </span>
@@ -1746,6 +1761,7 @@ function Farmer() {
             <h2>
               Products you listed
             </h2>
+
           </div>
 
           <span>
@@ -1753,6 +1769,7 @@ function Farmer() {
           </span>
 
         </div>
+
 
         {loadingProducts ? (
 
@@ -1763,8 +1780,11 @@ function Farmer() {
         ) : !myProducts.length ? (
 
           <div className="empty-inline">
+
             <Package />
+
             You have not listed any products yet.
+
           </div>
 
         ) : (
@@ -1772,12 +1792,13 @@ function Farmer() {
           myProducts.map(p => {
 
             const productImage =
-              Array.isArray(p.images) &&
-              p.images.length > 0
+              p.images?.length > 0
                 ? p.images[0]?.url
                 : null;
 
+
             return (
+
               <div
                 className="review-row"
                 key={p.id}
@@ -1825,6 +1846,7 @@ function Farmer() {
 
                   )}
 
+
                   <div>
 
                     <b>
@@ -1849,6 +1871,7 @@ function Farmer() {
 
                 </div>
 
+
                 <div className="review-actions">
 
                   <button
@@ -1856,7 +1879,6 @@ function Farmer() {
                     onClick={() =>
                       deleteProduct(p.id)
                     }
-                    disabled={busy}
                   >
                     Delete
                   </button>
@@ -1864,6 +1886,7 @@ function Farmer() {
                 </div>
 
               </div>
+
             );
 
           })
@@ -1871,6 +1894,7 @@ function Farmer() {
         )}
 
       </div>
+
 
     </section>
   );
@@ -2076,4 +2100,3 @@ export default function App() {
     </Layout>
   );
 }
-

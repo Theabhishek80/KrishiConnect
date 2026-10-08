@@ -17,17 +17,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // PUBLIC MARKETPLACE
     // ============================================================
 
-    @EntityGraph(attributePaths = {
-            "images"
-    })
+    @EntityGraph(attributePaths = {"images"})
     Page<Product> findByStatus(
             ProductStatus status,
             Pageable pageable
     );
 
-    @EntityGraph(attributePaths = {
-            "images"
-    })
+    @EntityGraph(attributePaths = {"images"})
     Page<Product> findByStatusAndNameContainingIgnoreCase(
             ProductStatus status,
             String name,
@@ -38,17 +34,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // FARMER PRODUCTS
     // ============================================================
 
-    @EntityGraph(attributePaths = {
-            "images"
-    })
+    @EntityGraph(attributePaths = {"images"})
     Page<Product> findByFarmerId(
             Long farmerId,
             Pageable pageable
     );
 
-    @EntityGraph(attributePaths = {
-            "images"
-    })
+    @EntityGraph(attributePaths = {"images"})
     List<Product> findByFarmerId(
             Long farmerId
     );
@@ -57,26 +49,20 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // ADMIN - ALL PRODUCTS
     // ============================================================
 
-    @EntityGraph(attributePaths = {
-            "images"
-    })
-    List<Product> findAllWithDetails();
+    @EntityGraph(attributePaths = {"images"})
+    List<Product> findAllByOrderByCreatedAtDesc();
 
     // ============================================================
-    // ADMIN - PRODUCTS BY STATUS
+    // ADMIN - STATUS
     // ============================================================
 
-    @EntityGraph(attributePaths = {
-            "images"
-    })
+    @EntityGraph(attributePaths = {"images"})
     Page<Product> findByStatusOrderByCreatedAtDesc(
             ProductStatus status,
             Pageable pageable
     );
 
-    @EntityGraph(attributePaths = {
-            "images"
-    })
+    @EntityGraph(attributePaths = {"images"})
     List<Product> findByStatusOrderByCreatedAtDesc(
             ProductStatus status
     );
@@ -85,9 +71,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // FARMER + STATUS
     // ============================================================
 
-    @EntityGraph(attributePaths = {
-            "images"
-    })
+    @EntityGraph(attributePaths = {"images"})
     Page<Product> findByFarmerIdAndStatus(
             Long farmerId,
             ProductStatus status,

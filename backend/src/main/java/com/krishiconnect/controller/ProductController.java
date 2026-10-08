@@ -71,13 +71,16 @@ public class ProductController {
     // DELETE PRODUCT - FARMER CAN DELETE ONLY THEIR OWN PRODUCT
     @DeleteMapping("/farmer/{productId}")
     @PreAuthorize("hasRole('FARMER')")
-    public void deleteFarmerProduct(
+    public java.util.Map<String, String> deleteFarmerProduct(
             Authentication a,
             @PathVariable Long productId
     ) {
-        service.deleteProduct(
-                context.userId(a),
-                productId
+        return java.util.Map.of(
+                "message",
+                service.deleteProduct(
+                        context.userId(a),
+                        productId
+                )
         );
     }
 

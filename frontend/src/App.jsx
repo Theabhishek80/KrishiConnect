@@ -42,22 +42,27 @@ import Navbar from "./components/Navbar/Navbar";
 import AdvertisementSlider from "./components/Advertisement/AdvertisementSlider";
 import AIAssistant from "./components/AI/AIAssistant";
 import Footer from "./components/Footer";
+
 import {
   MandiPage,
   ComingSoon,
   NotFoundPage
 } from "./components/Pages/Placeholders";
+
 import AdminPanel from "./components/Admin/AdminPanel";
 import AdminSectionPage from "./components/Admin/AdminSectionPage";
 import ContentSlider from "./components/Content/ContentSlider";
+
 import {
   ContentList,
   BlogDetail,
   RecipeDetail
 } from "./components/Content/ContentPages";
+
 import { BLOGS } from "./data/content";
 import ServiceStatus from "./components/Pages/ServiceStatus";
 import { useRecipes } from "./hooks/useRecipes";
+
 import {
   AUTH_EVENT,
   clearStoredSession
@@ -68,7 +73,7 @@ import "./styles/advertisement.css";
 
 import {
   signInWithEmailAndPassword,
- createUserWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   updateProfile,
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -102,15 +107,10 @@ function Layout({ children }) {
   useEffect(() => {
     const sync = () => setUser(getUser());
 
-    // "storage" only fires for OTHER tabs, so login / logout in this tab
-    // announce themselves through AUTH_EVENT (see utils/auth.js).
     window.addEventListener("storage", sync);
     window.addEventListener(AUTH_EVENT, sync);
 
-    // If Firebase has no session any more (expired / signed out elsewhere),
-    // drop the stale local profile so the UI never shows a "ghost" login.
     const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
-      // Admin / legacy sessions use a backend token, not Firebase - keep them.
       const stored = getUser();
 
       if (!firebaseUser && stored && !stored.legacy) {
@@ -196,8 +196,6 @@ function Layout({ children }) {
         {children}
       </main>
 
-     
-
     </div>
   );
 }
@@ -216,6 +214,7 @@ function Home() {
   const [q, setQ] = useState(
     new URLSearchParams(location.search).get("q") || ""
   );
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
@@ -225,6 +224,7 @@ function Home() {
     const params = new URLSearchParams(location.search);
     setQ(params.get("q") || "");
   }, [location.search]);
+
 
   useEffect(() => {
 
@@ -262,60 +262,64 @@ function Home() {
   }, [q]);
 
 
-const add = async id => {
-  if (!getUser()) {
-    setToast("Please sign in to add products to your cart.");
+  const add = async id => {
 
-    setTimeout(() => {
-      setToast("");
-    }, 3000);
+    if (!getUser()) {
+      setToast("Please sign in to add products to your cart.");
 
-    return;
-  }
+      setTimeout(() => {
+        setToast("");
+      }, 3000);
 
-  try {
-    await api.post(
-      "/cart/items",
-      {
-        productId: id,
-        quantity: 1
-      }
-    );
+      return;
+    }
 
-    setToast("Added to cart");
+    try {
 
-    setTimeout(() => {
-      setToast("");
-    }, 2500);
+      await api.post(
+        "/cart/items",
+        {
+          productId: id,
+          quantity: 1
+        }
+      );
 
-  } catch (e) {
-    console.error("Add to cart failed:", e);
+      setToast("Added to cart");
 
-    const errorMessage =
-      typeof e.response?.data?.error === "string"
-        ? e.response.data.error
-        : typeof e.response?.data?.message === "string"
-          ? e.response.data.message
-          : "Could not add item to cart.";
+      setTimeout(() => {
+        setToast("");
+      }, 2500);
 
-    setToast(errorMessage);
+    } catch (e) {
 
-    setTimeout(() => {
-      setToast("");
-    }, 3000);
-  }
-};
+      console.error("Add to cart failed:", e);
 
-return (
-  <>
-    {toast && (
-      <div className="app-toast">
-        <span className="app-toast-icon">✓</span>
-        <span>{toast}</span>
-      </div>
-    )}
+      const errorMessage =
+        typeof e.response?.data?.error === "string"
+          ? e.response.data.error
+          : typeof e.response?.data?.message === "string"
+            ? e.response.data.message
+            : "Could not add item to cart.";
 
-  
+      setToast(errorMessage);
+
+      setTimeout(() => {
+        setToast("");
+      }, 3000);
+    }
+  };
+
+
+  return (
+    <>
+
+      {toast && (
+        <div className="app-toast">
+          <span className="app-toast-icon">✓</span>
+          <span>{toast}</span>
+        </div>
+      )}
+
 
       <section className="hero-modern">
 
@@ -574,10 +578,9 @@ return (
         viewAllTo="/recipes"
       />
 
-</>
-);
+    </>
+  );
 }
-
 
 
 /* =========================
@@ -587,14 +590,26 @@ return (
 function About() {
   return (
     <section className="page-section kd-simple-page">
+
       <div className="page-heading">
+
         <div>
-          <span className="section-kicker">ABOUT KISANDIRECT</span>
-          <h1>Built to make agriculture more connected.</h1>
+
+          <span className="section-kicker">
+            ABOUT KISANDIRECT
+          </span>
+
+          <h1>
+            Built to make agriculture more connected.
+          </h1>
+
         </div>
+
       </div>
 
+
       <div className="panel kd-simple-page-card">
+
         <p>
           KisanDirect is a modern agriculture-focused platform
           connecting people with products, information and
@@ -607,10 +622,13 @@ function About() {
           and role-based features in one production-style
           application.
         </p>
+
       </div>
+
     </section>
   );
 }
+
 
 /* =========================
    PRODUCT CARD
@@ -802,7 +820,6 @@ function Auth({
     </div>
   );
 }
-
 
 
 /* =========================
@@ -1043,16 +1060,22 @@ function Cart() {
 
 
             <div>
+
               <span>Subtotal</span>
+
               <b>
                 ₹{total.toLocaleString("en-IN")}
               </b>
+
             </div>
 
 
             <div>
+
               <span>Delivery</span>
+
               <b>Address based</b>
+
             </div>
 
 
@@ -1122,47 +1145,52 @@ function Farmer() {
 
   const [busy, setBusy] = useState(false);
   const [myProducts, setMyProducts] = useState([]);
-const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
 
   const loadMyProducts = async () => {
-  try {
-    setLoadingProducts(true);
 
-    const r = await api.get(
-      "/products/farmer/my-products"
-    );
+    try {
 
-    setMyProducts(
-      r.data.content || []
-    );
+      setLoadingProducts(true);
 
-  } catch (e) {
+      const r = await api.get(
+        "/products/farmer/my-products"
+      );
 
-    console.error(
-      "Could not load farmer products",
-      e
-    );
+      setMyProducts(
+        r.data.content || []
+      );
 
-    setMyProducts([]);
+    } catch (e) {
 
-  } finally {
-    setLoadingProducts(false);
-  }
-};
+      console.error(
+        "Could not load farmer products",
+        e
+      );
 
-   useEffect(() => {
+      setMyProducts([]);
 
-  api
-    .get("/categories")
-    .then(r => setCategories(r.data))
-    .catch(() => {
-      setCategories([]);
-    });
+    } finally {
 
-  loadMyProducts();
+      setLoadingProducts(false);
 
-}, []);
+    }
+  };
+
+
+  useEffect(() => {
+
+    api
+      .get("/categories")
+      .then(r => setCategories(r.data))
+      .catch(() => {
+        setCategories([]);
+      });
+
+    loadMyProducts();
+
+  }, []);
 
 
   const handleImageChange = e => {
@@ -1279,10 +1307,12 @@ const [loadingProducts, setLoadingProducts] = useState(true);
 
       setImage(null);
       setImagePreview("");
+
       await loadMyProducts();
 
 
       /* Reset file input */
+
       const fileInput =
         document.getElementById(
           "product-image"
@@ -1308,30 +1338,86 @@ const [loadingProducts, setLoadingProducts] = useState(true);
   };
 
 
+  /*
+   * =========================
+   * DELETE FARMER PRODUCT
+   * =========================
+   *
+   * Uses the backend safe-delete endpoint.
+   *
+   * If the product has never been ordered:
+   * -> permanently deleted
+   *
+   * If the product has order history:
+   * -> archived/inactive
+   *
+   * If it exists in a customer's cart:
+   * -> cart reference is removed by backend
+   */
+
   const deleteProduct = async productId => {
 
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this product?"
+    const product = myProducts.find(
+      p => p.id === productId
     );
+
+    const productName =
+      product?.name || "this product";
+
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${productName}"?\n\n` +
+      "If this product has already been ordered, " +
+      "it will be archived instead of permanently deleted."
+    );
+
 
     if (!confirmed) return;
 
+
     try {
 
-      await api.delete(
-        `/products/farmer/${productId}`
+      setMessage(
+        "Deleting product..."
       );
 
-      setMessage("Product deleted successfully.");
+
+      const response =
+        await api.delete(
+          `/products/farmer/${productId}`
+        );
+
+
+      const responseMessage =
+        response.data?.message ||
+        "Product deleted successfully.";
+
+
+      setMessage(
+        responseMessage
+      );
+
+
       await loadMyProducts();
+
 
     } catch (e) {
 
-      setMessage(
-        e.response?.data?.error ||
-        "Could not delete product."
+      console.error(
+        "Delete product failed:",
+        e
       );
 
+
+      const errorMessage =
+        e.response?.data?.error ||
+        e.response?.data?.message ||
+        "Could not delete product. Please try again.";
+
+
+      setMessage(
+        errorMessage
+      );
     }
   };
 
@@ -1569,9 +1655,7 @@ const [loadingProducts, setLoadingProducts] = useState(true);
           </div>
 
 
-          {/* =========================
-              PRODUCT IMAGE
-          ========================= */}
+          {/* PRODUCT IMAGE */}
 
           <label>
             Product image
@@ -1656,53 +1740,159 @@ const [loadingProducts, setLoadingProducts] = useState(true);
 
       </div>
 
+
       {/* =========================
           MY PRODUCTS
       ========================= */}
 
-      <div className="panel admin-panel" style={{ marginTop: "24px" }}>
+      <div
+        className="panel admin-panel"
+        style={{ marginTop: "24px" }}
+      >
 
         <div className="sectionhead">
+
           <div>
-            <span className="section-kicker">MY PRODUCTS</span>
-            <h2>Products you listed</h2>
+
+            <span className="section-kicker">
+              MY PRODUCTS
+            </span>
+
+            <h2>
+              Products you listed
+            </h2>
+
           </div>
-          <span>{myProducts.length} products</span>
+
+          <span>
+            {myProducts.length} products
+          </span>
+
         </div>
 
+
         {loadingProducts ? (
-          <div className="empty-inline">Loading your products…</div>
-        ) : !myProducts.length ? (
+
           <div className="empty-inline">
-            <Package />
-            You have not listed any products yet.
+            Loading your products…
           </div>
+
+        ) : !myProducts.length ? (
+
+          <div className="empty-inline">
+
+            <Package />
+
+            You have not listed any products yet.
+
+          </div>
+
         ) : (
+
           myProducts.map(p => {
-            const productImage = p.images?.length > 0 ? p.images[0]?.url : null;
+
+            const productImage =
+              p.images?.length > 0
+                ? p.images[0]?.url
+                : null;
+
+
             return (
-              <div className="review-row" key={p.id}>
-                <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+
+              <div
+                className="review-row"
+                key={p.id}
+              >
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "14px",
+                    alignItems: "center"
+                  }}
+                >
+
                   {productImage ? (
-                    <img src={productImage} alt={p.name} style={{ width: "64px", height: "64px", objectFit: "cover", borderRadius: "10px", flexShrink: 0 }} />
+
+                    <img
+                      src={productImage}
+                      alt={p.name}
+                      style={{
+                        width: "64px",
+                        height: "64px",
+                        objectFit: "cover",
+                        borderRadius: "10px",
+                        flexShrink: 0
+                      }}
+                    />
+
                   ) : (
-                    <div style={{ width: "64px", height: "64px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", background: "#f1f5f0", fontSize: "26px", flexShrink: 0 }}>🌱</div>
+
+                    <div
+                      style={{
+                        width: "64px",
+                        height: "64px",
+                        borderRadius: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "#f1f5f0",
+                        fontSize: "26px",
+                        flexShrink: 0
+                      }}
+                    >
+                      🌱
+                    </div>
+
                   )}
+
+
                   <div>
-                    <b>{p.name}</b>
-                    <span>₹{Number(p.price || 0).toLocaleString("en-IN")} / {p.unit}</span>
-                    <span>Status: {p.status || "PENDING_APPROVAL"}</span>
+
+                    <b>
+                      {p.name}
+                    </b>
+
+                    <span>
+                      ₹
+                      {Number(
+                        p.price || 0
+                      ).toLocaleString("en-IN")}
+                      {" / "}
+                      {p.unit}
+                    </span>
+
+                    <span>
+                      Status:{" "}
+                      {p.status || "PENDING_APPROVAL"}
+                    </span>
+
                   </div>
+
                 </div>
+
+
                 <div className="review-actions">
-                  <button className="reject" onClick={() => deleteProduct(p.id)}>
+
+                  <button
+                    className="reject"
+                    onClick={() =>
+                      deleteProduct(p.id)
+                    }
+                  >
                     Delete
                   </button>
+
                 </div>
+
               </div>
+
             );
+
           })
+
         )}
+
       </div>
 
 
@@ -1758,9 +1948,20 @@ export default function App() {
           element={<AIAssistant />}
         />
 
-        <Route path="/ai" element={<Navigate to="/kisandirect-ai" replace />} />
+        <Route
+          path="/ai"
+          element={
+            <Navigate
+              to="/kisandirect-ai"
+              replace
+            />
+          }
+        />
 
-        <Route path="/system-status" element={<ServiceStatus />} />
+        <Route
+          path="/system-status"
+          element={<ServiceStatus />}
+        />
 
         <Route
           path="/mandi"
@@ -1778,9 +1979,9 @@ export default function App() {
         />
 
         <Route
-  path="/verify-email"
-  element={<VerifyEmail />}
-/>
+          path="/verify-email"
+          element={<VerifyEmail />}
+        />
 
         <Route
           path="/forgot-password"
@@ -1792,15 +1993,15 @@ export default function App() {
           element={<ResetPassword />}
         />
 
-      <Route
-  path="/cart"
-  element={<CartPage />}
-/>
+        <Route
+          path="/cart"
+          element={<CartPage />}
+        />
 
         <Route
-  path="/profile"
-  element={<Profile />}
-/>
+          path="/profile"
+          element={<Profile />}
+        />
 
         <Route
           path="/farmer"
@@ -1812,12 +2013,50 @@ export default function App() {
           element={<AdminPanel />}
         />
 
-        <Route path="/admin/overview" element={<AdminPanel defaultTab="overview" />} />
-        <Route path="/admin/approvals" element={<AdminPanel defaultTab="approvals" />} />
-        <Route path="/admin/products" element={<AdminPanel defaultTab="products" />} />
+        <Route
+          path="/admin/overview"
+          element={
+            <AdminPanel
+              defaultTab="overview"
+            />
+          }
+        />
 
-        <Route path="/admin/recipes" element={<AdminSectionPage section="recipes" />} />
-        <Route path="/admin/advertisements" element={<AdminSectionPage section="advertisements" />} />
+        <Route
+          path="/admin/approvals"
+          element={
+            <AdminPanel
+              defaultTab="approvals"
+            />
+          }
+        />
+
+        <Route
+          path="/admin/products"
+          element={
+            <AdminPanel
+              defaultTab="products"
+            />
+          }
+        />
+
+        <Route
+          path="/admin/recipes"
+          element={
+            <AdminSectionPage
+              section="recipes"
+            />
+          }
+        />
+
+        <Route
+          path="/admin/advertisements"
+          element={
+            <AdminSectionPage
+              section="advertisements"
+            />
+          }
+        />
 
         <Route
           path="/orders"
@@ -1854,9 +2093,10 @@ export default function App() {
           element={<NotFoundPage />}
         />
 
-          </Routes>
+      </Routes>
 
       <Footer />
+
     </Layout>
   );
 }

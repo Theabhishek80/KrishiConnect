@@ -58,6 +58,7 @@ public class ProductService {
     // PUBLIC MARKETPLACE
     // ============================================================
 
+    @Transactional(readOnly = true)
     public Page<Product> publicProducts(
             String q,
             int page,
@@ -65,7 +66,10 @@ public class ProductService {
     ) {
 
         int safePage = Math.max(page, 0);
-        int safeSize = Math.min(Math.max(size, 1), 50);
+        int safeSize = Math.min(
+                Math.max(size, 1),
+                50
+        );
 
         Pageable pageable = PageRequest.of(
                 safePage,
@@ -74,10 +78,7 @@ public class ProductService {
         );
 
         /*
-         * VERY IMPORTANT:
-         *
-         * Only APPROVED products are visible
-         * on the public marketplace.
+         * ONLY APPROVED PRODUCTS ARE PUBLIC.
          */
         if (q == null || q.isBlank()) {
 
@@ -117,7 +118,7 @@ public class ProductService {
         }
 
         // --------------------------------------------------------
-        // Validate farmer
+        // FARMER
         // --------------------------------------------------------
 
         User farmer = users.findById(farmerId)
@@ -127,14 +128,16 @@ public class ProductService {
                         )
                 );
 
-        if (farmer.getRole() != com.krishiconnect.domain.Role.FARMER) {
+        if (farmer.getRole() !=
+                com.krishiconnect.domain.Role.FARMER) {
+
             throw new IllegalArgumentException(
                     "Only farmers can create products."
             );
         }
 
         // --------------------------------------------------------
-        // Validate product fields
+        // VALIDATION
         // --------------------------------------------------------
 
         if (request.name() == null ||
@@ -142,6 +145,14 @@ public class ProductService {
 
             throw new IllegalArgumentException(
                     "Product name is required."
+            );
+        }
+
+        if (request.description() == null ||
+                request.description().isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Product description is required."
             );
         }
 
@@ -176,7 +187,7 @@ public class ProductService {
         }
 
         // --------------------------------------------------------
-        // Find category
+        // CATEGORY
         // --------------------------------------------------------
 
         var category = categories.findById(
@@ -188,7 +199,7 @@ public class ProductService {
         );
 
         // --------------------------------------------------------
-        // Create product
+        // PRODUCT
         // --------------------------------------------------------
 
         Product product = new Product();
@@ -202,9 +213,7 @@ public class ProductService {
         );
 
         product.setDescription(
-                request.description() == null
-                        ? ""
-                        : request.description().trim()
+                request.description().trim()
         );
 
         product.setPrice(
@@ -216,38 +225,31 @@ public class ProductService {
         );
 
         /*
-         * NEW PRODUCTS MUST NOT BE PUBLIC IMMEDIATELY.
+         * IMPORTANT:
          *
-         * Farmer creates:
+         * Farmer-created products are NEVER immediately public.
          *
          * PENDING_APPROVAL
-         *
-         * Admin approves:
-         *
+         *        ↓
+         * ADMIN APPROVES
+         *        ↓
          * APPROVED
-         *
-         * Only APPROVED products appear in marketplace.
          */
         product.setStatus(
                 ProductStatus.PENDING_APPROVAL
         );
 
         // --------------------------------------------------------
-        // Save product first
+        // SAVE PRODUCT
         // --------------------------------------------------------
 
-        Product savedProduct = products.save(product);
+        Product savedProduct =
+                products.save(product);
 
-        /*
-         * Flush immediately.
-         *
-         * This guarantees that the generated product ID exists
-         * before we create the inventory row.
-         */
         products.flush();
 
         // --------------------------------------------------------
-        // Create inventory
+        // INVENTORY
         // --------------------------------------------------------
 
         Inventory inv = new Inventory();
@@ -260,13 +262,6 @@ public class ProductService {
 
         inventory.save(inv);
 
-        /*
-         * Return the saved product.
-         *
-         * We intentionally do NOT put inventory inside Product
-         * response, so there is no lazy-loading problem from
-         * inventory.
-         */
         return savedProduct;
     }
 
@@ -301,15 +296,16 @@ public class ProductService {
             );
         }
 
-        Product product = products.findById(productId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Product not found."
-                        )
-                );
+        Product product =
+                products.findById(productId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Product not found."
+                                )
+                        );
 
         // --------------------------------------------------------
-        // Security check
+        // OWNER CHECK
         // --------------------------------------------------------
 
         if (product.getFarmer() == null ||
@@ -324,7 +320,7 @@ public class ProductService {
         }
 
         // --------------------------------------------------------
-        // Upload image
+        // IMAGE UPLOAD
         // --------------------------------------------------------
 
         String imageUrl =
@@ -342,7 +338,7 @@ public class ProductService {
         }
 
         // --------------------------------------------------------
-        // Save image
+        // SAVE IMAGE
         // --------------------------------------------------------
 
         ProductImage productImage =
@@ -354,9 +350,6 @@ public class ProductService {
                 imageUrl
         );
 
-        /*
-         * Put new image at the end.
-         */
         int sortOrder =
                 (int) productImages.countByProductId(
                         productId
@@ -414,13 +407,17 @@ public class ProductService {
             );
         }
 
-        Product product = products.findById(
-                productId
-        ).orElseThrow(() ->
-                new IllegalArgumentException(
-                        "Product not found."
-                )
-        );
+        Product product =
+                products.findById(productId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Product not found."
+                                )
+                        );
+
+        // --------------------------------------------------------
+        // OWNER CHECK
+        // --------------------------------------------------------
 
         if (product.getFarmer() == null ||
                 product.getFarmer().getId() == null ||
@@ -445,13 +442,13 @@ public class ProductService {
             Long productId
     ) {
 
-        Product product = products.findById(
-                productId
-        ).orElseThrow(() ->
-                new IllegalArgumentException(
-                        "Product not found."
-                )
-        );
+        Product product =
+                products.findById(productId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Product not found."
+                                )
+                        );
 
         return deleteProductSafely(product);
     }
@@ -464,23 +461,26 @@ public class ProductService {
             Product product
     ) {
 
-        Long productId = product.getId();
+        Long productId =
+                product.getId();
 
-        /*
-         * Remove product from carts first.
-         *
-         * Otherwise a foreign-key constraint can prevent
-         * product deletion.
-         */
+        // --------------------------------------------------------
+        // REMOVE FROM CART
+        // --------------------------------------------------------
+
         cartItems.deleteByProductId(
                 productId
         );
 
+        // --------------------------------------------------------
+        // PRODUCTS WITH ORDER HISTORY
+        // --------------------------------------------------------
+
         /*
-         * If product already exists in order history,
-         * NEVER physically delete it.
+         * If customers already ordered this product,
+         * don't physically delete it.
          *
-         * Existing orders need the product reference.
+         * Keep the product for order history.
          */
         if (orderItems.existsByProductId(productId)) {
 
@@ -493,22 +493,25 @@ public class ProductService {
             return "Product archived because it has order history.";
         }
 
-        /*
-         * No order history.
-         *
-         * Because Product.images uses:
-         *
-         * cascade = ALL
-         * orphanRemoval = true
-         *
-         * deleting the product also removes its images.
-         *
-         * Inventory should also be removed explicitly if
-         * the inventory table has a foreign-key reference.
-         */
+        // --------------------------------------------------------
+        // DELETE INVENTORY
+        // --------------------------------------------------------
+
         inventory.deleteByProductId(
                 productId
         );
+
+        // --------------------------------------------------------
+        // DELETE IMAGES
+        // --------------------------------------------------------
+
+        productImages.deleteByProductId(
+                productId
+        );
+
+        // --------------------------------------------------------
+        // DELETE PRODUCT
+        // --------------------------------------------------------
 
         products.delete(product);
 

@@ -1,5 +1,6 @@
 export const config = {
   maxDuration: 60,
+
   api: {
     bodyParser: false,
   },
@@ -11,16 +12,84 @@ export default async function handler(req, res) {
 
   const backends = [primary, backup]
     .filter(Boolean)
-    .map(url => url.replace(/\/+$/, ""));
+    .map((url) => url.replace(/\/+$/, ""));
 
   if (!backends.length) {
     return res.status(500).json({
-      message: "No backend URL is configured. Set PRIMARY_BACKEND_URL."
+      message:
+        "No backend URL is configured. Set PRIMARY_BACKEND_URL.",
     });
   }
 
-  const path = req.url || "/api/status";
+  /*
+   * vercel.json sends:
+   *
+   * /api/products/farmer
+   *
+   * to:
+   *
+   * /api/gateway?path=products/farmer
+   *
+   * We reconstruct the ORIGINAL Spring Boot API path here.
+   */
+  let requestedPath = req.query?.path;
 
+  if (Array.isArray(requestedPath)) {
+    requestedPath = requestedPath.join("/");
+  }
+
+  if (typeof requestedPath !== "string") {
+    requestedPath = "";
+  }
+
+  requestedPath = requestedPath.trim();
+
+  let path;
+
+  if (requestedPath) {
+    requestedPath = requestedPath.replace(/^\/+/, "");
+
+    path = `/api/${requestedPath}`;
+  } else {
+    /*
+     * Fallback for direct calls to the gateway.
+     */
+    const originalUrl =
+      req.headers["x-original-url"] ||
+      req.headers["x-forwarded-uri"];
+
+    if (typeof originalUrl === "string" && originalUrl.startsWith("/")) {
+      path = originalUrl;
+    } else {
+      path = "/api/status";
+    }
+  }
+
+  /*
+   * Preserve normal query parameters while removing the internal
+   * ?path= parameter used by the Vercel rewrite.
+   */
+  const urlObject = new URL(
+    req.url || "/",
+    "https://kisan-direct-gateway.local"
+  );
+
+  urlObject.searchParams.delete("path");
+
+  const queryString = urlObject.searchParams.toString();
+
+  if (queryString) {
+    path = `${path}?${queryString}`;
+  }
+
+  console.log("Gateway request:", {
+    method: req.method,
+    path,
+  });
+
+  /*
+   * Copy request headers.
+   */
   const headers = new Headers();
 
   for (const [key, value] of Object.entries(req.headers)) {
@@ -39,10 +108,20 @@ export default async function handler(req, res) {
 
     headers.set(
       key,
-      Array.isArray(value) ? value.join(",") : value
+      Array.isArray(value)
+        ? value.join(",")
+        : value
     );
   }
 
+  /*
+   * Read request body.
+   *
+   * Important for:
+   * - product creation
+   * - image uploads
+   * - JSON POST requests
+   */
   let body;
 
   if (!["GET", "HEAD"].includes(req.method)) {
@@ -50,7 +129,9 @@ export default async function handler(req, res) {
 
     for await (const chunk of req) {
       chunks.push(
-        Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
+        Buffer.isBuffer(chunk)
+          ? chunk
+          : Buffer.from(chunk)
       );
     }
 
@@ -59,15 +140,22 @@ export default async function handler(req, res) {
 
   async function callBackend(baseUrl, timeoutMs) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, timeoutMs);
 
     try {
-      return await fetch(`${baseUrl}${path}`, {
+      const targetUrl = `${baseUrl}${path}`;
+
+      console.log("Calling backend:", targetUrl);
+
+      return await fetch(targetUrl, {
         method: req.method,
         headers,
         body,
         redirect: "manual",
-        signal: controller.signal
+        signal: controller.signal,
       });
     } finally {
       clearTimeout(timeout);
@@ -88,16 +176,27 @@ export default async function handler(req, res) {
       }
     });
 
-    const buffer = Buffer.from(await response.arrayBuffer());
-    return res.status(response.status).send(buffer);
+    const buffer = Buffer.from(
+      await response.arrayBuffer()
+    );
+
+    return res
+      .status(response.status)
+      .send(buffer);
   }
 
-  const safeMethod = ["GET", "HEAD", "OPTIONS"].includes(req.method);
+  /*
+   * Only safe requests can fail over automatically.
+   *
+   * Product creation/image upload MUST NOT be replayed,
+   * because that could create duplicate products/uploads.
+   */
+  const safeMethod = [
+    "GET",
+    "HEAD",
+    "OPTIONS",
+  ].includes(req.method);
 
-  // These authentication operations are safe to retry because they do not
-  // create an order/upload. This keeps login/onboarding available during a
-  // Railway cold start while still protecting business writes from duplicate
-  // replay.
   const retryableAuthWrite =
     req.method === "POST" &&
     (
@@ -106,40 +205,71 @@ export default async function handler(req, res) {
       path.startsWith("/api/auth/firebase/onboard")
     );
 
-  const canFailover = safeMethod || retryableAuthWrite;
+  const canFailover =
+    safeMethod || retryableAuthWrite;
 
-  // Business writes (orders, product/image uploads, admin mutations, etc.)
-  // are never automatically replayed on the backup.
-  for (let i = 0; i < backends.length; i++) {
+  for (
+    let i = 0;
+    i < backends.length;
+    i++
+  ) {
     const backend = backends[i];
 
     try {
-      const timeoutMs = i === 0 ? 25000 : 50000;
-      const response = await callBackend(backend, timeoutMs);
+      const timeoutMs =
+        i === 0
+          ? 25000
+          : 50000;
 
+      const response =
+        await callBackend(
+          backend,
+          timeoutMs
+        );
+
+      /*
+       * For safe requests, try backup when primary
+       * is unavailable.
+       */
       if (
         i === 0 &&
         canFailover &&
-        [502, 503, 504].includes(response.status) &&
+        [502, 503, 504].includes(
+          response.status
+        ) &&
         backends.length > 1
       ) {
         continue;
       }
 
-      return await sendResponse(response);
+      return await sendResponse(
+        response
+      );
     } catch (error) {
-      console.error(`Backend ${i + 1} request failed:`, error);
+      console.error(
+        `Backend ${i + 1} request failed:`,
+        error
+      );
 
-      if (!canFailover || i === backends.length - 1) {
+      if (
+        !canFailover ||
+        i === backends.length - 1
+      ) {
         return res.status(503).json({
           message:
             i === 0
               ? "Primary backend is unavailable."
-              : "All configured backend servers are unavailable."
+              : "All configured backend servers are unavailable.",
         });
       }
     }
   }
+
+  return res.status(503).json({
+    message:
+      "Backend servers are unavailable.",
+  });
+}
 
   return res.status(503).json({
     message: "Backend servers are unavailable."

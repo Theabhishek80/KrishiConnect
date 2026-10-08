@@ -1125,564 +1125,340 @@ function Cart() {
 ========================= */
 
 function Farmer() {
-
   const [form, setForm] = useState({
-    name: "",
-    description: "",
-    price: "",
-    unit: "kg",
-    categoryId: "",
-    quantity: 10
+    name: "", description: "", price: "", unit: "kg",
+    categoryId: "", quantity: 10
   });
-
-
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-
   const [categories, setCategories] = useState([]);
-
   const [message, setMessage] = useState("");
-
+  const [messageType, setMessageType] = useState("success");
   const [busy, setBusy] = useState(false);
   const [myProducts, setMyProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
+  const showMessage = (text, type = "success") => {
+    setMessage(text);
+    setMessageType(type);
+  };
+
+  const getErrorMessage = (error, fallback) => {
+    const data = error?.response?.data;
+    if (typeof data === "string" && data.trim()) return data;
+    if (typeof data?.message === "string" && data.message.trim()) return data.message;
+    if (typeof data?.error === "string" && data.error.trim()) return data.error;
+    if (Array.isArray(data?.errors) && data.errors.length) {
+      return data.errors.map(x => x?.message || x).join(", ");
+    }
+    if (error?.response?.status === 401) return "Your session has expired. Please login again.";
+    if (error?.response?.status === 403) return "You are not authorized to perform this action.";
+    if (error?.response?.status === 400) return "Please check the product details and try again.";
+    return fallback;
+  };
 
   const loadMyProducts = async () => {
-
     try {
-
       setLoadingProducts(true);
-
-      const r = await api.get(
-        "/products/farmer/my-products"
-      );
-
+      const response = await api.get("/products/farmer/my-products");
+      const data = response?.data;
       setMyProducts(
-        r.data.content || []
+        Array.isArray(data) ? data :
+        Array.isArray(data?.content) ? data.content : []
       );
-
-    } catch (e) {
-
-      console.error(
-        "Could not load farmer products",
-        e
-      );
-
+    } catch (error) {
+      console.error("Could not load farmer products:", error);
       setMyProducts([]);
-
     } finally {
-
       setLoadingProducts(false);
-
     }
   };
-
 
   useEffect(() => {
-
-    api
-      .get("/categories")
-      .then(r => setCategories(r.data))
-      .catch(() => {
-        setCategories([]);
-      });
-
+    let mounted = true;
+    const loadCategories = async () => {
+      try {
+        const response = await api.get("/categories");
+        if (!mounted) return;
+        const data = response?.data;
+        setCategories(
+          Array.isArray(data) ? data :
+          Array.isArray(data?.content) ? data.content : []
+        );
+      } catch (error) {
+        console.error("Could not load categories:", error);
+        if (mounted) setCategories([]);
+      }
+    };
+    loadCategories();
     loadMyProducts();
-
+    return () => { mounted = false; };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
-  const handleImageChange = e => {
+  const handleImageChange = event => {
+    const file = event.target.files?.[0] || null;
+    setImage(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview("");
+    if (!file) return;
 
-    const file = e.target.files?.[0] || null;
-
-    setImage(file);
-
-
-    if (file) {
-
-      const previewUrl =
-        URL.createObjectURL(file);
-
-      setImagePreview(previewUrl);
-
-    } else {
-
-      setImagePreview("");
-
-    }
-  };
-
-
-  const create = async e => {
-
-    e.preventDefault();
-
-    setMessage("");
-
-
-    if (!form.categoryId) {
-
-      setMessage(
-        "Please select a category."
-      );
-
+    if (!file.type.startsWith("image/")) {
+      event.target.value = "";
+      showMessage("Please select a valid image file.", "error");
       return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      event.target.value = "";
+      showMessage("Image must be 5 MB or smaller.", "error");
+      return;
+    }
+    setImage(file);
+    setImagePreview(URL.createObjectURL(file));
+    setMessage("");
+  };
 
+  const create = async event => {
+    event.preventDefault();
+    if (busy) return;
+    setMessage("");
+
+    const name = form.name.trim();
+    const description = form.description.trim();
+    const unit = form.unit.trim();
+    const price = Number(form.price);
+    const quantity = Number(form.quantity);
+    const categoryId = Number(form.categoryId);
+
+    if (!name) return showMessage("Please enter a product name.", "error");
+    if (!description) return showMessage("Please enter a product description.", "error");
+    if (!Number.isFinite(price) || price < 0) return showMessage("Please enter a valid price.", "error");
+    if (!unit) return showMessage("Please enter a product unit.", "error");
+    if (!Number.isInteger(categoryId) || categoryId <= 0) return showMessage("Please select a valid category.", "error");
+    if (!Number.isFinite(quantity) || quantity < 0) return showMessage("Please enter a valid stock quantity.", "error");
 
     setBusy(true);
 
-
     try {
+      showMessage("Creating product...");
 
-      /* -------------------------
-         STEP 1: CREATE PRODUCT
-      ------------------------- */
-
-      const productResponse =
-        await api.post(
-          "/products/farmer",
-          {
-            ...form,
-            price: Number(form.price),
-            categoryId: Number(form.categoryId),
-            quantity: Number(form.quantity)
-          }
-        );
-
-
-      const productId =
-        productResponse.data.id;
-
-
-      /* -------------------------
-         STEP 2: UPLOAD IMAGE
-      ------------------------- */
-
-      if (image) {
-
-        setMessage(
-          "Product created. Uploading image…"
-        );
-
-
-        const formData = new FormData();
-
-        formData.append(
-          "image",
-          image
-        );
-
-
-        await api.post(
-          `/products/farmer/${productId}/images`,
-          formData
-        );
-
-      }
-
-
-      /* -------------------------
-         SUCCESS
-      ------------------------- */
-
-      setMessage(
-        image
-          ? "Product and image uploaded successfully. Waiting for admin approval."
-          : "Product submitted for admin approval."
-      );
-
-
-      setForm({
-        name: "",
-        description: "",
-        price: "",
-        unit: "kg",
-        categoryId: "",
-        quantity: 10
+      const response = await api.post("/products/farmer", {
+        name,
+        description,
+        price,
+        unit,
+        categoryId,
+        quantity: Math.floor(quantity)
       });
 
-
-      setImage(null);
-      setImagePreview("");
-
-      await loadMyProducts();
-
-
-      /* Reset file input */
-
-      const fileInput =
-        document.getElementById(
-          "product-image"
-        );
-
-      if (fileInput) {
-        fileInput.value = "";
+      const productId = response?.data?.id;
+      if (!productId) {
+        throw new Error("Product was created but the server did not return its ID.");
       }
 
+      if (image) {
+        try {
+          showMessage("Product created. Uploading image...");
+          const formData = new FormData();
+          formData.append("image", image);
+          await api.post(`/products/farmer/${productId}/images`, formData);
+        } catch (imageError) {
+          console.error("Product image upload failed:", imageError);
+          showMessage(
+            "Product was created successfully, but the image could not be uploaded. The product is still waiting for admin approval.",
+            "error"
+          );
+          await loadMyProducts();
+          return;
+        }
+      }
 
-    } catch (e) {
-
-      setMessage(
-        e.response?.data?.error ||
-        "Could not create product."
+      showMessage(
+        image
+          ? "Product and image uploaded successfully. Waiting for admin approval."
+          : "Product submitted successfully. Waiting for admin approval."
       );
 
-    } finally {
+      setForm({
+        name: "", description: "", price: "", unit: "kg",
+        categoryId: "", quantity: 10
+      });
+      setImage(null);
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      setImagePreview("");
 
-      setBusy(false);
-
-    }
-  };
-
-
-  /*
-   * =========================
-   * DELETE FARMER PRODUCT
-   * =========================
-   *
-   * Uses the backend safe-delete endpoint.
-   *
-   * If the product has never been ordered:
-   * -> permanently deleted
-   *
-   * If the product has order history:
-   * -> archived/inactive
-   *
-   * If it exists in a customer's cart:
-   * -> cart reference is removed by backend
-   */
-
-  const deleteProduct = async productId => {
-
-    const product = myProducts.find(
-      p => p.id === productId
-    );
-
-    const productName =
-      product?.name || "this product";
-
-
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${productName}"?\n\n` +
-      "If this product has already been ordered, " +
-      "it will be archived instead of permanently deleted."
-    );
-
-
-    if (!confirmed) return;
-
-
-    try {
-
-      setMessage(
-        "Deleting product..."
-      );
-
-
-      const response =
-        await api.delete(
-          `/products/farmer/${productId}`
-        );
-
-
-      const responseMessage =
-        response.data?.message ||
-        "Product deleted successfully.";
-
-
-      setMessage(
-        responseMessage
-      );
-
+      const fileInput = document.getElementById("product-image");
+      if (fileInput) fileInput.value = "";
 
       await loadMyProducts();
-
-
-    } catch (e) {
-
-      console.error(
-        "Delete product failed:",
-        e
+    } catch (error) {
+      console.error("Create product failed:", error);
+      showMessage(
+        getErrorMessage(error, "Could not create product. Please try again."),
+        "error"
       );
-
-
-      const errorMessage =
-        e.response?.data?.error ||
-        e.response?.data?.message ||
-        "Could not delete product. Please try again.";
-
-
-      setMessage(
-        errorMessage
-      );
+    } finally {
+      setBusy(false);
     }
   };
 
+  const deleteProduct = async productId => {
+    const product = myProducts.find(p => p.id === productId);
+    const productName = product?.name || "this product";
+
+    if (!window.confirm(
+      `Are you sure you want to delete "${productName}"?\n\n` +
+      "If this product has already been ordered, it will be archived instead of permanently deleted."
+    )) return;
+
+    try {
+      setBusy(true);
+      showMessage("Deleting product...");
+      const response = await api.delete(`/products/farmer/${productId}`);
+      showMessage(response?.data?.message || "Product deleted successfully.");
+      await loadMyProducts();
+    } catch (error) {
+      console.error("Delete product failed:", error);
+      showMessage(
+        getErrorMessage(error, "Could not delete product. Please try again."),
+        "error"
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const getStatusLabel = status => ({
+    APPROVED: "Approved",
+    REJECTED: "Rejected",
+    PENDING_APPROVAL: "Waiting for admin approval",
+    INACTIVE: "Archived",
+    DRAFT: "Draft"
+  }[status] || status || "Pending");
 
   return (
-
     <section className="page-section">
-
       <div className="page-heading">
-
         <div>
-
-          <span className="section-kicker">
-            FARMER STUDIO
-          </span>
-
-          <h1>
-            Your farm dashboard
-          </h1>
-
+          <span className="section-kicker">FARMER STUDIO</span>
+          <h1>Your farm dashboard</h1>
         </div>
-
-
-        <span className="status-chip">
-          ● Account active
-        </span>
-
+        <span className="status-chip">● Account active</span>
       </div>
-
 
       <div className="stats modern-stats">
-
-        <div>
-
-          <Sprout />
-
-          <b>
-            List produce
-          </b>
-
-          <span>
-            Publish fresh products for customers.
-          </span>
-
-        </div>
-
-
-        <div>
-
-          <Package />
-
-          <b>
-            Manage stock
-          </b>
-
-          <span>
-            Keep inventory quantities accurate.
-          </span>
-
-        </div>
-
-
-        <div>
-
-          <Truck />
-
-          <b>
-            Fulfil orders
-          </b>
-
-          <span>
-            Track the journey after checkout.
-          </span>
-
-        </div>
-
+        <div><Sprout /><b>List produce</b><span>Publish fresh products for customers.</span></div>
+        <div><Package /><b>Manage stock</b><span>Keep inventory quantities accurate.</span></div>
+        <div><Truck /><b>Fulfil orders</b><span>Track the journey after checkout.</span></div>
       </div>
 
-
       <div className="panel formpanel modern-form">
-
         <div>
-
-          <span className="section-kicker">
-            NEW LISTING
-          </span>
-
-          <h2>
-            Add a farm product
-          </h2>
-
-          <p>
-            Products go through admin approval
-            before appearing publicly.
-          </p>
-
+          <span className="section-kicker">NEW LISTING</span>
+          <h2>Add a farm product</h2>
+          <p>Products go through admin approval before appearing publicly.</p>
         </div>
 
-
         <form onSubmit={create}>
-
           <label>
             Product name
-
             <input
               value={form.name}
-              onChange={e =>
-                setForm({
-                  ...form,
-                  name: e.target.value
-                })
-              }
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
               placeholder="e.g. Fresh tomatoes"
+              disabled={busy}
               required
             />
-
           </label>
-
 
           <label>
             Description
-
             <textarea
               value={form.description}
-              onChange={e =>
-                setForm({
-                  ...form,
-                  description: e.target.value
-                })
-              }
+              onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
               placeholder="Tell customers about freshness, quality or harvest."
+              disabled={busy}
               required
             />
-
           </label>
 
-
           <div className="formrow">
-
             <label>
               Price
-
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={form.price}
-                onChange={e =>
-                  setForm({
-                    ...form,
-                    price: e.target.value
-                  })
-                }
+                onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
                 placeholder="0.00"
+                disabled={busy}
                 required
               />
-
             </label>
-
 
             <label>
               Unit
-
               <input
                 value={form.unit}
-                onChange={e =>
-                  setForm({
-                    ...form,
-                    unit: e.target.value
-                  })
-                }
-                placeholder="kg, dozen…"
+                onChange={e => setForm(p => ({ ...p, unit: e.target.value }))}
+                placeholder="kg, dozen..."
+                disabled={busy}
                 required
               />
-
             </label>
-
           </div>
 
-
           <div className="formrow">
-
             <label>
               Category
-
               <select
                 value={form.categoryId}
-                onChange={e =>
-                  setForm({
-                    ...form,
-                    categoryId: e.target.value
-                  })
-                }
+                onChange={e => setForm(p => ({ ...p, categoryId: e.target.value }))}
+                disabled={busy}
                 required
               >
-
-                <option value="">
-                  Select category
-                </option>
-
-
-                {categories.map(c => (
-
-                  <option
-                    key={c.id}
-                    value={c.id}
-                  >
-                    {c.name}
+                <option value="">Select category</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
                   </option>
-
                 ))}
-
               </select>
-
             </label>
-
 
             <label>
               Initial stock
-
               <input
                 type="number"
                 min="0"
+                step="1"
                 value={form.quantity}
-                onChange={e =>
-                  setForm({
-                    ...form,
-                    quantity: e.target.value
-                  })
-                }
+                onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))}
+                disabled={busy}
               />
-
             </label>
-
           </div>
-
-
-          {/* PRODUCT IMAGE */}
 
           <label>
             Product image
-
             <input
               id="product-image"
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
               onChange={handleImageChange}
+              disabled={busy}
             />
-
-            <small>
-              Optional · Maximum 5 MB
-            </small>
-
+            <small>Optional · Maximum 5 MB</small>
           </label>
 
-
           {imagePreview && (
-
-            <div
-              style={{
-                marginTop: "12px",
-                marginBottom: "12px"
-              }}
-            >
-
+            <div style={{ marginTop: "12px", marginBottom: "12px" }}>
               <img
                 src={imagePreview}
                 alt="Product preview"
@@ -1694,54 +1470,109 @@ function Farmer() {
                   display: "block"
                 }}
               />
-
             </div>
-
           )}
 
-
-          {image && (
-
-            <div className="notice success">
-
-              Selected:
-              {" "}
-              {image.name}
-
-            </div>
-
-          )}
-
+          {image && <div className="notice success">Selected: {image.name}</div>}
 
           {message && (
-
-            <div className="notice success">
+            <div className={messageType === "error" ? "notice error" : "notice success"}>
               {message}
             </div>
-
           )}
 
-
-          <button
-            className="primary-btn"
-            type="submit"
-            disabled={busy}
-          >
-
+          <button className="primary-btn" type="submit" disabled={busy}>
             <Plus size={17} />
-
-            {busy
-              ? "Submitting…"
-              : "Submit listing"}
-
+            {busy ? "Submitting..." : "Submit listing"}
           </button>
-
         </form>
-
       </div>
 
+      <div className="panel admin-panel" style={{ marginTop: "24px" }}>
+        <div className="sectionhead">
+          <div>
+            <span className="section-kicker">MY PRODUCTS</span>
+            <h2>Products you listed</h2>
+          </div>
+          <span>{myProducts.length} products</span>
+        </div>
 
-      {/* =========================
+        {loadingProducts ? (
+          <div className="empty-inline">Loading your products...</div>
+        ) : !myProducts.length ? (
+          <div className="empty-inline">
+            <Package />
+            You have not listed any products yet.
+          </div>
+        ) : (
+          myProducts.map(product => {
+            const productImage =
+              Array.isArray(product.images) && product.images.length
+                ? product.images[0]?.url
+                : null;
+
+            return (
+              <div className="review-row" key={product.id}>
+                <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+                  {productImage ? (
+                    <img
+                      src={productImage}
+                      alt={product.name}
+                      style={{
+                        width: "64px",
+                        height: "64px",
+                        objectFit: "cover",
+                        borderRadius: "10px",
+                        flexShrink: 0
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: "64px",
+                        height: "64px",
+                        borderRadius: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "#f1f5f0",
+                        fontSize: "26px",
+                        flexShrink: 0
+                      }}
+                    >
+                      🌱
+                    </div>
+                  )}
+
+                  <div>
+                    <b>{product.name}</b>
+                    <span>
+                      ₹{Number(product.price || 0).toLocaleString("en-IN")} / {product.unit}
+                    </span>
+                    <span>Status: {getStatusLabel(product.status)}</span>
+                  </div>
+                </div>
+
+                <div className="review-actions">
+                  <button
+                    className="reject"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => deleteProduct(product.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* =========================
           MY PRODUCTS
       ========================= */}
 
@@ -2100,3 +1931,4 @@ export default function App() {
     </Layout>
   );
 }
+

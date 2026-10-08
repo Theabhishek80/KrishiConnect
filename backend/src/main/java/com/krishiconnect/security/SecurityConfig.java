@@ -4,24 +4,19 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
-
 import org.springframework.http.HttpMethod;
-
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -37,27 +32,23 @@ public class SecurityConfig {
     // ============================================================
 
     @Bean
-    PasswordEncoder passwordEncoder() {
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
     }
 
 
     // ============================================================
-    // FIREBASE FILTER
+    // FIREBASE AUTH FILTER
     // ============================================================
 
     @Bean
-    FilterRegistrationBean<FirebaseAuthFilter> firebaseAuthFilterRegistration(
-            FirebaseAuthFilter filter
-    ) {
+    public FilterRegistrationBean<FirebaseAuthFilter>
+    firebaseAuthFilterRegistration(FirebaseAuthFilter filter) {
 
         FilterRegistrationBean<FirebaseAuthFilter> registration =
                 new FilterRegistrationBean<>(filter);
 
-        /*
-         * FirebaseAuthFilter is used ONLY inside Spring Security.
-         * Prevent Spring Boot from registering it separately.
-         */
+        // FirebaseAuthFilter must run only inside Spring Security.
         registration.setEnabled(false);
 
         return registration;
@@ -65,27 +56,12 @@ public class SecurityConfig {
 
 
     // ============================================================
-    // 1. PUBLIC MANDI SECURITY CHAIN
-    // ============================================================
-    //
-    // This chain matches ONLY:
-    //
-    //     /api/mandi
-    //     /api/mandi/**
-    //
-    // FirebaseAuthFilter is NOT added here.
-    //
-    // Therefore Mandi does not require:
-    //
-    //     Firebase token
-    //     JWT
-    //     Login
-    //
+    // PUBLIC MANDI SECURITY
     // ============================================================
 
     @Bean
-    @Order(1)
-    SecurityFilterChain mandiSecurityChain(
+    @org.springframework.core.annotation.Order(1)
+    public SecurityFilterChain mandiSecurityChain(
             HttpSecurity http
     ) throws Exception {
 
@@ -98,7 +74,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
 
                 .cors(cors ->
-                        cors.configurationSource(cors())
+                        cors.configurationSource(corsConfigurationSource())
                 )
 
                 .sessionManagement(session ->
@@ -116,25 +92,37 @@ public class SecurityConfig {
 
 
     // ============================================================
-    // 2. MAIN SECURITY CHAIN
+    // MAIN SECURITY CHAIN
     // ============================================================
 
     @Bean
-    @Order(2)
-    SecurityFilterChain securityFilterChain(
+    @org.springframework.core.annotation.Order(2)
+    public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            FirebaseAuthFilter authFilter
+            FirebaseAuthFilter firebaseAuthFilter
     ) throws Exception {
 
         http
 
-                .csrf(csrf ->
-                        csrf.disable()
-                )
+                // ------------------------------------------------
+                // CSRF
+                // ------------------------------------------------
+
+                .csrf(csrf -> csrf.disable())
+
+
+                // ------------------------------------------------
+                // CORS
+                // ------------------------------------------------
 
                 .cors(cors ->
-                        cors.configurationSource(cors())
+                        cors.configurationSource(corsConfigurationSource())
                 )
+
+
+                // ------------------------------------------------
+                // STATELESS API
+                // ------------------------------------------------
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
@@ -142,45 +130,34 @@ public class SecurityConfig {
                         )
                 )
 
+
+                // ------------------------------------------------
+                // AUTHORIZATION
+                // ------------------------------------------------
+
                 .authorizeHttpRequests(auth -> auth
 
-                        // ------------------------------------------------
-                        // CORS
-                        // ------------------------------------------------
-
+                        // CORS preflight
                         .requestMatchers(
                                 HttpMethod.OPTIONS,
                                 "/**"
                         ).permitAll()
 
 
-                        // ------------------------------------------------
-                        // SPRING BOOT ERROR PAGE
-                        // ------------------------------------------------
-                        //
-                        // When a controller throws an exception that is
-                        // not handled, Spring forwards the request to
-                        // /error. If /error is not public, the REAL error
-                        // (500) is replaced by an empty 403 Forbidden.
-                        // That is exactly what was happening on /api/mandi.
-                        //
-
+                        // Spring error endpoint
                         .requestMatchers(
                                 "/error"
                         ).permitAll()
 
 
-                        // ------------------------------------------------
-                        // HEALTH
-                        // ------------------------------------------------
-
+                        // Health check
                         .requestMatchers(
                                 "/api/status"
                         ).permitAll()
 
 
                         // ------------------------------------------------
-                        // AUTH
+                        // PUBLIC AUTH ENDPOINTS
                         // ------------------------------------------------
 
                         .requestMatchers(
@@ -189,6 +166,15 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password"
                         ).permitAll()
+
+
+                        // ------------------------------------------------
+                        // FIREBASE AUTHENTICATION
+                        // ------------------------------------------------
+
+                        .requestMatchers(
+                                "/api/auth/firebase/**"
+                        ).authenticated()
 
 
                         // ------------------------------------------------
@@ -211,23 +197,14 @@ public class SecurityConfig {
 
 
                         // ------------------------------------------------
-                        // SWAGGER
+                        // PUBLIC PRODUCTS
                         // ------------------------------------------------
 
                         .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**"
+                                HttpMethod.GET,
+                                "/api/products",
+                                "/api/products/**"
                         ).permitAll()
-
-
-                        // ------------------------------------------------
-                        // FIREBASE ONBOARDING
-                        // ------------------------------------------------
-
-                        .requestMatchers(
-                                "/api/auth/firebase/**"
-                        ).authenticated()
 
 
                         // ------------------------------------------------
@@ -241,23 +218,23 @@ public class SecurityConfig {
 
 
                         // ------------------------------------------------
-                        // PUBLIC PRODUCTS
-                        // ------------------------------------------------
-
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/products",
-                                "/api/products/**"
-                        ).permitAll()
-
-
-                        // ------------------------------------------------
                         // ADMIN
                         // ------------------------------------------------
 
                         .requestMatchers(
                                 "/api/admin/**"
                         ).hasRole("ADMIN")
+
+
+                        // ------------------------------------------------
+                        // SWAGGER
+                        // ------------------------------------------------
+
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
 
 
                         // ------------------------------------------------
@@ -268,10 +245,12 @@ public class SecurityConfig {
                 )
 
 
-                // Firebase/JWT authentication is ONLY in the
-                // main authenticated chain.
+                // ------------------------------------------------
+                // FIREBASE AUTH FILTER
+                // ------------------------------------------------
+
                 .addFilterBefore(
-                        authFilter,
+                        firebaseAuthFilter,
                         UsernamePasswordAuthenticationFilter.class
                 );
 
@@ -281,32 +260,24 @@ public class SecurityConfig {
 
 
     // ============================================================
-    // CORS
+    // CORS CONFIGURATION
     // ============================================================
 
     @Bean
-    CorsConfigurationSource cors() {
+    public CorsConfigurationSource corsConfigurationSource() {
 
-        CorsConfiguration c =
+        CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        /*
-         * FRONTEND_URL can contain:
-         *
-         * https://kisandirect.online,
-         * https://www.kisandirect.online
-         */
-
-        c.setAllowedOrigins(
-                java.util.Arrays.stream(
-                                frontendUrl.split(",")
-                        )
+        List<String> allowedOrigins =
+                Arrays.stream(frontendUrl.split(","))
                         .map(String::trim)
-                        .filter(v -> !v.isEmpty())
-                        .toList()
-        );
+                        .filter(origin -> !origin.isBlank())
+                        .toList();
 
-        c.setAllowedMethods(
+        configuration.setAllowedOrigins(allowedOrigins);
+
+        configuration.setAllowedMethods(
                 List.of(
                         "GET",
                         "POST",
@@ -317,21 +288,23 @@ public class SecurityConfig {
                 )
         );
 
-        c.setAllowedHeaders(
+        configuration.setAllowedHeaders(
                 List.of("*")
         );
 
-        c.setMaxAge(3600L);
+        configuration.setAllowCredentials(true);
+
+        configuration.setMaxAge(3600L);
+
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
         source.registerCorsConfiguration(
                 "/**",
-                c
+                configuration
         );
 
         return source;
     }
 }
-

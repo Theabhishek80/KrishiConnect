@@ -4,7 +4,6 @@ import com.krishiconnect.domain.ProductStatus;
 import com.krishiconnect.repository.OrderRepository;
 import com.krishiconnect.repository.ProductRepository;
 import com.krishiconnect.repository.UserRepository;
-import com.krishiconnect.security.AuthContext;
 import com.krishiconnect.service.ProductService;
 
 import org.springframework.data.domain.PageRequest;
@@ -22,25 +21,22 @@ public class AdminController {
     private final UserRepository users;
     private final ProductRepository products;
     private final OrderRepository orders;
-    private final AuthContext context;
     private final ProductService productService;
 
     public AdminController(
             UserRepository users,
             ProductRepository products,
             OrderRepository orders,
-            AuthContext context,
             ProductService productService
     ) {
         this.users = users;
         this.products = products;
         this.orders = orders;
-        this.context = context;
         this.productService = productService;
     }
 
     // ============================================================
-    // ADMIN DASHBOARD
+    // DASHBOARD
     // ============================================================
 
     @GetMapping("/dashboard")
@@ -70,7 +66,7 @@ public class AdminController {
     public ResponseEntity<?> allProducts() {
 
         return ResponseEntity.ok(
-                products.findAllWithDetails()
+                products.findAllByOrderByCreatedAtDesc()
         );
     }
 
@@ -82,12 +78,8 @@ public class AdminController {
     public ResponseEntity<?> pendingProducts() {
 
         return ResponseEntity.ok(
-                products.findByStatus(
-                        ProductStatus.PENDING_APPROVAL,
-                        PageRequest.of(
-                                0,
-                                100
-                        )
+                products.findByStatusOrderByCreatedAtDesc(
+                        ProductStatus.PENDING_APPROVAL
                 )
         );
     }
@@ -108,12 +100,6 @@ public class AdminController {
                         )
                 );
 
-        /*
-         * Only pending products should be approved.
-         *
-         * This prevents accidentally approving an already
-         * rejected/deleted/inactive product.
-         */
         if (product.getStatus() !=
                 ProductStatus.PENDING_APPROVAL) {
 
@@ -155,9 +141,6 @@ public class AdminController {
                         )
                 );
 
-        /*
-         * Only pending products should be rejected.
-         */
         if (product.getStatus() !=
                 ProductStatus.PENDING_APPROVAL) {
 
@@ -193,9 +176,7 @@ public class AdminController {
     ) {
 
         String message =
-                productService.deleteProductAsAdmin(
-                        id
-                );
+                productService.deleteProductAsAdmin(id);
 
         return ResponseEntity.ok(
                 Map.of(

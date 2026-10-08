@@ -5,6 +5,10 @@
       "destination": "/api/admin-proxy?route=:route*"
     },
     {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

@@ -8,6 +8,7 @@ import com.krishiconnect.security.AuthContext;
 import com.krishiconnect.service.ProductService;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,35 +39,67 @@ public class AdminController {
         this.productService = productService;
     }
 
+    // ============================================================
+    // ADMIN DASHBOARD
+    // ============================================================
+
     @GetMapping("/dashboard")
-    public Map<String, Object> dashboard() {
-        return Map.of(
-                "users", users.count(),
-                "products", products.count(),
-                "pendingProducts",
+    public ResponseEntity<Map<String, Object>> dashboard() {
+
+        long pendingProducts =
                 products.findByStatus(
                         ProductStatus.PENDING_APPROVAL,
                         PageRequest.of(0, 1)
-                ).getTotalElements(),
-                "orders", orders.count()
+                ).getTotalElements();
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "users", users.count(),
+                        "products", products.count(),
+                        "pendingProducts", pendingProducts,
+                        "orders", orders.count()
+                )
         );
     }
+
+    // ============================================================
+    // ALL PRODUCTS
+    // ============================================================
 
     @GetMapping("/products")
-    public Object allProducts() {
-        return products.findAllWithDetails();
-    }
+    public ResponseEntity<?> allProducts() {
 
-    @GetMapping("/products/pending")
-    public Object pendingProducts() {
-        return products.findByStatus(
-                ProductStatus.PENDING_APPROVAL,
-                PageRequest.of(0, 100)
+        return ResponseEntity.ok(
+                products.findAllWithDetails()
         );
     }
 
+    // ============================================================
+    // PENDING PRODUCTS
+    // ============================================================
+
+    @GetMapping("/products/pending")
+    public ResponseEntity<?> pendingProducts() {
+
+        return ResponseEntity.ok(
+                products.findByStatus(
+                        ProductStatus.PENDING_APPROVAL,
+                        PageRequest.of(
+                                0,
+                                100
+                        )
+                )
+        );
+    }
+
+    // ============================================================
+    // APPROVE PRODUCT
+    // ============================================================
+
     @PatchMapping("/products/{id}/approve")
-    public Object approve(@PathVariable Long id) {
+    public ResponseEntity<?> approve(
+            @PathVariable Long id
+    ) {
 
         var product = products.findById(id)
                 .orElseThrow(() ->
@@ -75,13 +108,45 @@ public class AdminController {
                         )
                 );
 
-        product.setStatus(ProductStatus.APPROVED);
+        /*
+         * Only pending products should be approved.
+         *
+         * This prevents accidentally approving an already
+         * rejected/deleted/inactive product.
+         */
+        if (product.getStatus() !=
+                ProductStatus.PENDING_APPROVAL) {
 
-        return products.save(product);
+            return ResponseEntity.badRequest().body(
+                    Map.of(
+                            "message",
+                            "Only pending products can be approved.",
+                            "status",
+                            product.getStatus().name()
+                    )
+            );
+        }
+
+        product.setStatus(
+                ProductStatus.APPROVED
+        );
+
+        var savedProduct =
+                products.save(product);
+
+        return ResponseEntity.ok(
+                savedProduct
+        );
     }
+
+    // ============================================================
+    // REJECT PRODUCT
+    // ============================================================
 
     @PatchMapping("/products/{id}/reject")
-    public Object reject(@PathVariable Long id) {
+    public ResponseEntity<?> reject(
+            @PathVariable Long id
+    ) {
 
         var product = products.findById(id)
                 .orElseThrow(() ->
@@ -90,34 +155,53 @@ public class AdminController {
                         )
                 );
 
-        product.setStatus(ProductStatus.REJECTED);
+        /*
+         * Only pending products should be rejected.
+         */
+        if (product.getStatus() !=
+                ProductStatus.PENDING_APPROVAL) {
 
-        return products.save(product);
+            return ResponseEntity.badRequest().body(
+                    Map.of(
+                            "message",
+                            "Only pending products can be rejected.",
+                            "status",
+                            product.getStatus().name()
+                    )
+            );
+        }
+
+        product.setStatus(
+                ProductStatus.REJECTED
+        );
+
+        var savedProduct =
+                products.save(product);
+
+        return ResponseEntity.ok(
+                savedProduct
+        );
     }
 
-    /*
-     * SAFE ADMIN PRODUCT DELETE
-     *
-     * Do NOT use products.deleteById(id) here.
-     *
-     * ProductService checks:
-     * - cart references
-     * - existing order history
-     * - whether the product should be deleted
-     * - whether it should instead be archived
-     */
+    // ============================================================
+    // ADMIN DELETE PRODUCT
+    // ============================================================
+
     @DeleteMapping("/products/{id}")
-    public Map<String, String> deleteProduct(
+    public ResponseEntity<Map<String, String>> deleteProduct(
             @PathVariable Long id
     ) {
 
         String message =
-                productService.deleteProductAsAdmin(id);
+                productService.deleteProductAsAdmin(
+                        id
+                );
 
-        return Map.of(
-                "message",
-                message
+        return ResponseEntity.ok(
+                Map.of(
+                        "message",
+                        message
+                )
         );
     }
 }
-

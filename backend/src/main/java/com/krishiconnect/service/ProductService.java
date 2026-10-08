@@ -1,15 +1,26 @@
 package com.krishiconnect.service;
 
-import org.springframework.web.multipart.MultipartFile;
-
 import com.krishiconnect.domain.ProductStatus;
-import com.krishiconnect.dto.ProductDtos.*;
-import com.krishiconnect.entity.*;
-import com.krishiconnect.repository.*;
+import com.krishiconnect.dto.ProductDtos.CreateRequest;
+import com.krishiconnect.entity.Inventory;
+import com.krishiconnect.entity.Product;
+import com.krishiconnect.entity.ProductImage;
+import com.krishiconnect.entity.User;
+import com.krishiconnect.repository.CartItemRepository;
+import com.krishiconnect.repository.CategoryRepository;
+import com.krishiconnect.repository.InventoryRepository;
+import com.krishiconnect.repository.OrderItemRepository;
+import com.krishiconnect.repository.ProductImageRepository;
+import com.krishiconnect.repository.ProductRepository;
+import com.krishiconnect.repository.UserRepository;
 
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class ProductService {
@@ -24,26 +35,34 @@ public class ProductService {
     private final ImageKitService imageKitService;
 
     public ProductService(
-            ProductRepository p,
-            UserRepository u,
-            CategoryRepository c,
-            InventoryRepository i,
-            ProductImageRepository pi,
-            CartItemRepository ci,
-            OrderItemRepository oi,
-            ImageKitService ik
+            ProductRepository products,
+            UserRepository users,
+            CategoryRepository categories,
+            InventoryRepository inventory,
+            ProductImageRepository productImages,
+            CartItemRepository cartItems,
+            OrderItemRepository orderItems,
+            ImageKitService imageKitService
     ) {
-        products = p;
-        users = u;
-        categories = c;
-        inventory = i;
-        productImages = pi;
-        cartItems = ci;
-        orderItems = oi;
-        imageKitService = ik;
+        this.products = products;
+        this.users = users;
+        this.categories = categories;
+        this.inventory = inventory;
+        this.productImages = productImages;
+        this.cartItems = cartItems;
+        this.orderItems = orderItems;
+        this.imageKitService = imageKitService;
     }
 
-    public Page<Product> publicProducts(String q, int page, int size) {
+    // ============================================================
+    // PUBLIC MARKETPLACE
+    // ============================================================
+
+    public Page<Product> publicProducts(
+            String q,
+            int page,
+            int size
+    ) {
 
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 50);
@@ -54,7 +73,14 @@ public class ProductService {
                 Sort.by("createdAt").descending()
         );
 
+        /*
+         * VERY IMPORTANT:
+         *
+         * Only APPROVED products are visible
+         * on the public marketplace.
+         */
         if (q == null || q.isBlank()) {
+
             return products.findByStatus(
                     ProductStatus.APPROVED,
                     pageable
@@ -68,8 +94,31 @@ public class ProductService {
         );
     }
 
+    // ============================================================
+    // CREATE PRODUCT
+    // ============================================================
+
     @Transactional
-    public Product create(Long farmerId, CreateRequest r) {
+    public Product create(
+            Long farmerId,
+            CreateRequest request
+    ) {
+
+        if (farmerId == null) {
+            throw new IllegalArgumentException(
+                    "Farmer authentication is required."
+            );
+        }
+
+        if (request == null) {
+            throw new IllegalArgumentException(
+                    "Product data is required."
+            );
+        }
+
+        // --------------------------------------------------------
+        // Validate farmer
+        // --------------------------------------------------------
 
         User farmer = users.findById(farmerId)
                 .orElseThrow(() ->
@@ -84,45 +133,146 @@ public class ProductService {
             );
         }
 
-        Product p = new Product();
+        // --------------------------------------------------------
+        // Validate product fields
+        // --------------------------------------------------------
 
-        p.setFarmer(farmer);
-        p.setName(r.name().trim());
-        p.setDescription(
-                r.description() == null
-                        ? ""
-                        : r.description().trim()
+        if (request.name() == null ||
+                request.name().isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Product name is required."
+            );
+        }
+
+        if (request.price() == null ||
+                request.price().signum() < 0) {
+
+            throw new IllegalArgumentException(
+                    "Product price must be zero or greater."
+            );
+        }
+
+        if (request.unit() == null ||
+                request.unit().isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Product unit is required."
+            );
+        }
+
+        if (request.categoryId() == null) {
+
+            throw new IllegalArgumentException(
+                    "Product category is required."
+            );
+        }
+
+        if (request.quantity() < 0) {
+
+            throw new IllegalArgumentException(
+                    "Product quantity cannot be negative."
+            );
+        }
+
+        // --------------------------------------------------------
+        // Find category
+        // --------------------------------------------------------
+
+        var category = categories.findById(
+                request.categoryId()
+        ).orElseThrow(() ->
+                new IllegalArgumentException(
+                        "Selected category was not found."
+                )
         );
-        p.setPrice(r.price());
-        p.setUnit(r.unit().trim());
 
-        p.setCategory(
-                categories.findById(r.categoryId())
-                        .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "Category not found."
-                                )
-                        )
+        // --------------------------------------------------------
+        // Create product
+        // --------------------------------------------------------
+
+        Product product = new Product();
+
+        product.setFarmer(farmer);
+
+        product.setCategory(category);
+
+        product.setName(
+                request.name().trim()
+        );
+
+        product.setDescription(
+                request.description() == null
+                        ? ""
+                        : request.description().trim()
+        );
+
+        product.setPrice(
+                request.price()
+        );
+
+        product.setUnit(
+                request.unit().trim()
         );
 
         /*
-         * New farmer products should not immediately appear
-         * in the public marketplace.
+         * NEW PRODUCTS MUST NOT BE PUBLIC IMMEDIATELY.
          *
-         * They first go to admin approval.
+         * Farmer creates:
+         *
+         * PENDING_APPROVAL
+         *
+         * Admin approves:
+         *
+         * APPROVED
+         *
+         * Only APPROVED products appear in marketplace.
          */
-        p.setStatus(ProductStatus.PENDING_APPROVAL);
+        product.setStatus(
+                ProductStatus.PENDING_APPROVAL
+        );
 
-        products.save(p);
+        // --------------------------------------------------------
+        // Save product first
+        // --------------------------------------------------------
+
+        Product savedProduct = products.save(product);
+
+        /*
+         * Flush immediately.
+         *
+         * This guarantees that the generated product ID exists
+         * before we create the inventory row.
+         */
+        products.flush();
+
+        // --------------------------------------------------------
+        // Create inventory
+        // --------------------------------------------------------
 
         Inventory inv = new Inventory();
-        inv.setProduct(p);
-        inv.setQuantity(r.quantity());
+
+        inv.setProduct(savedProduct);
+
+        inv.setQuantity(
+                request.quantity()
+        );
 
         inventory.save(inv);
 
-        return p;
+        /*
+         * Return the saved product.
+         *
+         * We intentionally do NOT put inventory inside Product
+         * response, so there is no lazy-loading problem from
+         * inventory.
+         */
+        return savedProduct;
     }
+
+    // ============================================================
+    // ADD PRODUCT IMAGE
+    // ============================================================
 
     @Transactional
     public ProductImage addProductImage(
@@ -131,6 +281,26 @@ public class ProductService {
             MultipartFile image
     ) {
 
+        if (farmerId == null) {
+            throw new IllegalArgumentException(
+                    "Farmer authentication is required."
+            );
+        }
+
+        if (productId == null) {
+            throw new IllegalArgumentException(
+                    "Product ID is required."
+            );
+        }
+
+        if (image == null ||
+                image.isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "Please select an image."
+            );
+        }
+
         Product product = products.findById(productId)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
@@ -138,11 +308,24 @@ public class ProductService {
                         )
                 );
 
-        if (!product.getFarmer().getId().equals(farmerId)) {
+        // --------------------------------------------------------
+        // Security check
+        // --------------------------------------------------------
+
+        if (product.getFarmer() == null ||
+                product.getFarmer().getId() == null ||
+                !product.getFarmer()
+                        .getId()
+                        .equals(farmerId)) {
+
             throw new IllegalArgumentException(
                     "You can only upload images for your own products."
             );
         }
+
+        // --------------------------------------------------------
+        // Upload image
+        // --------------------------------------------------------
 
         String imageUrl =
                 imageKitService.uploadProductImage(
@@ -150,43 +333,100 @@ public class ProductService {
                         productId
                 );
 
-        ProductImage productImage = new ProductImage();
+        if (imageUrl == null ||
+                imageUrl.isBlank()) {
+
+            throw new IllegalStateException(
+                    "Image upload failed."
+            );
+        }
+
+        // --------------------------------------------------------
+        // Save image
+        // --------------------------------------------------------
+
+        ProductImage productImage =
+                new ProductImage();
 
         productImage.setProduct(product);
-        productImage.setUrl(imageUrl);
-        productImage.setSortOrder(0);
 
-        return productImages.save(productImage);
+        productImage.setUrl(
+                imageUrl
+        );
+
+        /*
+         * Put new image at the end.
+         */
+        int sortOrder =
+                (int) productImages.countByProductId(
+                        productId
+                );
+
+        productImage.setSortOrder(
+                sortOrder
+        );
+
+        return productImages.save(
+                productImage
+        );
     }
 
-    /*
-     * ============================================================
-     * FARMER PRODUCT DELETE
-     * ============================================================
-     *
-     * Farmer can delete only their own product.
-     *
-     * Before deleting:
-     * 1. Remove the product from customers' carts.
-     * 2. Check whether the product exists in order history.
-     * 3. If it has order history, archive it instead of deleting it.
-     * 4. Otherwise permanently delete it.
-     */
+    // ============================================================
+    // FARMER PRODUCTS
+    // ============================================================
+
+    @Transactional(readOnly = true)
+    public Page<Product> farmerProducts(
+            Long farmerId
+    ) {
+
+        if (farmerId == null) {
+            throw new IllegalArgumentException(
+                    "Farmer authentication is required."
+            );
+        }
+
+        return products.findByFarmerId(
+                farmerId,
+                PageRequest.of(
+                        0,
+                        100,
+                        Sort.by(
+                                "createdAt"
+                        ).descending()
+                )
+        );
+    }
+
+    // ============================================================
+    // DELETE PRODUCT - FARMER
+    // ============================================================
+
     @Transactional
     public String deleteProduct(
             Long farmerId,
             Long productId
     ) {
 
-        Product product = products.findById(productId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Product not found."
-                        )
-                );
+        if (farmerId == null) {
+            throw new IllegalArgumentException(
+                    "Farmer authentication is required."
+            );
+        }
+
+        Product product = products.findById(
+                productId
+        ).orElseThrow(() ->
+                new IllegalArgumentException(
+                        "Product not found."
+                )
+        );
 
         if (product.getFarmer() == null ||
-                !product.getFarmer().getId().equals(farmerId)) {
+                product.getFarmer().getId() == null ||
+                !product.getFarmer()
+                        .getId()
+                        .equals(farmerId)) {
 
             throw new IllegalArgumentException(
                     "You can only delete your own products."
@@ -196,55 +436,57 @@ public class ProductService {
         return deleteProductSafely(product);
     }
 
-    /*
-     * ============================================================
-     * ADMIN PRODUCT DELETE
-     * ============================================================
-     */
-    @Transactional
-    public String deleteProductAsAdmin(Long productId) {
+    // ============================================================
+    // DELETE PRODUCT - ADMIN
+    // ============================================================
 
-        Product product = products.findById(productId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Product not found."
-                        )
-                );
+    @Transactional
+    public String deleteProductAsAdmin(
+            Long productId
+    ) {
+
+        Product product = products.findById(
+                productId
+        ).orElseThrow(() ->
+                new IllegalArgumentException(
+                        "Product not found."
+                )
+        );
 
         return deleteProductSafely(product);
     }
 
-    /*
-     * ============================================================
-     * SAFE DELETE LOGIC
-     * ============================================================
-     */
-    private String deleteProductSafely(Product product) {
+    // ============================================================
+    // SAFE DELETE
+    // ============================================================
+
+    private String deleteProductSafely(
+            Product product
+    ) {
 
         Long productId = product.getId();
 
         /*
-         * IMPORTANT:
+         * Remove product from carts first.
          *
-         * A product can exist inside a customer's cart.
-         * Delete those cart rows first so the database
-         * foreign-key constraint does not stop deletion.
+         * Otherwise a foreign-key constraint can prevent
+         * product deletion.
          */
-        cartItems.deleteByProductId(productId);
+        cartItems.deleteByProductId(
+                productId
+        );
 
         /*
-         * IMPORTANT:
+         * If product already exists in order history,
+         * NEVER physically delete it.
          *
-         * If this product has already been purchased,
-         * DO NOT physically delete it.
-         *
-         * Existing orders may reference this product.
-         *
-         * Instead mark it INACTIVE.
+         * Existing orders need the product reference.
          */
         if (orderItems.existsByProductId(productId)) {
 
-            product.setStatus(ProductStatus.INACTIVE);
+            product.setStatus(
+                    ProductStatus.INACTIVE
+            );
 
             products.save(product);
 
@@ -252,29 +494,24 @@ public class ProductService {
         }
 
         /*
-         * No order history:
+         * No order history.
          *
-         * Product can safely be permanently deleted.
+         * Because Product.images uses:
+         *
+         * cascade = ALL
+         * orphanRemoval = true
+         *
+         * deleting the product also removes its images.
+         *
+         * Inventory should also be removed explicitly if
+         * the inventory table has a foreign-key reference.
          */
+        inventory.deleteByProductId(
+                productId
+        );
+
         products.delete(product);
 
         return "Product deleted successfully.";
-    }
-
-    /*
-     * ============================================================
-     * FARMER PRODUCTS
-     * ============================================================
-     */
-    public Page<Product> farmerProducts(Long farmerId) {
-
-        return products.findByFarmerId(
-                farmerId,
-                PageRequest.of(
-                        0,
-                        100,
-                        Sort.by("createdAt").descending()
-                )
-        );
     }
 }

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -6,6 +5,8 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock3,
+  LocateFixed,
+  LogIn,
   MapPin,
   Milk,
   ShieldCheck,
@@ -13,7 +14,9 @@ import {
   Truck,
 } from "lucide-react";
 import api from "../../api";
+import { detectPosition, reverseGeocode, useMyDairyStore } from "./DairyShared";
 import "./dairy-marketplace.css";
+import "./dairy-store.css";
 
 const INITIAL_FORM = {
   storeName: "",
@@ -28,14 +31,6 @@ const INITIAL_FORM = {
   deliveryRadiusKm: "5",
   operatingDays: "",
 };
-
-function getCurrentUser() {
-  try {
-    return JSON.parse(localStorage.getItem("kc_user") || "null");
-  } catch {
-    return null;
-  }
-}
 
 function getErrorMessage(error) {
   const status = error?.response?.status;
@@ -71,6 +66,8 @@ function getErrorMessage(error) {
 
 export default function DairyStoreRegistration() {
   const navigate = useNavigate();
+  const { user, store: myStore, loading: myStoreLoading } = useMyDairyStore();
+  const [locating, setLocating] = useState(false);
 
   const [form, setForm] = useState(INITIAL_FORM);
   const [busy, setBusy] = useState(false);
@@ -94,12 +91,39 @@ export default function DairyStoreRegistration() {
     setMessageType(type);
   };
 
+  const fillFromMyLocation = async () => {
+    setLocating(true);
+    setMessage("");
+
+    try {
+      const { latitude, longitude } = await detectPosition();
+      const place = await reverseGeocode(latitude, longitude);
+
+      setForm((current) => ({
+        ...current,
+        latitude: latitude.toFixed(6),
+        longitude: longitude.toFixed(6),
+        city: current.city || place.city || "",
+        state: current.state || place.state || "",
+        postalCode: current.postalCode || place.postalCode || "",
+        addressLine: current.addressLine || place.area || "",
+      }));
+
+      showMessage(
+        "Location filled in. Please check the address details below.",
+        "success"
+      );
+    } catch (error) {
+      showMessage(error.message);
+    } finally {
+      setLocating(false);
+    }
+  };
+
   const submit = async (event) => {
     event.preventDefault();
 
     if (busy) return;
-
-    const user = getCurrentUser();
 
     if (!user) {
       showMessage("Please sign in to register your dairy store.");
@@ -177,12 +201,13 @@ export default function DairyStoreRegistration() {
       const response = await api.post("/dairy/stores", payload);
 
       setRegisteredStore(response.data);
-      showMessage(
-        "Your dairy store has been registered successfully!",
-        "success"
-      );
-
       setForm(INITIAL_FORM);
+
+      // Onboarding finished: open the new store so the owner can add products.
+      navigate(`/dairy/stores/${response.data.id}`, {
+        replace: true,
+        state: { welcome: true },
+      });
     } catch (error) {
       console.error("Dairy store registration failed:", error);
       showMessage(getErrorMessage(error));
@@ -252,7 +277,7 @@ export default function DairyStoreRegistration() {
 
           <div className="dairy-registration-trust">
             <ShieldCheck size={17} />
-            Sign in with your existing KisanDirect account.
+            Use your existing KisanDirect account. One account can run one dairy store.
           </div>
         </div>
 
@@ -315,10 +340,44 @@ export default function DairyStoreRegistration() {
           </p>
         </div>
 
+        {!user ? (
+          <div className="dairy-gate-card">
+            <LogIn size={30} />
+            <h3>Sign in to register your dairy store</h3>
+            <p>Your store is linked to your KisanDirect account.</p>
+            <div className="dairy-empty-actions">
+              <Link to="/login" className="dairy-primary-button">Sign in</Link>
+              <Link to="/register" className="dairy-secondary-button">Create account</Link>
+            </div>
+          </div>
+        ) : myStoreLoading ? (
+          <div className="dairy-gate-card"><p>Checking your account…</p></div>
+        ) : myStore ? (
+          <div className="dairy-gate-card">
+            <Store size={30} />
+            <h3>You already have a dairy store</h3>
+            <p><strong>{myStore.storeName}</strong> is registered under your account.</p>
+            <div className="dairy-empty-actions">
+              <Link to={`/dairy/stores/${myStore.id}`} className="dairy-primary-button">
+                Open my store <ArrowRight size={17} />
+              </Link>
+            </div>
+          </div>
+        ) : (
         <form
           className="dairy-subscription-form dairy-store-form"
           onSubmit={submit}
         >
+          <button
+            type="button"
+            className="dairy-secondary-button dairy-locate-button"
+            onClick={fillFromMyLocation}
+            disabled={locating}
+          >
+            <LocateFixed size={17} />
+            {locating ? "Detecting location…" : "Use my current location to fill the address"}
+          </button>
+
           <div className="dairy-form-field">
             <label htmlFor="dairy-store-name">Store name *</label>
             <input
@@ -485,49 +544,21 @@ export default function DairyStoreRegistration() {
             </div>
           )}
 
-          {registeredStore && (
-            <div className="dairy-registration-success-details">
-              <CheckCircle2 size={20} />
-              <span>
-                <strong>{registeredStore.storeName || "Your dairy store"}</strong>
-                <small>
-                  Your store has been created. You can now return to the
-                  marketplace.
-                </small>
-              </span>
-            </div>
-          )}
-
           <button
             type="submit"
             className="dairy-primary-button dairy-submit-button"
-            disabled={busy || Boolean(registeredStore)}
+            disabled={busy}
           >
-            {busy
-              ? "Registering your store..."
-              : registeredStore
-                ? "Store registered"
-                : "Register my store"}
-            {!busy && !registeredStore && <ArrowRight size={17} />}
+            {busy ? "Registering your store..." : "Register my store"}
+            {!busy && <ArrowRight size={17} />}
           </button>
 
-          {registeredStore && (
-            <button
-              type="button"
-              className="dairy-secondary-button dairy-registration-return"
-              onClick={() => navigate("/dairy")}
-            >
-              Explore Dairy Marketplace
-              <ArrowRight size={17} />
-            </button>
-          )}
-
           <p className="dairy-prototype-note">
-            Store registration does not automatically publish products.
-            You can add product management and delivery subscriptions as
-            separate features.
+            After registering you'll land on your store page, where you can
+            add products, set prices and offer monthly subscriptions.
           </p>
         </form>
+        )}
       </section>
     </div>
   );

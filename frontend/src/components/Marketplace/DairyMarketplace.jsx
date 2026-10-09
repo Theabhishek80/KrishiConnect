@@ -1,171 +1,320 @@
-import React, { useEffect, useMemo, useState } from "react";
-import api from "../../api";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
-  Check,
-  Clock3,
-  Minus,
+  ClipboardList,
+  LocateFixed,
+  MapPin,
   Milk,
-  Plus,
+  Pencil,
   Search,
-  ShieldCheck,
-  ShoppingBag,
-  ShoppingCart,
   Store,
   Truck,
   X,
 } from "lucide-react";
+import api from "../../api";
+import {
+  RatingLine,
+  daysListedLabel,
+  detectPosition,
+  errorText,
+  loadLocation,
+  reverseGeocode,
+  saveLocation,
+  useMyDairyStore,
+} from "./DairyShared";
 import "./dairy-marketplace.css";
+import "./dairy-store.css";
 
+/* ==================================================================
+   STEP 1  Ask for location  (automatic or manual)
+   STEP 2  Show registered stores near that location, best-reviewed first
+   STEP 3  Tap a store -> /dairy/stores/:id  (products, reviews, order)
+================================================================== */
 export default function DairyMarketplace() {
-  const [search, setSearch] = useState("");
+  const { user, store: myStore, loading: myStoreLoading } = useMyDairyStore();
+
+  const [location, setLocation] = useState(() => loadLocation());
   const [stores, setStores] = useState([]);
-  const [storesLoading, setStoresLoading] = useState(true);
-  const [storesError, setStoresError] = useState("");
-  const [area, setArea] = useState("");
-  const [locationMessage, setLocationMessage] = useState("");
-  const [locationBusy, setLocationBusy] = useState(false);
-  const [subscriptionOpen, setSubscriptionOpen] = useState(false);
-  const [quantity, setQuantity] = useState("1");
-  const [frequency, setFrequency] = useState("Daily");
-  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
 
-  async function loadStores(params = {}) {
+  const [manual, setManual] = useState("");
+  const [detecting, setDetecting] = useState(false);
+  const [locationError, setLocationError] = useState("");
+
+  /* ---------- load stores whenever the chosen location changes ---------- */
+  const loadStores = useCallback(async (loc) => {
+    if (!loc) return;
     try {
-      setStoresLoading(true);
-      setStoresError("");
-      const response = await api.get("/dairy/stores", { params });
-      const data = response.data;
-      const list = Array.isArray(data) ? data : Array.isArray(data?.content) ? data.content : [];
-      setStores(list);
-      if (!list.length && (params.city || params.state || params.postalCode)) {
-        setLocationMessage("No registered dairy stores found for this location. Try another city or PIN code.");
-      } else {
-        setLocationMessage("");
+      setLoading(true);
+      setError("");
+      const params = {};
+      if (loc.city) params.city = loc.city;
+      if (loc.postalCode) params.postalCode = loc.postalCode;
+      if (loc.latitude != null && loc.longitude != null) {
+        params.lat = loc.latitude;
+        params.lng = loc.longitude;
       }
-    } catch (error) {
-      setStoresError(error.response?.status === 403
-        ? "You don't have permission to view dairy stores."
-        : "Unable to load dairy stores. Please try again.");
+      const { data } = await api.get("/dairy/stores", { params });
+      setStores(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(errorText(e, "Unable to load dairy stores. Please try again."));
     } finally {
-      setStoresLoading(false);
+      setLoading(false);
     }
-  }
-
-  useEffect(() => {
-    loadStores();
   }, []);
 
-  function requestLocation() {
-    setLocationMessage("");
-    if (!navigator.geolocation) {
-      setLocationMessage("Your browser doesn't support automatic location. Enter your city or PIN code instead.");
-      return;
-    }
-    setLocationBusy(true);
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      const { latitude, longitude } = position.coords;
-      setLocationBusy(false);
-      // Current API supports city/state and PIN code, not GPS coordinates.
-      // Keep coordinates for future distance-search integration; ask for city/PIN now.
-      setLocationMessage(`Location detected (${latitude.toFixed(3)}, ${longitude.toFixed(3)}). Enter your city or PIN code to find stores nearby.`);
-    }, (error) => {
-      setLocationBusy(false);
-      setLocationMessage(error.code === error.PERMISSION_DENIED
-        ? "Location permission was declined. Enter your city or PIN code to search manually."
-        : "Couldn't detect your location. Enter your city or PIN code to search manually.");
-    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+  useEffect(() => {
+    if (location) loadStores(location);
+  }, [location, loadStores]);
+
+  function chooseLocation(loc) {
+    saveLocation(loc);
+    setLocation(loc);
+    setSearch("");
+    setLocationError("");
   }
 
-  async function searchLocation(event) {
+  /* ---------- automatic ---------- */
+  async function useMyLocation() {
+    setLocationError("");
+    setDetecting(true);
+    try {
+      const { latitude, longitude } = await detectPosition();
+      const place = await reverseGeocode(latitude, longitude);
+      chooseLocation({
+        mode: "auto",
+        latitude,
+        longitude,
+        city: place.city || "",
+        postalCode: "",
+        label: [place.area, place.city].filter(Boolean).join(", ") || "Your current location",
+      });
+    } catch (e) {
+      setLocationError(e.message);
+    } finally {
+      setDetecting(false);
+    }
+  }
+
+  /* ---------- manual ---------- */
+  function submitManual(event) {
     event.preventDefault();
-    const value = area.trim();
+    const value = manual.trim();
     if (!value) {
-      await loadStores();
+      setLocationError("Enter your city or 6-digit PIN code.");
       return;
     }
     if (/^\d{6}$/.test(value)) {
-      await loadStores({ postalCode: value });
+      chooseLocation({ mode: "manual", postalCode: value, label: `PIN ${value}` });
+    } else if (/^\d+$/.test(value)) {
+      setLocationError("A PIN code has 6 digits.");
     } else {
-      await loadStores({ city: value });
+      chooseLocation({ mode: "manual", city: value, label: value });
     }
+  }
+
+  function changeLocation() {
+    saveLocation(null);
+    setLocation(null);
+    setStores([]);
+    setManual("");
   }
 
   const visibleStores = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return stores;
-    return stores.filter((store) => [store.storeName, store.description, store.city, store.state, store.addressLine, store.postalCode]
-      .some((value) => String(value || "").toLowerCase().includes(query)));
+    const q = search.trim().toLowerCase();
+    if (!q) return stores;
+    return stores.filter((s) =>
+      [s.storeName, s.description, s.city, s.addressLine, s.postalCode]
+        .some((v) => String(v || "").toLowerCase().includes(q))
+    );
   }, [stores, search]);
 
-  function closeSubscription() {
-    setSubscriptionOpen(false);
-    setMessage("");
-  }
+  /* ---------- top bar: register button disappears once you own a store ---------- */
+  const topbar = (
+    <div className="dairy-topbar">
+      <Link to="/" className="dairy-back-link">
+        <ArrowLeft size={17} /> Back to KisanDirect
+      </Link>
 
-  function requestSubscription(event) {
-    event.preventDefault();
-    if (!area.trim()) {
-      setMessage("Please enter your delivery area.");
-      return;
-    }
-    setMessage("Your preferences are ready. Subscription activation requires a connected ordering backend.");
-  }
+      <div className="dairy-topbar-actions">
+        {user && (
+          <Link to="/dairy/orders" className="dairy-secondary-button dairy-small-button">
+            <ClipboardList size={16} /> Orders
+          </Link>
+        )}
 
-  return (
-    <div className="dairy-page">
-      <div className="dairy-topbar">
-        <Link to="/" className="dairy-back-link"><ArrowLeft size={17} /> Back to KisanDirect</Link>
-        <Link to="/dairy/register-store" className="dairy-primary-button"><Store size={17} /> Register Your Dairy Store <ArrowRight size={17} /></Link>
+        {!myStoreLoading && myStore ? (
+          <Link to={`/dairy/stores/${myStore.id}`} className="dairy-primary-button dairy-small-button">
+            <Store size={16} /> My Dairy Store
+          </Link>
+        ) : (
+          !myStoreLoading && (
+            <Link to="/dairy/register-store" className="dairy-primary-button dairy-small-button">
+              <Store size={16} /> Register as Dairy Store
+            </Link>
+          )
+        )}
       </div>
-
-      <section className="dairy-hero">
-        <div className="dairy-hero-copy">
-          <span className="dairy-eyebrow"><Milk size={15} /> KISANDIRECT DAIRY</span>
-          <h1>Dairy essentials,<br /><span>closer to home.</span></h1>
-          <p>Find registered local dairy stores, connect with nearby producers, and explore fresh dairy options in your area.</p>
-          <div className="dairy-hero-actions">
-            <a href="#dairy-products" className="dairy-primary-button">Find dairy stores <ArrowRight size={17} /></a>
-            <button type="button" className="dairy-secondary-button" onClick={() => setSubscriptionOpen(true)}><CalendarDays size={17} /> Milk subscription</button>
-          </div>
-          <div className="dairy-trust-row"><span><ShieldCheck size={16} /> Registered store listings</span><span><Truck size={16} /> Local delivery information</span></div>
-        </div>
-        <div className="dairy-hero-art" aria-label="Fresh milk from local dairy producers"><div className="dairy-art-circle"><span>🥛</span></div><div className="dairy-art-note dairy-art-note-one"><span>🐄</span> Local dairies</div><div className="dairy-art-note dairy-art-note-two"><span>🌿</span> Fresh from nearby</div></div>
-      </section>
-
-      <section className="dairy-benefits">
-        <div><Store size={21} /><span><strong>Registered stores</strong><small>Real store information</small></span></div>
-        <div><MapPinIcon /><span><strong>Location search</strong><small>Search by city or PIN code</small></span></div>
-        <div><CalendarDays size={21} /><span><strong>Milk subscriptions</strong><small>Explore delivery preferences</small></span></div>
-      </section>
-
-      <section className="dairy-products-section" id="dairy-products">
-        <div className="dairy-section-heading"><div><span className="dairy-section-kicker">LOCAL DAIRY NETWORK</span><h2>Dairy stores near you</h2><p>Only stores registered with KisanDirect appear here. Product listings will appear when real product data is connected.</p></div><Link to="/dairy/register-store" className="dairy-secondary-button"><Plus size={17} /> Register a store</Link></div>
-
-        <div className="dairy-location-panel">
-          <div className="dairy-location-copy"><strong>Find stores in your area</strong><p>Allow location access or enter a city name or 6-digit PIN code.</p></div>
-          <button type="button" className="dairy-secondary-button" onClick={requestLocation} disabled={locationBusy}>{locationBusy ? "Detecting location…" : "Use my location"}</button>
-          <form className="dairy-location-search" onSubmit={searchLocation}><input value={area} onChange={(e) => setArea(e.target.value)} placeholder="City or PIN code (e.g. Bhopal / 462001)" aria-label="Search stores by city or PIN code"/><button type="submit" className="dairy-primary-button">Search</button><button type="button" className="dairy-secondary-button" onClick={() => {setArea(""); loadStores();}}>Show all</button></form>
-          {locationMessage && <p className="dairy-location-message" role="status">{locationMessage}</p>}
-        </div>
-
-        <div className="dairy-search"><Search size={19}/><input type="search" placeholder="Search store name, city, or address…" value={search} onChange={(event) => setSearch(event.target.value)} aria-label="Search registered dairy stores"/>{search && <button type="button" onClick={() => setSearch("")} aria-label="Clear search"><X size={17}/></button>}</div>
-
-        {storesLoading ? <div className="dairy-empty-state"><Milk size={30}/><h3>Finding local dairy stores…</h3><p>Loading registered stores from KisanDirect.</p></div> : storesError ? <div className="dairy-empty-state" role="alert"><h3>Unable to load dairy stores</h3><p>{storesError}</p><button type="button" className="dairy-primary-button" onClick={() => loadStores()}>Try again</button></div> : visibleStores.length === 0 ? <div className="dairy-empty-state"><Store size={35}/><h3>{stores.length === 0 ? "No dairy stores registered yet" : "No stores match your search"}</h3><p>{stores.length === 0 ? "Be the first to register a dairy store and help local customers discover you." : "Try another store name, city, or address."}</p><Link to="/dairy/register-store" className="dairy-primary-button"><Plus size={17}/> Register Your Dairy Store</Link></div> : <div className="dairy-store-grid">{visibleStores.map((store) => <article className="dairy-store-card" key={store.id ?? store.storeId ?? `${store.storeName}-${store.postalCode}`}><div className="dairy-store-card-art"><span>🏡</span><small><Store size={13}/> Registered dairy store</small></div><div className="dairy-store-card-content"><h3>{store.storeName || "Local dairy store"}</h3>{store.description && <p>{store.description}</p>}<p className="dairy-store-address">{[store.addressLine, store.city, store.state, store.postalCode].filter(Boolean).join(", ") || "Address not provided"}</p>{store.phone && <p className="dairy-store-phone">Contact: {store.phone}</p>}<span className="dairy-store-delivery">Delivery radius: {store.deliveryRadiusKm ?? "—"} km</span></div></article>)}</div>}
-      </section>
-
-      <section className="dairy-subscription-banner"><div className="dairy-subscription-icon"><CalendarDays size={29}/></div><div><span className="dairy-section-kicker">YOUR DAILY ROUTINE</span><h2>Need milk regularly?</h2><p>Explore daily and weekly delivery preferences for your household.</p></div><button type="button" onClick={() => setSubscriptionOpen(true)}>Explore subscriptions <ArrowRight size={17}/></button></section>
-
-      {subscriptionOpen && <div className="dairy-modal-overlay" onClick={closeSubscription}><section className="dairy-modal" role="dialog" aria-modal="true" aria-labelledby="dairy-subscription-title" onClick={(event) => event.stopPropagation()}><div className="dairy-modal-header"><div><span className="dairy-section-kicker">RECURRING DELIVERY</span><h2 id="dairy-subscription-title">Milk subscription preferences</h2></div><button type="button" className="dairy-close-button" onClick={closeSubscription} aria-label="Close subscription form"><X size={20}/></button></div><form className="dairy-subscription-form" onSubmit={requestSubscription}><label>Milk quantity per delivery<select value={quantity} onChange={(event) => setQuantity(event.target.value)}><option value="0.5">500 ml</option><option value="1">1 litre</option><option value="1.5">1.5 litres</option><option value="2">2 litres</option></select></label><label>Delivery frequency<select value={frequency} onChange={(event) => setFrequency(event.target.value)}><option value="Daily">Daily</option><option value="Alternate days">Alternate days</option><option value="Weekly">Selected weekly schedule</option></select></label><label>Your delivery area<input value={area} onChange={(event) => setArea(event.target.value)} placeholder="e.g. Kolar Road, Bhopal" required/></label><div className="dairy-subscription-summary"><CalendarDays size={19}/><span><strong>{quantity} litre(s) per delivery</strong><small>{frequency} · {area || "Area not entered"}</small></span></div>{message && <div className="dairy-form-message" role="status">{message}</div>}<button type="submit" className="dairy-primary-button dairy-submit-button">Save preferences <Check size={17}/></button><p className="dairy-prototype-note">Saving preferences does not create a paid subscription. Seller availability, scheduled orders, and billing require backend integration.</p></form></section></div>}
     </div>
   );
-}
 
-function MapPinIcon() {
-  return <span aria-hidden="true" style={{fontSize: 21, lineHeight: 1}}>📍</span>;
+  /* ================= STEP 1: location gate ================= */
+  if (!location) {
+    return (
+      <div className="dairy-page">
+        {topbar}
+
+        <section className="dairy-gate">
+          <div className="dairy-gate-icon">
+            <Milk size={34} />
+          </div>
+          <span className="dairy-section-kicker">KISANDIRECT DAIRY</span>
+          <h1>Where should we look for fresh dairy?</h1>
+          <p>
+            Tell us your location and we'll show registered dairy stores that serve your area,
+            with the best-reviewed ones first.
+          </p>
+
+          <button
+            type="button"
+            className="dairy-primary-button dairy-gate-auto"
+            onClick={useMyLocation}
+            disabled={detecting}
+          >
+            <LocateFixed size={18} />
+            {detecting ? "Detecting your location…" : "Use my current location"}
+          </button>
+
+          <div className="dairy-gate-or"><span>or enter it yourself</span></div>
+
+          <form className="dairy-gate-form" onSubmit={submitManual}>
+            <MapPin size={18} />
+            <input
+              value={manual}
+              onChange={(e) => setManual(e.target.value)}
+              placeholder="City or 6-digit PIN code (e.g. Bhopal / 462001)"
+              aria-label="City or PIN code"
+            />
+            <button type="submit" className="dairy-primary-button dairy-small-button">
+              Find stores
+            </button>
+          </form>
+
+          {locationError && (
+            <p className="dairy-inline-error" role="alert">{locationError}</p>
+          )}
+        </section>
+      </div>
+    );
+  }
+
+  /* ================= STEP 2: store list ================= */
+  return (
+    <div className="dairy-page">
+      {topbar}
+
+      <section className="dairy-list-head">
+        <div>
+          <span className="dairy-section-kicker">LOCAL DAIRY STORES</span>
+          <h1>Dairy stores near you</h1>
+          <p className="dairy-location-chip">
+            <MapPin size={15} /> {location.label || location.city || location.postalCode}
+            <button type="button" onClick={changeLocation}>
+              <Pencil size={13} /> Change
+            </button>
+          </p>
+        </div>
+
+        <div className="dairy-search">
+          <Search size={19} />
+          <input
+            type="search"
+            placeholder="Search store name or area…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search dairy stores"
+          />
+          {search && (
+            <button type="button" onClick={() => setSearch("")} aria-label="Clear search">
+              <X size={17} />
+            </button>
+          )}
+        </div>
+      </section>
+
+      {loading ? (
+        <div className="dairy-empty-state">
+          <Milk size={30} />
+          <h3>Finding dairy stores…</h3>
+        </div>
+      ) : error ? (
+        <div className="dairy-empty-state" role="alert">
+          <h3>Unable to load dairy stores</h3>
+          <p>{error}</p>
+          <button type="button" className="dairy-primary-button" onClick={() => loadStores(location)}>
+            Try again
+          </button>
+        </div>
+      ) : visibleStores.length === 0 ? (
+        <div className="dairy-empty-state">
+          <Store size={35} />
+          <h3>{stores.length === 0 ? "No dairy stores here yet" : "No store matches your search"}</h3>
+          <p>
+            {stores.length === 0
+              ? "No registered store serves this location yet. Try another city or PIN code, or be the first to open one."
+              : "Try a different name or area."}
+          </p>
+          <div className="dairy-empty-actions">
+            <button type="button" className="dairy-secondary-button" onClick={changeLocation}>
+              Change location
+            </button>
+            {!myStore && (
+              <Link to="/dairy/register-store" className="dairy-primary-button">
+                Register as Dairy Store
+              </Link>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="dairy-store-grid">
+          {visibleStores.map((s, index) => (
+            <Link to={`/dairy/stores/${s.id}`} className="dairy-store-card dairy-store-link" key={s.id}>
+              <div className="dairy-store-card-art">
+                <span>🏡</span>
+                {s.reviewCount > 0 && index < 3 && !search && (
+                  <em className="dairy-rank-badge">#{index + 1} top rated</em>
+                )}
+              </div>
+
+              <div className="dairy-store-card-content">
+                <h3>{s.storeName}</h3>
+                <RatingLine average={s.averageRating} count={s.reviewCount} />
+
+                <p className="dairy-store-address">
+                  {[s.addressLine, s.city].filter(Boolean).join(", ")}
+                </p>
+
+                <div className="dairy-store-meta">
+                  {s.distanceKm != null && <span><MapPin size={13} /> {s.distanceKm} km away</span>}
+                  <span><Truck size={13} /> {s.deliveryRadiusKm ?? "—"} km delivery</span>
+                  <span><CalendarDays size={13} /> {daysListedLabel(s.daysListed)}</span>
+                </div>
+
+                <span className="dairy-store-open">
+                  {s.productCount} product{s.productCount === 1 ? "" : "s"} · View store <ArrowRight size={15} />
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 

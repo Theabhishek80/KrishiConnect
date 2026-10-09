@@ -182,11 +182,38 @@ public class SecurityConfig {
 // PUBLIC DAIRY STORE DISCOVERY
 // ------------------------------------------------
 
-.requestMatchers(
-        HttpMethod.GET,
-        "/api/dairy/stores",
-        "/api/dairy/stores/**"
-).permitAll()
+
+                        // ------------------------------------------------
+                        // DAIRY MARKETPLACE
+                        // ------------------------------------------------
+
+                        // Anyone can browse active dairy stores.
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/dairy/stores",
+                                "/api/dairy/stores/**"
+                        ).permitAll()
+
+                        // Any signed-in user can register a dairy store.
+                        // No FARMER role is required.
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/dairy/stores"
+                        ).authenticated()
+
+                        // Any signed-in user can view their own stores.
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/dairy/stores/mine"
+                        ).authenticated()
+
+                        // Any signed-in user may attempt an update;
+                        // DairyStoreService must enforce ownership.
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/dairy/stores/*"
+                        ).authenticated()
+
 
 
 

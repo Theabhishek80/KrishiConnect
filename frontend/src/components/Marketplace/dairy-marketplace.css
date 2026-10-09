@@ -1216,3 +1216,134 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* =========================================================
+   EXTRA CREATIVE DETAIL — FLOATING MILK DROPS + MILK SPLASH
+   CSS-only animation; no JavaScript or extra dependency.
+========================================================= */
+
+.dairy-hero-art {
+  overflow: visible;
+}
+
+.dairy-hero-art::before,
+.dairy-hero-art::after {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  content: "";
+}
+
+/* A small floating milk droplet */
+.dairy-hero-art::before {
+  top: 18%;
+  left: 13%;
+  width: 21px;
+  height: 28px;
+  border: 2px solid rgba(255, 255, 255, .92);
+  border-radius: 58% 42% 58% 42%;
+  background: linear-gradient(145deg, #fff 8%, #f2fff4 80%);
+  box-shadow:
+    0 5px 18px rgba(255, 255, 255, .55),
+    0 8px 22px rgba(39, 112, 52, .12);
+  transform: rotate(18deg);
+  animation: dairyMilkDropDrift 5.5s ease-in-out infinite;
+}
+
+/* Soft milk-splash ring that appears and fades */
+.dairy-hero-art::after {
+  right: 13%;
+  bottom: 13%;
+  width: 56px;
+  height: 28px;
+  border: 4px solid rgba(255, 255, 255, .88);
+  border-top-color: rgba(255, 255, 255, .18);
+  border-radius: 50%;
+  filter: drop-shadow(0 6px 10px rgba(40, 123, 59, .12));
+  animation: dairyMilkSplash 3.8s ease-in-out infinite;
+}
+
+@keyframes dairyMilkDropDrift {
+  0%, 100% {
+    opacity: .82;
+    transform: translate3d(0, 0, 0) rotate(18deg) scale(.94);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(10px, -22px, 0) rotate(34deg) scale(1.08);
+  }
+}
+
+@keyframes dairyMilkSplash {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(8px) scale(.55) rotate(-8deg);
+  }
+  35% {
+    opacity: .9;
+    transform: translateY(-3px) scale(1) rotate(4deg);
+  }
+  65% {
+    opacity: .65;
+    transform: translateY(-7px) scale(1.08) rotate(0deg);
+  }
+}
+
+/* Animated white milk shimmer sweeping across the farmer artwork */
+.dairy-art-circle {
+  background-color: #e7f3e4;
+}
+
+.dairy-art-circle::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: -25%;
+  left: -65%;
+  width: 42%;
+  height: 150%;
+  border-radius: 50%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, .42),
+    rgba(255, 255, 255, .08),
+    transparent
+  );
+  transform: rotate(20deg);
+  pointer-events: none;
+  animation: dairyMilkShimmer 7s ease-in-out infinite;
+}
+
+@keyframes dairyMilkShimmer {
+  0%, 15% { left: -65%; opacity: 0; }
+  30% { opacity: .9; }
+  58% { left: 125%; opacity: .5; }
+  59%, 100% { left: 125%; opacity: 0; }
+}
+
+/* Tiny milk-drop accent on product artwork */
+.dairy-product-art::after {
+  content: "✦";
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  color: rgba(47, 125, 59, .22);
+  font-size: 22px;
+  animation: dairyTinySparkle 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes dairyTinySparkle {
+  0%, 100% { opacity: .25; transform: scale(.8) rotate(0deg); }
+  50% { opacity: .85; transform: scale(1.15) rotate(18deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dairy-hero-art::before,
+  .dairy-hero-art::after,
+  .dairy-art-circle::before,
+  .dairy-product-art::after {
+    animation: none !important;
+  }
+}

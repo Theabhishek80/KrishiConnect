@@ -559,6 +559,26 @@ function Home() {
         )}
 
       </section>
+      
+
+      {/* DAIRY MARKETPLACE PROMOTION */}
+      <section className="dairy-home-promo">
+        <div className="dairy-home-promo-icon">🥛</div>
+
+        <div className="dairy-home-promo-copy">
+          <span>INTRODUCING DAIRY MARKETPLACE</span>
+          <h2>Your daily dairy, from local producers.</h2>
+          <p>
+            Discover milk, curd, paneer and more.
+            Explore local sellers and recurring delivery options.
+          </p>
+        </div>
+
+        <Link to="/dairy" className="dairy-home-promo-button">
+          Explore Dairy
+          <ArrowRight size={18} />
+        </Link>
+      </section>
 
 
       <ContentSlider
@@ -2155,6 +2175,13 @@ export default function App() {
           path="/"
           element={<Home />}
         />
+
+      
+        <Route
+          path="/dairy"
+          element={<DairyMarketplace />}
+        />
+
 
         <Route
           path="/about"

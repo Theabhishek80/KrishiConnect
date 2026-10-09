@@ -425,4 +425,3 @@ export function RatingLine({ average = 0, count = 0 }) {
     </span>
   );
 }
-

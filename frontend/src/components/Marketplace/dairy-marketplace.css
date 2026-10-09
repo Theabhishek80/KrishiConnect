@@ -533,3 +533,31 @@ footer a:hover, .footer a:hover, .site-footer a:hover, .app-footer a:hover, .mai
   footer::before, footer::after, .footer::before, .footer::after,
   .site-footer::before, .site-footer::after { animation: none !important; transition-duration: .01ms !important; }
 }
+
+.dairy-registration-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dairy-registration-grid label {
+  min-width: 0;
+}
+
+.dairy-registration-grid input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dairy-subscription-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font: inherit;
+}
+
+@media (max-width: 600px) {
+  .dairy-registration-grid {
+    grid-template-columns: 1fr;
+  }
+}

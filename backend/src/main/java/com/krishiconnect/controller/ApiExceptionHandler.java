@@ -21,6 +21,23 @@ public class ApiExceptionHandler {
         return Map.of("error", e.getMessage() == null ? "Bad request" : e.getMessage());
     }
 
+    // 404 for "not found" thrown by the dairy services.
+    @ExceptionHandler(java.util.NoSuchElementException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String,String> notFound(java.util.NoSuchElementException e) {
+        return Map.of("error", e.getMessage() == null ? "Not found" : e.getMessage());
+    }
+
+    // Keeps the HTTP status chosen by the code and exposes the reason as "error".
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public org.springframework.http.ResponseEntity<Map<String,String>> statusException(
+            org.springframework.web.server.ResponseStatusException e) {
+        String reason = e.getReason() == null ? "Request failed" : e.getReason();
+        return org.springframework.http.ResponseEntity
+            .status(e.getStatusCode())
+            .body(Map.of("error", reason, "message", reason));
+    }
+
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public Map<String,String> forbidden(Exception e) { return Map.of("error", "Forbidden"); }

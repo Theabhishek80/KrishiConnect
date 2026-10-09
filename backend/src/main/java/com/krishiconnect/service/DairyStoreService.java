@@ -1,7 +1,6 @@
 
 package com.krishiconnect.service;
 
-import com.krishiconnect.domain.Role;
 import com.krishiconnect.dto.DairyStoreRequest;
 import com.krishiconnect.entity.DairyStore;
 import com.krishiconnect.entity.User;
@@ -83,7 +82,9 @@ public class DairyStoreService {
     }
 
     // --------------------------------------------------
-    // CREATE STORE
+    // REGISTER DAIRY STORE
+    // Any enabled, authenticated user may register.
+    // FARMER role is not required for this feature.
     // --------------------------------------------------
 
     @Transactional
@@ -91,22 +92,19 @@ public class DairyStoreService {
             Authentication authentication,
             DairyStoreRequest request
     ) {
-        User owner = getAuthenticatedFarmer(authentication);
+        User owner = getAuthenticatedUser(authentication);
 
         DairyStore store = new DairyStore();
         store.setOwner(owner);
 
         applyRequest(store, request);
-
-        // New stores are active by default in the current entity.
-        // Review/approval workflow can be added separately.
         store.setActive(true);
 
         return dairyStoreRepository.save(store);
     }
 
     // --------------------------------------------------
-    // GET CURRENT FARMER'S STORES
+    // GET CURRENT USER'S STORES
     // --------------------------------------------------
 
     @Transactional(readOnly = true)
@@ -121,6 +119,7 @@ public class DairyStoreService {
 
     // --------------------------------------------------
     // UPDATE OWN STORE
+    // Only the owner can update their store.
     // --------------------------------------------------
 
     @Transactional
@@ -141,24 +140,30 @@ public class DairyStoreService {
         if (store.getOwner() == null
                 || !store.getOwner().getId().equals(userId)) {
             throw new AccessDeniedException(
-                    "You cannot update another farmer's store."
+                    "You cannot update another user's store."
             );
         }
 
         applyRequest(store, request);
 
-        // Do not allow a normal update to change the store's
-        // activation status.
+        // A normal update must not change activation status.
         return dairyStoreRepository.save(store);
     }
 
     // --------------------------------------------------
-    // AUTHENTICATION AND ROLE VALIDATION
+    // AUTHENTICATION AND ACCOUNT VALIDATION
     // --------------------------------------------------
 
-    private User getAuthenticatedFarmer(
+    private User getAuthenticatedUser(
             Authentication authentication
     ) {
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException(
+                    "Please sign in to register a dairy store."
+            );
+        }
+
         Long userId = authContext.userId(authentication);
 
         User owner = userRepository.findById(userId)
@@ -171,12 +176,6 @@ public class DairyStoreService {
         if (!owner.isEnabled()) {
             throw new AccessDeniedException(
                     "This account is disabled."
-            );
-        }
-
-        if (owner.getRole() != Role.FARMER) {
-            throw new AccessDeniedException(
-                    "Only farmers can manage dairy stores."
             );
         }
 
@@ -194,6 +193,39 @@ public class DairyStoreService {
         if (request == null) {
             throw new IllegalArgumentException(
                     "Store request cannot be empty."
+            );
+        }
+
+        if (request.storeName() == null
+                || request.storeName().isBlank()) {
+            throw new IllegalArgumentException(
+                    "Store name is required."
+            );
+        }
+
+        if (request.addressLine() == null
+                || request.addressLine().isBlank()) {
+            throw new IllegalArgumentException(
+                    "Address is required."
+            );
+        }
+
+        if (request.city() == null || request.city().isBlank()) {
+            throw new IllegalArgumentException(
+                    "City is required."
+            );
+        }
+
+        if (request.state() == null || request.state().isBlank()) {
+            throw new IllegalArgumentException(
+                    "State is required."
+            );
+        }
+
+        if (request.postalCode() == null
+                || request.postalCode().isBlank()) {
+            throw new IllegalArgumentException(
+                    "Postal code is required."
             );
         }
 

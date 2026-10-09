@@ -1,4 +1,4 @@
-
+import { Stars } from "./DairyShared";
 import { useCallback, useEffect, useState } from "react";
 import { Star } from "lucide-react";
 import api from "../../api";

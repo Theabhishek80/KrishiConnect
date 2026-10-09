@@ -177,6 +177,19 @@ public class SecurityConfig {
                         ).authenticated()
 
 
+                                       
+// ------------------------------------------------
+// PUBLIC DAIRY STORE DISCOVERY
+// ------------------------------------------------
+
+.requestMatchers(
+        HttpMethod.GET,
+        "/api/dairy/stores",
+        "/api/dairy/stores/**"
+).permitAll()
+
+
+
                         // ------------------------------------------------
                         // PUBLIC CATALOGUE
                         // ------------------------------------------------

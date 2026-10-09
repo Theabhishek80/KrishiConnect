@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -7,7 +6,6 @@ import {
   CalendarDays,
   Check,
   Clock3,
-  MapPin,
   Minus,
   Milk,
   Plus,
@@ -124,17 +122,13 @@ export default function DairyMarketplace() {
   );
 
   const cartTotal = cartItems.reduce(
-    (total, product) =>
-      total + product.price * cart[product.id],
+    (total, product) => total + product.price * cart[product.id],
     0
   );
 
   function updateCart(productId, change) {
     setCart((current) => {
-      const nextQuantity = Math.max(
-        0,
-        (current[productId] || 0) + change
-      );
+      const nextQuantity = Math.max(0, (current[productId] || 0) + change);
 
       return {
         ...current,
@@ -142,6 +136,11 @@ export default function DairyMarketplace() {
       };
     });
 
+    setMessage("");
+  }
+
+  function closeSubscription() {
+    setSubscriptionOpen(false);
     setMessage("");
   }
 
@@ -191,9 +190,8 @@ export default function DairyMarketplace() {
           </h1>
 
           <p>
-            Discover milk and everyday dairy products from local
-            producers. Explore your options and choose what works
-            for your household.
+            Discover milk and everyday dairy products from local producers.
+            Explore your options and choose what works for your household.
           </p>
 
           <div className="dairy-hero-actions">
@@ -234,7 +232,7 @@ export default function DairyMarketplace() {
           </div>
           <div className="dairy-art-note dairy-art-note-two">
             <span>🧀</span>
-            Paneer & more
+            Paneer &amp; more
           </div>
         </div>
       </section>
@@ -304,9 +302,7 @@ export default function DairyMarketplace() {
               type="button"
               key={item}
               className={
-                category === item
-                  ? "dairy-category active"
-                  : "dairy-category"
+                category === item ? "dairy-category active" : "dairy-category"
               }
               onClick={() => setCategory(item)}
             >
@@ -336,16 +332,14 @@ export default function DairyMarketplace() {
 
                   <div className="dairy-product-bottom">
                     <div>
-                      <strong>
-                        ₹{product.price.toLocaleString("en-IN")}
-                      </strong>
+                      <strong>₹{product.price.toLocaleString("en-IN")}</strong>
                       <small> / {product.unit}</small>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => updateCart(product.id, 1)}
-                      aria-label={`Add ${product.name} to basket`}
+                      aria-label={"Add " + product.name + " to basket"}
                     >
                       <Plus size={17} />
                       Add
@@ -382,15 +376,11 @@ export default function DairyMarketplace() {
           <span className="dairy-section-kicker">YOUR DAILY ROUTINE</span>
           <h2>Need milk regularly?</h2>
           <p>
-            Explore daily and weekly delivery preferences for your
-            household.
+            Explore daily and weekly delivery preferences for your household.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setSubscriptionOpen(true)}
-        >
+        <button type="button" onClick={() => setSubscriptionOpen(true)}>
           Explore subscriptions
           <ArrowRight size={17} />
         </button>
@@ -429,10 +419,7 @@ export default function DairyMarketplace() {
                 <ShoppingBag size={38} />
                 <h3>Your basket is empty</h3>
                 <p>Add some dairy products to get started.</p>
-                <button
-                  type="button"
-                  onClick={() => setCartOpen(false)}
-                >
+                <button type="button" onClick={() => setCartOpen(false)}>
                   Browse products
                 </button>
               </div>
@@ -441,9 +428,7 @@ export default function DairyMarketplace() {
                 <div className="dairy-cart-items">
                   {cartItems.map((product) => (
                     <div className="dairy-cart-item" key={product.id}>
-                      <span className="dairy-cart-emoji">
-                        {product.emoji}
-                      </span>
+                      <span className="dairy-cart-emoji">{product.emoji}</span>
 
                       <div className="dairy-cart-item-info">
                         <strong>{product.name}</strong>
@@ -455,7 +440,7 @@ export default function DairyMarketplace() {
                           <button
                             type="button"
                             onClick={() => updateCart(product.id, -1)}
-                            aria-label={`Remove one ${product.name}`}
+                            aria-label={"Remove one " + product.name}
                           >
                             <Minus size={14} />
                           </button>
@@ -465,30 +450,26 @@ export default function DairyMarketplace() {
                           <button
                             type="button"
                             onClick={() => updateCart(product.id, 1)}
-                            aria-label={`Add one ${product.name}`}
+                            aria-label={"Add one " + product.name}
                           >
                             <Plus size={14} />
                           </button>
                         </div>
                       </div>
 
-                      <strong>
-                        ₹{product.price * cart[product.id]}
-                      </strong>
+                      <strong>₹{product.price * cart[product.id]}</strong>
                     </div>
                   ))}
                 </div>
 
                 <div className="dairy-cart-total">
                   <span>Subtotal</span>
-                  <strong>
-                    ₹{cartTotal.toLocaleString("en-IN")}
-                  </strong>
+                  <strong>₹{cartTotal.toLocaleString("en-IN")}</strong>
                 </div>
 
                 <p className="dairy-prototype-note">
-                  This basket is a frontend preview. Checkout and
-                  payment will work after backend integration.
+                  This basket is a frontend preview. Checkout and payment will
+                  work after backend integration.
                 </p>
               </>
             )}
@@ -497,13 +478,7 @@ export default function DairyMarketplace() {
       )}
 
       {subscriptionOpen && (
-        <div
-          className="dairy-modal-overlay"
-          onClick={() => {
-            setSubscriptionOpen(false);
-            setMessage("");
-          }}
-        >
+        <div className="dairy-modal-overlay" onClick={closeSubscription}>
           <section
             className="dairy-modal"
             role="dialog"
@@ -513,9 +488,7 @@ export default function DairyMarketplace() {
           >
             <div className="dairy-modal-header">
               <div>
-                <span className="dairy-section-kicker">
-                  RECURRING DELIVERY
-                </span>
+                <span className="dairy-section-kicker">RECURRING DELIVERY</span>
                 <h2 id="dairy-subscription-title">
                   Milk subscription preferences
                 </h2>
@@ -524,10 +497,7 @@ export default function DairyMarketplace() {
               <button
                 type="button"
                 className="dairy-close-button"
-                onClick={() => {
-                  setSubscriptionOpen(false);
-                  setMessage("");
-                }}
+                onClick={closeSubscription}
                 aria-label="Close subscription form"
               >
                 <X size={20} />
@@ -577,7 +547,9 @@ export default function DairyMarketplace() {
                 <CalendarDays size={19} />
                 <span>
                   <strong>{quantity} litre(s) per delivery</strong>
-                  <small>{frequency} · {area || "Area not entered"}</small>
+                  <small>
+                    {frequency} · {area || "Area not entered"}
+                  </small>
                 </span>
               </div>
 
@@ -596,9 +568,9 @@ export default function DairyMarketplace() {
               </button>
 
               <p className="dairy-prototype-note">
-                Saving preferences does not create a paid subscription.
-                Seller availability, scheduled orders, and billing require
-                backend integration.
+                Saving preferences does not create a paid subscription. Seller
+                availability, scheduled orders, and billing require backend
+                integration.
               </p>
             </form>
           </section>

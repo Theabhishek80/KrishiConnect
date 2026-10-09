@@ -4,6 +4,8 @@ import io.imagekit.client.ImageKitClient;
 import io.imagekit.client.okhttp.ImageKitOkHttpClient;
 import io.imagekit.models.files.FileUploadParams;
 import io.imagekit.models.files.FileUploadResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +15,9 @@ import java.util.Objects;
 
 @Service
 public class ImageKitService {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(ImageKitService.class);
 
     // Spring resolves this from Railway/Render environment variables or the
     // optional Spring-imported .env file. Do not rely on System.getenv() here:
@@ -82,7 +87,12 @@ public class ImageKitService {
 
         } catch (IOException e) {
             throw new IllegalStateException("Could not read the uploaded image.", e);
+        } catch (IllegalStateException e) {
+            // already has a clear message (e.g. key not configured)
+            log.error("ImageKit upload failed: {}", e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
+            log.error("ImageKit upload failed", e);
             throw new IllegalStateException("ImageKit upload failed.", e);
         }
     }
@@ -139,7 +149,15 @@ public class ImageKitService {
                 e
         );
 
+    } catch (IllegalStateException e) {
+
+        // already has a clear message (e.g. key not configured)
+        log.error("ImageKit upload failed: {}", e.getMessage(), e);
+        throw e;
+
     } catch (Exception e) {
+
+        log.error("ImageKit upload failed", e);
 
         throw new IllegalStateException(
                 "ImageKit upload failed.",
@@ -191,7 +209,12 @@ public class ImageKitService {
 
         } catch (IOException e) {
             throw new IllegalStateException("Could not read the uploaded image.", e);
+        } catch (IllegalStateException e) {
+            // already has a clear message (e.g. key not configured)
+            log.error("ImageKit upload failed: {}", e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
+            log.error("ImageKit upload failed", e);
             throw new IllegalStateException("ImageKit upload failed.", e);
         }
     }
@@ -233,8 +256,11 @@ public class ImageKitService {
         } catch (IOException e) {
             throw new IllegalStateException("Could not read the uploaded image.", e);
         } catch (IllegalStateException e) {
+            // already has a clear message (e.g. key not configured)
+            log.error("ImageKit upload failed: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
+            log.error("ImageKit upload failed", e);
             throw new IllegalStateException("ImageKit upload failed.", e);
         }
     }

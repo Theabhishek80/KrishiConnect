@@ -45,6 +45,7 @@ import AIAssistant from "./components/AI/AIAssistant";
 import Footer from "./components/Footer";
 import ErrorBoundary from "./components/ErrorBoundary";
 import DairyMarketplace from "./components/Marketplace/DairyMarketplace";
+import DairyStoreRegistration from "./components/Marketplace/DairyStoreRegistration";
 
 import {
   MandiPage,
@@ -2182,6 +2183,11 @@ export default function App() {
           path="/dairy"
           element={<DairyMarketplace />}
         />
+
+        <Route
+  path="/dairy/register-store"
+  element={<DairyStoreRegistration />}
+/>
 
 
         <Route

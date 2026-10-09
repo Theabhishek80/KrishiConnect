@@ -1,13 +1,9 @@
-import { Stars } from "./DairyShared";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Star } from "lucide-react";
 import api from "../../api";
 import { AUTH_EVENT, getStoredUser } from "../../utils/auth";
 
-/* =========================================================
-   PRODUCT CATEGORIES
-========================================================= */
-
+/* Product categories */
 export const CATEGORIES = [
   { value: "MILK", label: "Milk", emoji: "🥛" },
   { value: "CURD", label: "Curd / Dahi", emoji: "🍶" },
@@ -22,13 +18,10 @@ export const categoryOf = (value) =>
   CATEGORIES.find((category) => category.value === value) ??
   CATEGORIES[CATEGORIES.length - 1];
 
-/* =========================================================
-   CURRENCY FORMATTER
-========================================================= */
-
+/* Currency formatter */
 export const rupees = (amount) => {
-  const parsedAmount = Number(amount ?? 0);
-  const safeAmount = Number.isFinite(parsedAmount) ? parsedAmount : 0;
+  const parsed = Number(amount ?? 0);
+  const safeAmount = Number.isFinite(parsed) ? parsed : 0;
 
   return (
     "₹" +
@@ -38,31 +31,19 @@ export const rupees = (amount) => {
   );
 };
 
-/* =========================================================
-   LISTING DATE LABELS
-========================================================= */
-
+/* Listing date labels */
 export function daysListedLabel(days) {
-  if (days === undefined || days === null || days === "") {
-    return "";
-  }
+  if (days === undefined || days === null || days === "") return "";
 
-  const numberOfDays = Number(days);
+  const value = Number(days);
+  if (!Number.isFinite(value)) return "";
+  if (value <= 0) return "Listed today";
+  if (value === 1) return "Listed 1 day ago";
 
-  if (!Number.isFinite(numberOfDays)) {
-    return "";
-  }
-
-  if (numberOfDays <= 0) return "Listed today";
-  if (numberOfDays === 1) return "Listed 1 day ago";
-
-  return `Listed ${numberOfDays} days ago`;
+  return `Listed ${value} days ago`;
 }
 
-/* =========================================================
-   API ERROR MESSAGES
-========================================================= */
-
+/* API error messages */
 export function errorText(
   error,
   fallback = "Something went wrong. Please try again."
@@ -73,22 +54,12 @@ export function errorText(
 
   const data = error.response.data;
 
-  if (typeof data?.error === "string") {
-    return data.error;
-  }
-
-  if (typeof data?.message === "string") {
-    return data.message;
-  }
-
-  if (error.response.status === 401) {
-    return "Please sign in to continue.";
-  }
-
+  if (typeof data?.error === "string") return data.error;
+  if (typeof data?.message === "string") return data.message;
+  if (error.response.status === 401) return "Please sign in to continue.";
   if (error.response.status === 403) {
     return "You don't have permission to perform this action.";
   }
-
   if (error.response.status === 404) {
     return "The requested dairy resource could not be found.";
   }
@@ -96,17 +67,12 @@ export function errorText(
   return fallback;
 }
 
-/* =========================================================
-   AUTHENTICATED USER
-========================================================= */
-
+/* Authentication state */
 export function useAuthUser() {
   const [user, setUser] = useState(() => getStoredUser());
 
   useEffect(() => {
-    const syncUser = () => {
-      setUser(getStoredUser());
-    };
+    const syncUser = () => setUser(getStoredUser());
 
     window.addEventListener(AUTH_EVENT, syncUser);
     window.addEventListener("storage", syncUser);
@@ -120,10 +86,7 @@ export function useAuthUser() {
   return user;
 }
 
-/* =========================================================
-   CURRENT USER'S DAIRY STORE
-========================================================= */
-
+/* Current user's dairy store */
 export function useMyDairyStore() {
   const user = useAuthUser();
   const [store, setStore] = useState(null);
@@ -142,13 +105,9 @@ export function useMyDairyStore() {
       const response = await api.get("/dairy/stores/mine");
       const data = response?.data;
 
-      if (Array.isArray(data)) {
-        setStore(data[0] ?? null);
-      } else {
-        setStore(data ?? null);
-      }
+      setStore(Array.isArray(data) ? data[0] ?? null : data ?? null);
     } catch (error) {
-      console.error("Failed to load my dairy store:", error);
+      console.error("Failed to load dairy store:", error);
       setStore(null);
     } finally {
       setLoading(false);
@@ -159,29 +118,18 @@ export function useMyDairyStore() {
     reload();
   }, [reload]);
 
-  return {
-    user,
-    store,
-    loading,
-    reload,
-  };
+  return { user, store, loading, reload };
 }
 
-/* =========================================================
-   SHOPPER LOCATION STORAGE
-========================================================= */
-
+/* Shopper location storage */
 const LOCATION_KEY = "kc_dairy_location";
 
 export function loadLocation() {
   try {
     if (typeof window === "undefined") return null;
 
-    const storedLocation = window.localStorage.getItem(LOCATION_KEY);
-
-    if (!storedLocation) return null;
-
-    return JSON.parse(storedLocation);
+    const stored = window.localStorage.getItem(LOCATION_KEY);
+    return stored ? JSON.parse(stored) : null;
   } catch {
     return null;
   }
@@ -200,14 +148,11 @@ export function saveLocation(location) {
       window.localStorage.removeItem(LOCATION_KEY);
     }
   } catch {
-    // Storage can be disabled by the browser.
+    // Ignore unavailable browser storage.
   }
 }
 
-/* =========================================================
-   BROWSER GPS
-========================================================= */
-
+/* Browser GPS */
 export function detectPosition() {
   return new Promise((resolve, reject) => {
     if (
@@ -248,11 +193,7 @@ export function detectPosition() {
   });
 }
 
-/* =========================================================
-   REVERSE GEOCODING
-   GPS coordinates -> city, state, PIN code and area
-========================================================= */
-
+/* Reverse geocoding */
 export async function reverseGeocode(latitude, longitude) {
   const lat = Number(latitude);
   const lon = Number(longitude);
@@ -277,16 +218,13 @@ export async function reverseGeocode(latitude, longitude) {
         `?format=jsonv2&addressdetails=1&zoom=14&lat=${lat}&lon=${lon}`,
       {
         signal: controller.signal,
-        headers: {
-          Accept: "application/json",
-        },
+        headers: { Accept: "application/json" },
       }
     );
 
     if (!response.ok) return {};
 
-    const result = await response.json();
-    const address = result?.address ?? {};
+    const address = (await response.json())?.address ?? {};
 
     return {
       city:
@@ -312,116 +250,96 @@ export async function reverseGeocode(latitude, longitude) {
   }
 }
 
-/* =========================================================
-   RATING HELPERS
-========================================================= */
-
+/* Rating helpers */
 function normalizeRating(value) {
-  const numericValue = Number(value ?? 0);
+  const number = Number(value ?? 0);
 
-  if (!Number.isFinite(numericValue)) {
-    return 0;
-  }
-
-  return Math.min(5, Math.max(0, numericValue));
+  return Number.isFinite(number)
+    ? Math.min(5, Math.max(0, number))
+    : 0;
 }
 
-/* =========================================================
-   STAR DISPLAY
-========================================================= */
-
+/* Star display: no JSX, compatible with a .js file */
 export function Stars({ value = 0, size = 16 }) {
   const rating = normalizeRating(value);
   const starSize = Number.isFinite(Number(size))
     ? Math.max(8, Math.min(48, Number(size)))
     : 16;
 
-  return (
-    <span
-      className="dairy-stars"
-      role="img"
-      aria-label={`${rating} out of 5 stars`}
-    >
-      {[1, 2, 3, 4, 5].map((number) => {
-        const isActive = number <= Math.round(rating);
-
-        return (
-          <Star
-            key={number}
-            size={starSize}
-            className={isActive ? "on" : "off"}
-            fill={isActive ? "currentColor" : "none"}
-            aria-hidden="true"
-          />
-        );
-      })}
-    </span>
+  return React.createElement(
+    "span",
+    {
+      className: "dairy-stars",
+      role: "img",
+      "aria-label": `${rating} out of 5 stars`,
+    },
+    [1, 2, 3, 4, 5].map((number) =>
+      React.createElement(Star, {
+        key: number,
+        size: starSize,
+        className: number <= Math.round(rating) ? "on" : "off",
+        fill: number <= Math.round(rating) ? "currentColor" : "none",
+        "aria-hidden": true,
+      })
+    )
   );
 }
 
-/* =========================================================
-   INTERACTIVE STAR PICKER
-========================================================= */
-
+/* Interactive star picker */
 export function StarPicker({ value = 0, onChange }) {
   const rating = normalizeRating(value);
 
-  return (
-    <span
-      className="dairy-star-picker"
-      role="radiogroup"
-      aria-label="Your rating"
-    >
-      {[1, 2, 3, 4, 5].map((number) => {
-        const isActive = number <= rating;
-
-        return (
-          <button
-            key={number}
-            type="button"
-            role="radio"
-            aria-checked={rating === number}
-            aria-label={`${number} star${number === 1 ? "" : "s"}`}
-            onClick={() => onChange?.(number)}
-            className={isActive ? "on" : ""}
-          >
-            <Star
-              size={28}
-              fill={isActive ? "currentColor" : "none"}
-              aria-hidden="true"
-            />
-          </button>
-        );
-      })}
-    </span>
+  return React.createElement(
+    "span",
+    {
+      className: "dairy-star-picker",
+      role: "radiogroup",
+      "aria-label": "Your rating",
+    },
+    [1, 2, 3, 4, 5].map((number) =>
+      React.createElement(
+        "button",
+        {
+          key: number,
+          type: "button",
+          role: "radio",
+          "aria-checked": rating === number,
+          "aria-label": `${number} star${number === 1 ? "" : "s"}`,
+          onClick: () => onChange?.(number),
+          className: number <= rating ? "on" : "",
+        },
+        React.createElement(Star, {
+          size: 28,
+          fill: number <= rating ? "currentColor" : "none",
+          "aria-hidden": true,
+        })
+      )
+    )
   );
 }
 
-/* =========================================================
-   RATING SUMMARY
-========================================================= */
-
+/* Rating summary */
 export function RatingLine({ average = 0, count = 0 }) {
   const rating = normalizeRating(average);
   const reviewCount = Math.max(0, Number(count) || 0);
 
   if (reviewCount === 0) {
-    return (
-      <span className="dairy-rating-line dairy-rating-new">
-        ⭐ New · no reviews yet
-      </span>
+    return React.createElement(
+      "span",
+      { className: "dairy-rating-line dairy-rating-new" },
+      "⭐ New · no reviews yet"
     );
   }
 
-  return (
-    <span className="dairy-rating-line">
-      <Stars value={rating} size={15} />
-
-      <strong>{rating.toFixed(1)}</strong>
-
-      <small>
-        ({reviewCount} review{reviewCount === 1 ? "" : "s"})
-      </small>
-    </span>
+  return React.createElement(
+    "span",
+    { className: "dairy-rating-line" },
+    React.createElement(Stars, { value: rating, size: 15 }),
+    React.createElement("strong", null, rating.toFixed(1)),
+    React.createElement(
+      "small",
+      null,
+      `(${reviewCount} review${reviewCount === 1 ? "" : "s"})`
+    )
   );
 }

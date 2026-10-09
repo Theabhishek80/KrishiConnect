@@ -1,13 +1,20 @@
 
 package com.krishiconnect.controller;
 
+import com.krishiconnect.dto.DairyStoreRequest;
 import com.krishiconnect.entity.DairyStore;
 import com.krishiconnect.service.DairyStoreService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/dairy/stores")
@@ -21,14 +28,17 @@ public class DairyStoreController {
         this.dairyStoreService = dairyStoreService;
     }
 
+    // --------------------------------------------------
+    // PUBLIC STORE DISCOVERY
+    // --------------------------------------------------
+
     // GET /api/dairy/stores
-    // Returns active stores.
     @GetMapping
     public List<DairyStore> getActiveStores() {
         return dairyStoreService.getActiveStores();
     }
 
-    // GET /api/dairy/stores?city=Indore&state=Madhya%20Pradesh
+    // GET /api/dairy/stores?city=Indore&state=Madhya Pradesh
     @GetMapping(params = {"city", "state"})
     public List<DairyStore> getStoresByCity(
             @RequestParam String city,
@@ -40,7 +50,8 @@ public class DairyStoreController {
             );
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, ex.getMessage()
+                    HttpStatus.BAD_REQUEST,
+                    ex.getMessage()
             );
         }
     }
@@ -64,12 +75,62 @@ public class DairyStoreController {
 
     // GET /api/dairy/stores/12
     @GetMapping("/{id}")
-    public DairyStore getStoreById(@PathVariable Long id) {
+    public DairyStore getStoreById(
+            @PathVariable Long id
+    ) {
         try {
             return dairyStoreService.getActiveStoreById(id);
-        } catch (java.util.NoSuchElementException ex) {
+        } catch (NoSuchElementException ex) {
             throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, ex.getMessage()
+                    HttpStatus.NOT_FOUND,
+                    ex.getMessage()
+            );
+        }
+    }
+
+    // --------------------------------------------------
+    // FARMER STORE MANAGEMENT
+    // --------------------------------------------------
+
+    // POST /api/dairy/stores
+    @PostMapping
+    public ResponseEntity<DairyStore> createStore(
+            Authentication authentication,
+            @Valid @RequestBody DairyStoreRequest request
+    ) {
+        DairyStore store =
+                dairyStoreService.createStore(
+                        authentication, request
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(store);
+    }
+
+    // GET /api/dairy/stores/mine
+    @GetMapping("/mine")
+    public List<DairyStore> getMyStores(
+            Authentication authentication
+    ) {
+        return dairyStoreService.getMyStores(authentication);
+    }
+
+    // PUT /api/dairy/stores/12
+    @PutMapping("/{id}")
+    public DairyStore updateStore(
+            @PathVariable Long id,
+            Authentication authentication,
+            @Valid @RequestBody DairyStoreRequest request
+    ) {
+        try {
+            return dairyStoreService.updateStore(
+                    authentication, id, request
+            );
+        } catch (NoSuchElementException ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    ex.getMessage()
             );
         }
     }

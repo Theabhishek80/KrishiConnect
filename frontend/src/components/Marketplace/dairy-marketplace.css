@@ -1,0 +1,819 @@
+/* =========================================================
+   KisanDirect Dairy Marketplace
+   Place at: frontend/src/components/Marketplace/dairy-marketplace.css
+========================================================= */
+
+.dairy-page {
+  --dairy-green: #2f7d3b;
+  --dairy-green-dark: #1f5c2a;
+  --dairy-green-soft: #eaf5ec;
+  --dairy-cream: #fff9ec;
+  --dairy-ink: #1c2a1f;
+  --dairy-muted: #627066;
+  --dairy-border: #e2e8e2;
+  --dairy-white: #ffffff;
+
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 20px 60px;
+  color: var(--dairy-ink);
+}
+
+.dairy-page * {
+  box-sizing: border-box;
+}
+
+.dairy-page button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---------- Top bar ---------- */
+
+.dairy-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.dairy-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dairy-green-dark);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.dairy-back-link:hover {
+  text-decoration: underline;
+}
+
+.dairy-cart-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--dairy-border);
+  border-radius: 999px;
+  background: var(--dairy-white);
+  color: var(--dairy-ink);
+  font-weight: 600;
+}
+
+.dairy-cart-button span {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--dairy-green);
+  color: #fff;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Hero ---------- */
+
+.dairy-hero {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 32px;
+  align-items: center;
+  padding: 44px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, var(--dairy-cream), var(--dairy-green-soft));
+  overflow: hidden;
+}
+
+.dairy-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--dairy-green-dark);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.dairy-hero h1 {
+  margin: 18px 0 14px;
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+.dairy-hero h1 span {
+  color: var(--dairy-green);
+}
+
+.dairy-hero p {
+  max-width: 520px;
+  margin: 0 0 24px;
+  color: var(--dairy-muted);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.dairy-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dairy-primary-button,
+.dairy-secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 22px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.dairy-primary-button {
+  border: none;
+  background: var(--dairy-green);
+  color: #fff;
+}
+
+.dairy-primary-button:hover {
+  background: var(--dairy-green-dark);
+  transform: translateY(-1px);
+}
+
+.dairy-secondary-button {
+  border: 1px solid var(--dairy-green);
+  background: transparent;
+  color: var(--dairy-green-dark);
+}
+
+.dairy-secondary-button:hover {
+  background: #fff;
+}
+
+.dairy-trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 26px;
+}
+
+.dairy-trust-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dairy-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ---------- Hero art ---------- */
+
+.dairy-hero-art {
+  position: relative;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dairy-art-circle {
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 20px 50px rgba(47, 125, 59, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 110px;
+}
+
+.dairy-art-note {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dairy-art-note span {
+  font-size: 20px;
+}
+
+.dairy-art-note-one {
+  top: 18px;
+  left: 0;
+}
+
+.dairy-art-note-two {
+  bottom: 18px;
+  right: 0;
+}
+
+/* ---------- Benefits ---------- */
+
+.dairy-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 24px 0 40px;
+}
+
+.dairy-benefits > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--dairy-border);
+  border-radius: 18px;
+  background: #fff;
+  color: var(--dairy-green);
+}
+
+.dairy-benefits span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dairy-benefits strong {
+  color: var(--dairy-ink);
+  font-size: 15px;
+}
+
+.dairy-benefits small {
+  color: var(--dairy-muted);
+  font-size: 13px;
+}
+
+/* ---------- Products section ---------- */
+
+.dairy-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.dairy-section-kicker {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--dairy-green);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.dairy-section-heading h2 {
+  margin: 0 0 4px;
+  font-size: 28px;
+}
+
+.dairy-section-heading p {
+  margin: 0;
+  color: var(--dairy-muted);
+}
+
+.dairy-product-count {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--dairy-green-soft);
+  color: var(--dairy-green-dark);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---------- Search ---------- */
+
+.dairy-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--dairy-border);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--dairy-muted);
+}
+
+.dairy-search:focus-within {
+  border-color: var(--dairy-green);
+  box-shadow: 0 0 0 3px rgba(47, 125, 59, 0.12);
+}
+
+.dairy-search input {
+  flex: 1;
+  padding: 14px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: var(--dairy-ink);
+}
+
+.dairy-search button {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dairy-muted);
+}
+
+.dairy-search button:hover {
+  background: var(--dairy-green-soft);
+}
+
+/* ---------- Categories ---------- */
+
+.dairy-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.dairy-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: 1px solid var(--dairy-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--dairy-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dairy-category:hover {
+  border-color: var(--dairy-green);
+}
+
+.dairy-category.active {
+  border-color: var(--dairy-green);
+  background: var(--dairy-green);
+  color: #fff;
+}
+
+/* ---------- Product grid ---------- */
+
+.dairy-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.dairy-product-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--dairy-border);
+  border-radius: 20px;
+  background: #fff;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.dairy-product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.08);
+}
+
+.dairy-product-art {
+  position: relative;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--dairy-cream), var(--dairy-green-soft));
+  font-size: 64px;
+}
+
+.dairy-product-art small {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--dairy-green-dark);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dairy-product-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 18px;
+}
+
+.dairy-seller-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+  color: var(--dairy-muted);
+  font-size: 12px;
+}
+
+.dairy-product-info h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.dairy-product-info p {
+  flex: 1;
+  margin: 0 0 16px;
+  color: var(--dairy-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.dairy-product-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dairy-product-bottom strong {
+  font-size: 20px;
+}
+
+.dairy-product-bottom small {
+  color: var(--dairy-muted);
+}
+
+.dairy-product-bottom button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--dairy-green);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dairy-product-bottom button:hover {
+  background: var(--dairy-green-dark);
+}
+
+/* ---------- Empty state ---------- */
+
+.dairy-empty-state,
+.dairy-empty-cart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 44px 20px;
+  border: 1px dashed var(--dairy-border);
+  border-radius: 20px;
+  text-align: center;
+  color: var(--dairy-muted);
+}
+
+.dairy-empty-cart {
+  border: none;
+}
+
+.dairy-empty-state h3,
+.dairy-empty-cart h3 {
+  margin: 4px 0 0;
+  color: var(--dairy-ink);
+}
+
+.dairy-empty-state p,
+.dairy-empty-cart p {
+  margin: 0 0 8px;
+}
+
+.dairy-empty-state button,
+.dairy-empty-cart button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 999px;
+  background: var(--dairy-green);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ---------- Subscription banner ---------- */
+
+.dairy-subscription-banner {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 44px;
+  padding: 30px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--dairy-green-dark), var(--dairy-green));
+  color: #fff;
+}
+
+.dairy-subscription-banner > div:nth-child(2) {
+  flex: 1;
+}
+
+.dairy-subscription-banner .dairy-section-kicker {
+  color: #c9f0cf;
+}
+
+.dairy-subscription-banner h2 {
+  margin: 0 0 6px;
+  font-size: 26px;
+}
+
+.dairy-subscription-banner p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.dairy-subscription-icon {
+  width: 62px;
+  height: 62px;
+  flex-shrink: 0;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dairy-subscription-banner > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 22px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--dairy-green-dark);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ---------- Modals ---------- */
+
+.dairy-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 25, 18, 0.55);
+}
+
+.dairy-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.25);
+}
+
+.dairy-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.dairy-modal-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.dairy-close-button {
+  display: inline-flex;
+  padding: 8px;
+  border: none;
+  border-radius: 50%;
+  background: #f1f4f1;
+  color: var(--dairy-ink);
+}
+
+.dairy-close-button:hover {
+  background: var(--dairy-border);
+}
+
+/* ---------- Cart ---------- */
+
+.dairy-cart-items {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dairy-cart-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--dairy-border);
+}
+
+.dairy-cart-emoji {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: var(--dairy-green-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.dairy-cart-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dairy-cart-item-info small {
+  color: var(--dairy-muted);
+}
+
+.dairy-quantity-control {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 3px;
+  border: 1px solid var(--dairy-border);
+  border-radius: 999px;
+}
+
+.dairy-quantity-control button {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--dairy-green-soft);
+  color: var(--dairy-green-dark);
+}
+
+.dairy-quantity-control span {
+  min-width: 14px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.dairy-cart-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  font-size: 18px;
+}
+
+.dairy-prototype-note {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--dairy-cream);
+  color: var(--dairy-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---------- Subscription form ---------- */
+
+.dairy-subscription-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dairy-subscription-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dairy-subscription-form select,
+.dairy-subscription-form input {
+  padding: 12px 14px;
+  border: 1px solid var(--dairy-border);
+  border-radius: 12px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--dairy-ink);
+}
+
+.dairy-subscription-form select:focus,
+.dairy-subscription-form input:focus {
+  outline: none;
+  border-color: var(--dairy-green);
+  box-shadow: 0 0 0 3px rgba(47, 125, 59, 0.12);
+}
+
+.dairy-subscription-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--dairy-green-soft);
+  color: var(--dairy-green-dark);
+}
+
+.dairy-subscription-summary span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dairy-subscription-summary small {
+  color: var(--dairy-muted);
+}
+
+.dairy-form-message {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff4d6;
+  color: #7a5a00;
+  font-size: 14px;
+}
+
+.dairy-submit-button {
+  width: 100%;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 860px) {
+  .dairy-hero {
+    grid-template-columns: 1fr;
+    padding: 28px 22px;
+  }
+
+  .dairy-hero-art {
+    min-height: 240px;
+  }
+
+  .dairy-benefits {
+    grid-template-columns: 1fr;
+  }
+
+  .dairy-subscription-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 520px) {
+  .dairy-page {
+    padding: 14px 14px 48px;
+  }
+
+  .dairy-section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dairy-art-circle {
+    width: 190px;
+    height: 190px;
+    font-size: 84px;
+  }
+}

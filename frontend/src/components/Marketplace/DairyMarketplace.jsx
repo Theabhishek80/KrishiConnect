@@ -98,6 +98,42 @@ export default function DairyMarketplace() {
   const [stores, setStores] = useState([]);
 const [storesLoading, setStoresLoading] = useState(true);
 const [storesError, setStoresError] = useState("");
+  useEffect(() => {
+  let cancelled = false;
+
+  async function loadStores() {
+    try {
+      setStoresLoading(true);
+      setStoresError("");
+
+      const response = await api.get("/dairy/stores");
+
+      if (!cancelled) {
+        setStores(
+          Array.isArray(response.data) ? response.data : []
+        );
+      }
+    } catch (error) {
+      if (!cancelled) {
+        setStoresError(
+          error.response?.status === 403
+            ? "You don't have permission to view dairy stores."
+            : "Unable to load dairy stores. Please try again."
+        );
+      }
+    } finally {
+      if (!cancelled) {
+        setStoresLoading(false);
+      }
+    }
+  }
+
+  loadStores();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   const products = useMemo(() => {
     const query = search.trim().toLowerCase();

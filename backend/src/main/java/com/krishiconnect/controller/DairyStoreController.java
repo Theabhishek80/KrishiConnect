@@ -89,7 +89,9 @@ public class DairyStoreController {
     }
 
     // --------------------------------------------------
-    // FARMER STORE MANAGEMENT
+    // DAIRY STORE REGISTRATION
+    // Any authenticated user can register.
+    // No FARMER role is required.
     // --------------------------------------------------
 
     // POST /api/dairy/stores
@@ -98,15 +100,18 @@ public class DairyStoreController {
             Authentication authentication,
             @Valid @RequestBody DairyStoreRequest request
     ) {
-        DairyStore store =
-                dairyStoreService.createStore(
-                        authentication, request
-                );
+        DairyStore store = dairyStoreService.createStore(
+                authentication, request
+        );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(store);
     }
+
+    // --------------------------------------------------
+    // CURRENT USER'S STORES
+    // --------------------------------------------------
 
     // GET /api/dairy/stores/mine
     @GetMapping("/mine")
@@ -115,6 +120,10 @@ public class DairyStoreController {
     ) {
         return dairyStoreService.getMyStores(authentication);
     }
+
+    // --------------------------------------------------
+    // UPDATE OWN STORE
+    // --------------------------------------------------
 
     // PUT /api/dairy/stores/12
     @PutMapping("/{id}")
@@ -135,3 +144,4 @@ public class DairyStoreController {
         }
     }
 }
+

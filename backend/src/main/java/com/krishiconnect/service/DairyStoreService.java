@@ -1,234 +1,267 @@
-
 package com.krishiconnect.service;
 
+import com.krishiconnect.dto.DairyDtos.StoreView;
 import com.krishiconnect.dto.DairyStoreRequest;
 import com.krishiconnect.entity.DairyStore;
 import com.krishiconnect.entity.User;
+import com.krishiconnect.repository.DairyProductRepository;
 import com.krishiconnect.repository.DairyStoreRepository;
+import com.krishiconnect.repository.DairyStoreReviewRepository;
 import com.krishiconnect.repository.UserRepository;
 import com.krishiconnect.security.AuthContext;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
 public class DairyStoreService {
 
-    private final DairyStoreRepository dairyStoreRepository;
-    private final UserRepository userRepository;
+    // Bayesian average: a store with a single 5-star review should not
+    // outrank a store with 40 reviews averaging 4.7.
+    private static final double PRIOR_RATING = 3.5;
+    private static final double PRIOR_WEIGHT = 3.0;
+
+    private final DairyStoreRepository stores;
+    private final DairyStoreReviewRepository reviews;
+    private final DairyProductRepository products;
+    private final UserRepository users;
     private final AuthContext authContext;
 
     public DairyStoreService(
-            DairyStoreRepository dairyStoreRepository,
-            UserRepository userRepository,
+            DairyStoreRepository stores,
+            DairyStoreReviewRepository reviews,
+            DairyProductRepository products,
+            UserRepository users,
             AuthContext authContext
     ) {
-        this.dairyStoreRepository = dairyStoreRepository;
-        this.userRepository = userRepository;
+        this.stores = stores;
+        this.reviews = reviews;
+        this.products = products;
+        this.users = users;
         this.authContext = authContext;
     }
 
     // --------------------------------------------------
-    // PUBLIC STORE DISCOVERY
+    // DISCOVERY - location filter + ranking by reviews
     // --------------------------------------------------
 
     @Transactional(readOnly = true)
-    public List<DairyStore> getActiveStores() {
-        return dairyStoreRepository
-                .findByActiveTrueOrderByStoreNameAsc();
-    }
-
-    @Transactional(readOnly = true)
-    public List<DairyStore> getStoresByLocation(
-            String city,
-            String state,
-            String postalCode
+    public List<StoreView> search(
+            String city, String postalCode, Double lat, Double lng
     ) {
-        if (postalCode != null && !postalCode.isBlank()) {
-            return dairyStoreRepository
-                    .findActiveStoresByPostalCode(
-                            postalCode.trim()
-                    );
-        }
+        String cityQ = blankToNull(city);
+        String postalQ = blankToNull(postalCode);
+        boolean hasCoords = lat != null && lng != null;
+        boolean hasLocation = cityQ != null || postalQ != null || hasCoords;
 
-        if (city == null || city.isBlank()
-                || state == null || state.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Provide a postal code or both city and state."
-            );
-        }
+        Map<Long, double[]> ratings = ratingMap();
+        Map<Long, Long> productCounts = productCountMap();
 
-        return dairyStoreRepository
-                .findActiveStoresByCityAndState(
-                        city.trim(),
-                        state.trim()
-                );
+        return stores.findByActiveTrueOrderByStoreNameAsc().stream()
+                .map(s -> {
+                    Double distance = null;
+                    if (hasCoords && s.getLatitude() != null && s.getLongitude() != null) {
+                        distance = haversineKm(lat, lng, s.getLatitude(), s.getLongitude());
+                    }
+                    return new Object[]{s, distance};
+                })
+                .filter(pair -> {
+                    if (!hasLocation) return true;
+                    DairyStore s = (DairyStore) pair[0];
+                    Double d = (Double) pair[1];
+                    if (postalQ != null && postalQ.equals(s.getPostalCode())) return true;
+                    if (cityQ != null && cityQ.equalsIgnoreCase(s.getCity())) return true;
+                    double radius = s.getDeliveryRadiusKm() == null ? 5.0 : s.getDeliveryRadiusKm();
+                    return d != null && d <= radius;
+                })
+                .map(pair -> toView(
+                        (DairyStore) pair[0], (Double) pair[1], ratings, productCounts))
+                .sorted((a, b) -> {
+                    int byScore = Double.compare(score(b), score(a));
+                    if (byScore != 0) return byScore;
+                    int byCount = Long.compare(b.reviewCount(), a.reviewCount());
+                    if (byCount != 0) return byCount;
+                    return b.createdAt().compareTo(a.createdAt());
+                })
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public DairyStore getActiveStoreById(Long id) {
-        return dairyStoreRepository
-                .findByIdAndActiveTrue(id)
-                .orElseThrow(() ->
-                        new NoSuchElementException(
-                                "Active dairy store not found."
-                        )
-                );
+    public StoreView getStoreView(Long id) {
+        DairyStore store = getActiveStore(id);
+        return toView(store, null, ratingMap(), productCountMap());
+    }
+
+    @Transactional(readOnly = true)
+    public DairyStore getActiveStore(Long id) {
+        return stores.findByIdAndActiveTrue(id)
+                .orElseThrow(() -> new NoSuchElementException("Dairy store not found."));
     }
 
     // --------------------------------------------------
-    // REGISTER DAIRY STORE
-    // Any enabled, authenticated user may register.
-    // FARMER role is not required for this feature.
+    // REGISTER / UPDATE (one store per user)
     // --------------------------------------------------
 
     @Transactional
-    public DairyStore createStore(
-            Authentication authentication,
-            DairyStoreRequest request
-    ) {
-        User owner = getAuthenticatedUser(authentication);
+    public StoreView createStore(Authentication auth, DairyStoreRequest request) {
+        User owner = requireUser(auth);
+
+        if (!stores.findByOwner_IdOrderByCreatedAtDesc(owner.getId()).isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "You already have a dairy store.");
+        }
 
         DairyStore store = new DairyStore();
         store.setOwner(owner);
-
         applyRequest(store, request);
         store.setActive(true);
 
-        return dairyStoreRepository.save(store);
+        DairyStore saved = stores.save(store);
+        return toView(saved, null, Map.of(), Map.of());
     }
-
-    // --------------------------------------------------
-    // GET CURRENT USER'S STORES
-    // --------------------------------------------------
 
     @Transactional(readOnly = true)
-    public List<DairyStore> getMyStores(
-            Authentication authentication
-    ) {
-        Long userId = authContext.userId(authentication);
-
-        return dairyStoreRepository
-                .findByOwner_IdOrderByCreatedAtDesc(userId);
+    public List<StoreView> getMyStores(Authentication auth) {
+        Long userId = authContext.userId(auth);
+        Map<Long, double[]> ratings = ratingMap();
+        Map<Long, Long> counts = productCountMap();
+        return stores.findByOwner_IdOrderByCreatedAtDesc(userId).stream()
+                .map(s -> toView(s, null, ratings, counts))
+                .toList();
     }
 
-    // --------------------------------------------------
-    // UPDATE OWN STORE
-    // Only the owner can update their store.
-    // --------------------------------------------------
-
     @Transactional
-    public DairyStore updateStore(
-            Authentication authentication,
-            Long storeId,
-            DairyStoreRequest request
-    ) {
-        Long userId = authContext.userId(authentication);
+    public StoreView updateStore(Authentication auth, Long storeId, DairyStoreRequest request) {
+        Long userId = authContext.userId(auth);
 
-        DairyStore store = dairyStoreRepository.findById(storeId)
-                .orElseThrow(() ->
-                        new NoSuchElementException(
-                                "Dairy store not found."
-                        )
-                );
+        DairyStore store = stores.findById(storeId)
+                .orElseThrow(() -> new NoSuchElementException("Dairy store not found."));
 
-        if (store.getOwner() == null
-                || !store.getOwner().getId().equals(userId)) {
-            throw new AccessDeniedException(
-                    "You cannot update another user's store."
-            );
+        if (store.getOwner() == null || !store.getOwner().getId().equals(userId)) {
+            throw new AccessDeniedException("You cannot update another user's store.");
         }
 
         applyRequest(store, request);
-
-        // A normal update must not change activation status.
-        return dairyStoreRepository.save(store);
+        DairyStore saved = stores.save(store);
+        return toView(saved, null, ratingMap(), productCountMap());
     }
 
     // --------------------------------------------------
-    // AUTHENTICATION AND ACCOUNT VALIDATION
+    // HELPERS shared with other dairy services
     // --------------------------------------------------
 
-    private User getAuthenticatedUser(
-            Authentication authentication
-    ) {
-        if (authentication == null
-                || !authentication.isAuthenticated()) {
-            throw new AccessDeniedException(
-                    "Please sign in to register a dairy store."
-            );
+    public User requireUser(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new AccessDeniedException("Please sign in first.");
         }
-
-        Long userId = authContext.userId(authentication);
-
-        User owner = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new NoSuchElementException(
-                                "Authenticated user not found."
-                        )
-                );
-
-        if (!owner.isEnabled()) {
-            throw new AccessDeniedException(
-                    "This account is disabled."
-            );
+        Long userId = authContext.userId(auth);
+        User user = users.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("Authenticated user not found."));
+        if (!user.isEnabled()) {
+            throw new AccessDeniedException("This account is disabled.");
         }
+        return user;
+    }
 
-        return owner;
+    public DairyStore requireOwnStore(Authentication auth) {
+        Long userId = authContext.userId(auth);
+        List<DairyStore> mine = stores.findByOwner_IdOrderByCreatedAtDesc(userId);
+        if (mine.isEmpty()) {
+            throw new NoSuchElementException("You have not registered a dairy store yet.");
+        }
+        return mine.get(0);
     }
 
     // --------------------------------------------------
-    // REQUEST MAPPING
+    // INTERNALS
     // --------------------------------------------------
 
-    private void applyRequest(
-            DairyStore store,
-            DairyStoreRequest request
+    private StoreView toView(
+            DairyStore s,
+            Double distanceKm,
+            Map<Long, double[]> ratings,
+            Map<Long, Long> productCounts
     ) {
+        double[] agg = ratings.getOrDefault(s.getId(), new double[]{0, 0});
+        long days = Math.max(0, Duration.between(s.getCreatedAt(), Instant.now()).toDays());
+
+        return new StoreView(
+                s.getId(),
+                s.getStoreName(),
+                s.getDescription(),
+                s.getPhone(),
+                s.getAddressLine(),
+                s.getCity(),
+                s.getState(),
+                s.getPostalCode(),
+                s.getLatitude(),
+                s.getLongitude(),
+                s.getDeliveryRadiusKm(),
+                s.getOperatingDays(),
+                s.isActive(),
+                s.getCreatedAt(),
+                days,
+                Math.round(agg[0] * 10.0) / 10.0,
+                (long) agg[1],
+                productCounts.getOrDefault(s.getId(), 0L),
+                distanceKm == null ? null : Math.round(distanceKm * 10.0) / 10.0,
+                s.getOwner() == null ? null : s.getOwner().getName()
+        );
+    }
+
+    private static double score(StoreView v) {
+        return (v.averageRating() * v.reviewCount() + PRIOR_RATING * PRIOR_WEIGHT)
+                / (v.reviewCount() + PRIOR_WEIGHT);
+    }
+
+    private Map<Long, double[]> ratingMap() {
+        Map<Long, double[]> map = new HashMap<>();
+        for (Object[] row : reviews.aggregateAll()) {
+            map.put((Long) row[0], new double[]{
+                    ((Number) row[1]).doubleValue(),
+                    ((Number) row[2]).doubleValue()
+            });
+        }
+        return map;
+    }
+
+    private Map<Long, Long> productCountMap() {
+        Map<Long, Long> map = new HashMap<>();
+        for (Object[] row : products.countAvailableByStore()) {
+            map.put((Long) row[0], ((Number) row[1]).longValue());
+        }
+        return map;
+    }
+
+    private static double haversineKm(double lat1, double lon1, double lat2, double lon2) {
+        double r = 6371.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    private static String blankToNull(String v) {
+        return v == null || v.isBlank() ? null : v.trim();
+    }
+
+    private void applyRequest(DairyStore store, DairyStoreRequest request) {
         if (request == null) {
-            throw new IllegalArgumentException(
-                    "Store request cannot be empty."
-            );
+            throw new IllegalArgumentException("Store request cannot be empty.");
         }
-
-        if (request.storeName() == null
-                || request.storeName().isBlank()) {
-            throw new IllegalArgumentException(
-                    "Store name is required."
-            );
-        }
-
-        if (request.addressLine() == null
-                || request.addressLine().isBlank()) {
-            throw new IllegalArgumentException(
-                    "Address is required."
-            );
-        }
-
-        if (request.city() == null || request.city().isBlank()) {
-            throw new IllegalArgumentException(
-                    "City is required."
-            );
-        }
-
-        if (request.state() == null || request.state().isBlank()) {
-            throw new IllegalArgumentException(
-                    "State is required."
-            );
-        }
-
-        if (request.postalCode() == null
-                || request.postalCode().isBlank()) {
-            throw new IllegalArgumentException(
-                    "Postal code is required."
-            );
-        }
-
         store.setStoreName(request.storeName().trim());
         store.setDescription(request.description());
         store.setPhone(request.phone());
@@ -236,18 +269,14 @@ public class DairyStoreService {
         store.setCity(request.city().trim());
         store.setState(request.state().trim());
         store.setPostalCode(request.postalCode().trim());
-
         store.setLatitude(request.latitude());
         store.setLongitude(request.longitude());
 
         if (request.deliveryRadiusKm() != null) {
-            store.setDeliveryRadiusKm(
-                    request.deliveryRadiusKm()
-            );
+            store.setDeliveryRadiusKm(request.deliveryRadiusKm());
         } else if (store.getDeliveryRadiusKm() == null) {
             store.setDeliveryRadiusKm(5.0);
         }
-
         store.setOperatingDays(request.operatingDays());
     }
 }

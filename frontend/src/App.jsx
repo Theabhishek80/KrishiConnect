@@ -40,6 +40,7 @@ import ResetPassword from "./components/Auth/ResetPassword";
 import CartPage from "./components/Marketplace/Cart";
 import Navbar from "./components/Navbar/Navbar";
 import AdvertisementSlider from "./components/Advertisement/AdvertisementSlider";
+   import "./styles/dairy-home-promo.css";
 import AIAssistant from "./components/AI/AIAssistant";
 import Footer from "./components/Footer";
 import ErrorBoundary from "./components/ErrorBoundary";

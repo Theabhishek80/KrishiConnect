@@ -42,6 +42,7 @@ import Navbar from "./components/Navbar/Navbar";
 import AdvertisementSlider from "./components/Advertisement/AdvertisementSlider";
 import AIAssistant from "./components/AI/AIAssistant";
 import Footer from "./components/Footer";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 import {
   MandiPage,
@@ -1124,17 +1125,169 @@ function Cart() {
    FARMER
 ========================= */
 
+/* ---------- helpers used by the Farmer dashboard ---------- */
+
+// Vercel serverless functions reject request bodies above ~4.5 MB, so the
+// image is shrunk in the browser first and must end up below this limit.
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+
+// Anything bigger than this is rejected before we even try to shrink it.
+const MAX_PICKED_IMAGE_BYTES = 15 * 1024 * 1024;
+
+const EMPTY_PRODUCT_FORM = {
+  name: "",
+  description: "",
+  price: "",
+  unit: "kg",
+  categoryId: "",
+  quantity: 10
+};
+
+/*
+ * Always returns a plain string. The old code put
+ * `e.response.data.error` straight into React state; if that value was
+ * ever an object, React threw "Objects are not valid as a React child"
+ * and the whole app went blank.
+ */
+function getErrorMessage(err, fallback) {
+  const status = err?.response?.status;
+  const data = err?.response?.data;
+
+  if (status === 413) {
+    return "The image is too large. Please choose a smaller photo.";
+  }
+
+  if (typeof data === "string") {
+    const text = data.trim();
+
+    // Ignore HTML error pages from proxies / hosting platforms.
+    if (text && text.length < 200 && !text.startsWith("<")) {
+      return text;
+    }
+  } else if (data && typeof data === "object") {
+    for (const candidate of [data.error, data.message]) {
+      if (typeof candidate === "string" && candidate.trim()) {
+        return candidate;
+      }
+
+      if (
+        candidate &&
+        typeof candidate === "object" &&
+        typeof candidate.message === "string"
+      ) {
+        return candidate.message;
+      }
+    }
+  }
+
+  if (status === 401) {
+    return "Your session has expired. Please sign in again.";
+  }
+
+  if (status === 403) {
+    return "You do not have permission to do this.";
+  }
+
+  if ([502, 503, 504].includes(status)) {
+    return "The server is starting up. Please wait a few seconds and try again.";
+  }
+
+  if (!err?.response) {
+    return "Cannot reach the server. Check your internet connection and try again.";
+  }
+
+  return fallback;
+}
+
+/*
+ * Shrinks a photo to max 1600px / JPEG before upload.
+ * Phone photos are often 4-10 MB; that is above Vercel's body limit and
+ * made the upload step fail. If anything goes wrong the original file
+ * is returned unchanged.
+ */
+function compressImage(file, maxSide = 1600, quality = 0.82) {
+  return new Promise(resolve => {
+    if (
+      !file ||
+      !file.type.startsWith("image/") ||
+      file.type === "image/gif" ||
+      file.type === "image/svg+xml"
+    ) {
+      resolve(file);
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+
+    let finished = false;
+
+    // Resolve exactly once; always fall back to the original file.
+    const finish = result => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      URL.revokeObjectURL(url);
+      resolve(result);
+    };
+
+    // Safety net: if the browser never fires onload/onerror, do not
+    // leave the "Submitting…" button stuck forever.
+    const timer = setTimeout(() => finish(file), 8000);
+
+    img.onload = () => {
+      try {
+        const scale = Math.min(
+          1,
+          maxSide / Math.max(img.width, img.height)
+        );
+
+        const width = Math.max(1, Math.round(img.width * scale));
+        const height = Math.max(1, Math.round(img.height * scale));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          blob => {
+            if (!blob || blob.size >= file.size) {
+              finish(file);
+              return;
+            }
+
+            const baseName =
+              file.name.replace(/\.[^.]+$/, "") || "product";
+
+            finish(
+              new File([blob], `${baseName}.jpg`, {
+                type: "image/jpeg"
+              })
+            );
+          },
+          "image/jpeg",
+          quality
+        );
+      } catch {
+        finish(file);
+      }
+    };
+
+    img.onerror = () => finish(file);
+
+    img.src = url;
+  });
+}
+
+
 function Farmer() {
 
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    price: "",
-    unit: "kg",
-    categoryId: "",
-    quantity: 10
-  });
-
+  const [form, setForm] = useState(EMPTY_PRODUCT_FORM);
 
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -1142,10 +1295,17 @@ function Farmer() {
   const [categories, setCategories] = useState([]);
 
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
 
   const [busy, setBusy] = useState(false);
   const [myProducts, setMyProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+
+
+  const showMessage = (text, type = "success") => {
+    setMessageType(type);
+    setMessage(text);
+  };
 
 
   const loadMyProducts = async () => {
@@ -1158,9 +1318,14 @@ function Farmer() {
         "/products/farmer/my-products"
       );
 
-      setMyProducts(
-        r.data.content || []
-      );
+      // Accept both a Spring Page ({content: []}) and a plain array.
+      const list = Array.isArray(r.data?.content)
+        ? r.data.content
+        : Array.isArray(r.data)
+          ? r.data
+          : [];
+
+      setMyProducts(list);
 
     } catch (e) {
 
@@ -1183,7 +1348,13 @@ function Farmer() {
 
     api
       .get("/categories")
-      .then(r => setCategories(r.data))
+      .then(r => {
+        // Never trust the shape: categories.map() on a non-array
+        // used to crash the whole page.
+        setCategories(
+          Array.isArray(r.data) ? r.data : []
+        );
+      })
       .catch(() => {
         setCategories([]);
       });
@@ -1193,25 +1364,58 @@ function Farmer() {
   }, []);
 
 
+  // Free the preview blob when it changes / the page closes.
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
+
+  const resetFileInput = () => {
+    const fileInput = document.getElementById("product-image");
+
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  };
+
+
   const handleImageChange = e => {
 
     const file = e.target.files?.[0] || null;
 
-    setImage(file);
-
-
-    if (file) {
-
-      const previewUrl =
-        URL.createObjectURL(file);
-
-      setImagePreview(previewUrl);
-
-    } else {
-
+    if (!file) {
+      setImage(null);
       setImagePreview("");
-
+      return;
     }
+
+    if (!file.type.startsWith("image/")) {
+      showMessage(
+        "Please choose an image file (JPG, PNG or WebP).",
+        "error"
+      );
+      setImage(null);
+      setImagePreview("");
+      resetFileInput();
+      return;
+    }
+
+    if (file.size > MAX_PICKED_IMAGE_BYTES) {
+      showMessage(
+        "That photo is too large. Please choose an image under 15 MB.",
+        "error"
+      );
+      setImage(null);
+      setImagePreview("");
+      resetFileInput();
+      return;
+    }
+
+    setMessage("");
+    setImage(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
 
@@ -1219,21 +1423,52 @@ function Farmer() {
 
     e.preventDefault();
 
+    if (busy) return;
+
     setMessage("");
 
+    // ---------- client-side validation ----------
 
-    if (!form.categoryId) {
+    const name = form.name.trim();
+    const description = form.description.trim();
+    const unit = form.unit.trim();
+    const price = Number(form.price);
+    const quantity = Number(form.quantity === "" ? 0 : form.quantity);
 
-      setMessage(
-        "Please select a category."
-      );
-
+    if (!name) {
+      showMessage("Please enter a product name.", "error");
       return;
     }
 
+    if (!description) {
+      showMessage("Please enter a description.", "error");
+      return;
+    }
+
+    if (!Number.isFinite(price) || price < 0) {
+      showMessage("Please enter a valid price.", "error");
+      return;
+    }
+
+    if (!unit) {
+      showMessage("Please enter a unit (kg, dozen…).", "error");
+      return;
+    }
+
+    if (!form.categoryId) {
+      showMessage("Please select a category.", "error");
+      return;
+    }
+
+    if (!Number.isInteger(quantity) || quantity < 0) {
+      showMessage(
+        "Initial stock must be a whole number (0 or more).",
+        "error"
+      );
+      return;
+    }
 
     setBusy(true);
-
 
     try {
 
@@ -1241,93 +1476,105 @@ function Farmer() {
          STEP 1: CREATE PRODUCT
       ------------------------- */
 
-      const productResponse =
-        await api.post(
-          "/products/farmer",
-          {
-            ...form,
-            price: Number(form.price),
-            categoryId: Number(form.categoryId),
-            quantity: Number(form.quantity)
-          }
+      const productResponse = await api.post(
+        "/products/farmer",
+        {
+          name,
+          description,
+          unit,
+          price,
+          categoryId: Number(form.categoryId),
+          quantity
+        }
+      );
+
+      const productId = productResponse?.data?.id;
+
+      if (!productId) {
+        showMessage(
+          "The server gave an unexpected reply. Please check " +
+          "\"Products you listed\" below before trying again.",
+          "error"
         );
-
-
-      const productId =
-        productResponse.data.id;
+        await loadMyProducts();
+        return;
+      }
 
 
       /* -------------------------
          STEP 2: UPLOAD IMAGE
+         (its own try/catch: the product already exists, so a
+         failed image must NOT look like a failed product and
+         must not make the farmer create a duplicate)
       ------------------------- */
+
+      let imageError = "";
 
       if (image) {
 
-        setMessage(
-          "Product created. Uploading image…"
-        );
+        showMessage("Product created. Uploading image…");
 
+        try {
 
-        const formData = new FormData();
+          const prepared = await compressImage(image);
 
-        formData.append(
-          "image",
-          image
-        );
+          if (prepared.size > MAX_UPLOAD_BYTES) {
+            throw new Error("IMAGE_TOO_BIG");
+          }
 
+          const formData = new FormData();
+          formData.append("image", prepared);
 
-        await api.post(
-          `/products/farmer/${productId}/images`,
-          formData
-        );
+          await api.post(
+            `/products/farmer/${productId}/images`,
+            formData,
+            { timeout: 60000 }
+          );
 
+        } catch (imgErr) {
+
+          console.error("Product image upload failed", imgErr);
+
+          imageError =
+            imgErr?.message === "IMAGE_TOO_BIG"
+              ? "The image is still larger than 4 MB after shrinking. Please choose a smaller photo."
+              : getErrorMessage(imgErr, "Image upload failed.");
+        }
       }
 
 
       /* -------------------------
-         SUCCESS
+         DONE: reset the form
       ------------------------- */
 
-      setMessage(
-        image
-          ? "Product and image uploaded successfully. Waiting for admin approval."
-          : "Product submitted for admin approval."
-      );
+      if (imageError) {
+        showMessage(
+          "Product was created and sent for admin approval, but the " +
+          `image could not be uploaded: ${imageError}`,
+          "error"
+        );
+      } else {
+        showMessage(
+          image
+            ? "Product and image uploaded successfully. Waiting for admin approval."
+            : "Product submitted for admin approval."
+        );
+      }
 
-
-      setForm({
-        name: "",
-        description: "",
-        price: "",
-        unit: "kg",
-        categoryId: "",
-        quantity: 10
-      });
-
-
+      setForm(EMPTY_PRODUCT_FORM);
       setImage(null);
       setImagePreview("");
+      resetFileInput();
 
       await loadMyProducts();
 
+    } catch (err) {
 
-      /* Reset file input */
+      console.error("Create product failed", err);
 
-      const fileInput =
-        document.getElementById(
-          "product-image"
-        );
-
-      if (fileInput) {
-        fileInput.value = "";
-      }
-
-
-    } catch (e) {
-
-      setMessage(
-        e.response?.data?.error ||
-        "Could not create product."
+      showMessage(
+        getErrorMessage(err, "Could not create product."),
+        "error"
       );
 
     } finally {
@@ -1377,29 +1624,20 @@ function Farmer() {
 
     try {
 
-      setMessage(
-        "Deleting product..."
+      showMessage("Deleting product...");
+
+      const response = await api.delete(
+        `/products/farmer/${productId}`
       );
-
-
-      const response =
-        await api.delete(
-          `/products/farmer/${productId}`
-        );
-
 
       const responseMessage =
-        response.data?.message ||
-        "Product deleted successfully.";
+        typeof response.data?.message === "string"
+          ? response.data.message
+          : "Product deleted successfully.";
 
-
-      setMessage(
-        responseMessage
-      );
-
+      showMessage(responseMessage);
 
       await loadMyProducts();
-
 
     } catch (e) {
 
@@ -1408,19 +1646,15 @@ function Farmer() {
         e
       );
 
-
-      const errorMessage =
-        e.response?.data?.error ||
-        e.response?.data?.message ||
-        "Could not delete product. Please try again.";
-
-
-      setMessage(
-        errorMessage
+      showMessage(
+        getErrorMessage(
+          e,
+          "Could not delete product. Please try again."
+        ),
+        "error"
       );
     }
   };
-
 
   return (
 
@@ -1619,7 +1853,7 @@ function Farmer() {
                 </option>
 
 
-                {categories.map(c => (
+                {(Array.isArray(categories) ? categories : []).map(c => (
 
                   <option
                     key={c.id}
@@ -1668,7 +1902,7 @@ function Farmer() {
             />
 
             <small>
-              Optional · Maximum 5 MB
+              Optional · Large photos are shrunk automatically
             </small>
 
           </label>
@@ -1715,8 +1949,8 @@ function Farmer() {
 
           {message && (
 
-            <div className="notice success">
-              {message}
+            <div className={`notice ${messageType}`}>
+              {String(message)}
             </div>
 
           )}
@@ -1907,10 +2141,13 @@ function Farmer() {
 
 export default function App() {
 
+  const location = useLocation();
+
   return (
 
     <Layout>
 
+      <ErrorBoundary resetKey={location.pathname}>
       <Routes>
 
         <Route
@@ -2094,6 +2331,7 @@ export default function App() {
         />
 
       </Routes>
+      </ErrorBoundary>
 
       <Footer />
 

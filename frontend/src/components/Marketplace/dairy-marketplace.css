@@ -561,3 +561,757 @@ footer a:hover, .footer a:hover, .site-footer a:hover, .app-footer a:hover, .mai
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   13. DAIRY STORE REGISTRATION — VILLAGE MILK HANDOFF
+   Added without removing the existing marketplace animations.
+========================================================= */
+
+.dairy-registration-page {
+  overflow: hidden;
+}
+
+.dairy-registration-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: clamp(24px, 4vw, 52px);
+  align-items: center;
+  width: min(1180px, 100%);
+  margin: 32px auto 56px;
+}
+
+.dairy-registration-intro {
+  min-width: 0;
+}
+
+.dairy-registration-intro > .dairy-section-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #287b3b;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.dairy-registration-intro h1 {
+  margin: 18px 0 14px;
+  color: #174d2b;
+  font-size: clamp(34px, 4.2vw, 54px);
+  font-weight: 850;
+  letter-spacing: -.045em;
+  line-height: 1.08;
+}
+
+.dairy-registration-intro h1 span {
+  display: inline;
+  background: linear-gradient(100deg, #1f6a31, #58a968, #1f6a31);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: dairyRegistrationTextShine 5s ease-in-out infinite;
+}
+
+.dairy-registration-intro > p {
+  max-width: 540px;
+  margin-top: 12px;
+  color: #637267;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.dairy-registration-benefits {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.dairy-registration-benefits > div {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.dairy-registration-benefit-icon {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid #d7eadb;
+  border-radius: 14px;
+  background: #eef8ef;
+  color: #287447;
+  transition: transform .25s ease, background .25s ease;
+}
+
+.dairy-registration-benefits > div:hover .dairy-registration-benefit-icon {
+  transform: translateY(-3px) rotate(-5deg);
+  background: #dff2e2;
+}
+
+.dairy-registration-benefits > div > span:last-child {
+  display: grid;
+  gap: 4px;
+}
+
+.dairy-registration-benefits strong {
+  color: #244d35;
+  font-size: 14px;
+}
+
+.dairy-registration-benefits small {
+  color: #758579;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dairy-registration-trust {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 28px;
+  color: #467458;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Village scene: hills, sun, clouds, farmer and customer */
+
+.dairy-village-scene {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: 410px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 75% 12%, rgba(255,255,255,.75), transparent 24%),
+    linear-gradient(180deg, #dff6e8 0%, #f3fbe8 56%, #c7e7a9 100%);
+  box-shadow: 0 22px 55px rgba(35, 91, 51, .13);
+  animation: dairyVillageAppear .7s cubic-bezier(.2,.75,.2,1) both;
+}
+
+.dairy-scene-sun {
+  position: absolute;
+  top: 34px;
+  right: 48px;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: #ffdc83;
+  box-shadow: 0 0 0 12px rgba(255,220,131,.2),
+              0 0 38px rgba(255,205,95,.35);
+  animation: dairyVillageSun 4s ease-in-out infinite;
+}
+
+.dairy-scene-cloud {
+  position: absolute;
+  width: 48px;
+  height: 15px;
+  border-radius: 30px;
+  background: rgba(255,255,255,.78);
+  animation: dairyVillageCloud 8s ease-in-out infinite alternate;
+}
+
+.dairy-scene-cloud::before,
+.dairy-scene-cloud::after {
+  position: absolute;
+  bottom: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: inherit;
+  content: "";
+}
+
+.dairy-scene-cloud::before { left: 7px; }
+.dairy-scene-cloud::after {
+  right: 5px;
+  width: 19px;
+  height: 19px;
+}
+
+.dairy-cloud-one { top: 76px; left: 36%; }
+.dairy-cloud-two {
+  top: 118px;
+  right: 13%;
+  scale: .7;
+  animation-delay: -3s;
+}
+
+.dairy-village-scene .dairy-scene-hill {
+  position: absolute;
+  left: -25%;
+  width: 150%;
+  border-radius: 50% 50% 0 0;
+}
+
+.dairy-village-scene .dairy-scene-hill-back {
+  bottom: 42px;
+  height: 165px;
+  background: #a7d68f;
+  animation: dairyVillageHill 9s ease-in-out infinite alternate;
+}
+
+.dairy-village-scene .dairy-scene-hill-front {
+  bottom: 10px;
+  height: 125px;
+  background: #79bd70;
+  animation: dairyVillageHill 7s ease-in-out infinite alternate-reverse;
+}
+
+.dairy-village-scene .dairy-scene-house,
+.dairy-village-scene .dairy-scene-tree {
+  position: absolute;
+  z-index: 2;
+  filter: drop-shadow(0 7px 7px rgba(30,80,40,.12));
+}
+
+.dairy-village-scene .dairy-scene-house {
+  top: 135px;
+  left: 7%;
+  font-size: 53px;
+  animation: dairyVillageHouse 5s ease-in-out infinite;
+}
+
+.dairy-village-scene .dairy-scene-tree { font-size: 34px; }
+.dairy-village-scene .dairy-tree-one { top: 196px; left: 12%; }
+.dairy-village-scene .dairy-tree-two { top: 174px; right: 7%; }
+
+.dairy-village-scene .dairy-scene-caption {
+  position: absolute;
+  z-index: 5;
+  top: 22px;
+  left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-width: 67%;
+}
+
+.dairy-village-scene .dairy-scene-caption span {
+  align-self: flex-start;
+  padding: 7px 10px;
+  border: 1px solid rgba(30,100,60,.12);
+  border-radius: 30px;
+  background: rgba(255,255,255,.82);
+  color: #216b40;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .5px;
+}
+
+.dairy-village-scene .dairy-scene-caption strong {
+  max-width: 260px;
+  color: #15482c;
+  font-size: clamp(19px, 2.4vw, 27px);
+  line-height: 1.2;
+}
+
+.dairy-village-scene .dairy-scene-caption small {
+  color: #386b4b;
+  font-size: 12px;
+}
+
+/* Farmer character */
+
+.dairy-village-scene .dairy-farmer-character {
+  position: absolute;
+  z-index: 4;
+  bottom: 49px;
+  left: 29%;
+  width: 110px;
+  height: 175px;
+  animation: dairyVillageBreathe 3s ease-in-out infinite;
+}
+
+.dairy-village-scene .dairy-farmer-head {
+  position: absolute;
+  top: 0;
+  left: 19px;
+  z-index: 2;
+  font-size: 49px;
+  line-height: 1;
+  transform-origin: 65% 85%;
+  animation: dairyVillageLook 4s ease-in-out infinite;
+}
+
+.dairy-village-scene .dairy-farmer-body {
+  position: absolute;
+  top: 49px;
+  left: 20px;
+  width: 53px;
+  height: 69px;
+  border: 3px solid rgba(255,255,255,.55);
+  border-radius: 20px 20px 10px 10px;
+  background: linear-gradient(145deg, #f5a34a, #e77930);
+  box-shadow: 0 9px 14px rgba(55,91,40,.15);
+}
+
+.dairy-village-scene .dairy-farmer-arm {
+  position: absolute;
+  z-index: 3;
+  top: 63px;
+  left: 55px;
+  width: 48px;
+  height: 15px;
+  border-radius: 20px;
+  background: #d99565;
+  transform: rotate(-9deg);
+  transform-origin: left center;
+  animation: dairyVillageHandoff 2.8s ease-in-out infinite;
+}
+
+.dairy-village-scene .dairy-farmer-can {
+  position: absolute;
+  z-index: 5;
+  top: 76px;
+  left: 83px;
+  font-size: 34px;
+  transform-origin: bottom center;
+  animation: dairyVillageCanPass 2.8s ease-in-out infinite;
+}
+
+/* Customer receiving milk */
+
+.dairy-village-scene .dairy-customer-character {
+  position: absolute;
+  z-index: 4;
+  right: 23%;
+  bottom: 48px;
+  width: 90px;
+  height: 155px;
+  animation: dairyVillageCustomerBreathe 3.2s ease-in-out infinite;
+}
+
+.dairy-village-scene .dairy-customer-head {
+  position: absolute;
+  top: 5px;
+  left: 17px;
+  z-index: 2;
+  font-size: 45px;
+  line-height: 1;
+}
+
+.dairy-village-scene .dairy-customer-body {
+  position: absolute;
+  top: 50px;
+  left: 17px;
+  width: 49px;
+  height: 66px;
+  border: 3px solid rgba(255,255,255,.55);
+  border-radius: 19px 19px 10px 10px;
+  background: linear-gradient(145deg, #68a8e5, #3479c4);
+  box-shadow: 0 9px 14px rgba(55,91,40,.15);
+}
+
+.dairy-village-scene .dairy-customer-arm {
+  position: absolute;
+  z-index: 3;
+  top: 67px;
+  left: -7px;
+  width: 45px;
+  height: 13px;
+  border-radius: 20px;
+  background: #c98e64;
+  transform: rotate(12deg);
+  transform-origin: right center;
+  animation: dairyVillageReceive 2.8s ease-in-out infinite;
+}
+
+/* Sparkles, milk drops and scene badge */
+
+.dairy-village-scene .dairy-milk-drop {
+  position: absolute;
+  z-index: 6;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(255,255,255,.9);
+  pointer-events: none;
+}
+
+.dairy-village-scene .dairy-drop-one {
+  top: 48%;
+  left: 51%;
+  font-size: 19px;
+  animation: dairyVillageDroplet 2.6s ease-in-out infinite;
+}
+
+.dairy-village-scene .dairy-drop-two {
+  top: 38%;
+  right: 20%;
+  color: #fff5c4;
+  font-size: 21px;
+  animation: dairyVillageSparkle 2s ease-in-out infinite;
+}
+
+.dairy-village-scene .dairy-drop-three {
+  top: 62%;
+  left: 20%;
+  color: #fff5c4;
+  font-size: 17px;
+  animation: dairyVillageSparkle 2.7s ease-in-out infinite reverse;
+}
+
+.dairy-village-scene .dairy-scene-ground {
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 25px;
+  border-top: 3px solid rgba(255,255,255,.25);
+  background: linear-gradient(90deg, #4b8e4b, #8ac36b, #4b8e4b);
+}
+
+.dairy-village-scene .dairy-scene-stamp {
+  position: absolute;
+  z-index: 7;
+  right: 15px;
+  bottom: 38px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border: 1px solid rgba(255,255,255,.7);
+  border-radius: 30px;
+  background: rgba(255,255,255,.9);
+  color: #246b40;
+  font-size: 10px;
+  font-weight: 750;
+  box-shadow: 0 5px 18px rgba(40,80,40,.1);
+  animation: dairyVillageStamp 3s ease-in-out infinite;
+}
+
+/* Registration form layout */
+
+.dairy-registration-form-section {
+  width: min(900px, 100%);
+  margin: 0 auto 70px;
+  padding: clamp(22px, 4vw, 42px);
+  border: 1px solid #e4eee5;
+  border-radius: 26px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 20px 55px rgba(32,73,43,.07);
+}
+
+.dairy-registration-form-heading { margin-bottom: 26px; }
+
+.dairy-registration-form-heading h2 {
+  margin: 9px 0;
+  color: #1b412b;
+  font-size: clamp(25px, 3vw, 34px);
+  letter-spacing: -.035em;
+}
+
+.dairy-registration-form-heading p {
+  color: #738276;
+  line-height: 1.7;
+}
+
+.dairy-store-form { display: grid; gap: 19px; }
+
+.dairy-store-form .dairy-form-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dairy-store-form .dairy-form-field label {
+  display: block;
+  color: #284a35;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dairy-store-form input,
+.dairy-store-form textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid #dce8de;
+  border-radius: 12px;
+  outline: none;
+  background: #fbfdfb;
+  color: #243a2b;
+  font: inherit;
+  font-size: 14px;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.dairy-store-form input { min-height: 48px; padding: 12px 14px; }
+.dairy-store-form textarea { min-height: 100px; padding: 13px 14px; resize: vertical; }
+
+.dairy-store-form input::placeholder,
+.dairy-store-form textarea::placeholder { color: #a1ada3; }
+
+.dairy-store-form input:focus,
+.dairy-store-form textarea:focus {
+  border-color: #4a9b65;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(74,155,101,.12);
+}
+
+.dairy-store-form .dairy-registration-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.dairy-store-form .dairy-form-message {
+  padding: 13px 15px;
+  border: 1px solid #e7d8a5;
+  border-radius: 12px;
+  background: #fff9e8;
+  color: #785b14;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.dairy-store-form .dairy-form-message-error {
+  border-color: #f0caca;
+  background: #fff2f2;
+  color: #a22f2f;
+}
+
+.dairy-store-form .dairy-form-message-success {
+  border-color: #c8e8d0;
+  background: #eef9f0;
+  color: #226b3d;
+}
+
+.dairy-registration-success-details {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #cbe7d0;
+  border-radius: 14px;
+  background: #f0faf1;
+  color: #277244;
+}
+
+.dairy-registration-success-details span { display: grid; gap: 5px; }
+.dairy-registration-success-details small { color: #587963; line-height: 1.5; }
+
+.dairy-store-form .dairy-submit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 52px;
+}
+
+.dairy-store-form .dairy-submit-button:disabled {
+  cursor: not-allowed;
+  opacity: .7;
+  transform: none;
+}
+
+.dairy-registration-return {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #cfe3d2;
+  border-radius: 12px;
+  background: #f5fbf5;
+  color: #246b40;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dairy-registration-return:hover { background: #eaf6ec; }
+
+.dairy-store-form .dairy-prototype-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff8e9;
+  color: #637267;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* Registration animation keyframes — unique names avoid collisions */
+
+@keyframes dairyRegistrationTextShine {
+  to { background-position: 200% 0; }
+}
+
+@keyframes dairyVillageAppear {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dairyVillageSun {
+  50% { transform: scale(1.08); opacity: .86; }
+}
+
+@keyframes dairyVillageCloud {
+  to { translate: 12px 0; }
+}
+
+@keyframes dairyVillageHill {
+  to { translate: 12px 0; }
+}
+
+@keyframes dairyVillageHouse {
+  50% { translate: 0 -5px; }
+}
+
+@keyframes dairyVillageBreathe {
+  50% { translate: 0 -4px; }
+}
+
+@keyframes dairyVillageLook {
+  0%, 100% { rotate: 0deg; }
+  50% { rotate: -5deg; }
+}
+
+@keyframes dairyVillageHandoff {
+  0%, 100% { rotate: 0deg; }
+  45%, 65% { rotate: -10deg; }
+}
+
+@keyframes dairyVillageCanPass {
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  45% { translate: 12px -5px; rotate: 8deg; }
+  65% { translate: 14px 0; rotate: 5deg; }
+}
+
+@keyframes dairyVillageCustomerBreathe {
+  50% { translate: 0 -3px; }
+}
+
+@keyframes dairyVillageReceive {
+  0%, 100% { rotate: 0deg; }
+  45%, 65% { rotate: -12deg; }
+}
+
+@keyframes dairyVillageDroplet {
+  0%, 100% { translate: 0 0; opacity: .5; }
+  50% { translate: 10px -14px; opacity: 1; }
+}
+
+@keyframes dairyVillageSparkle {
+  0%, 100% { scale: .7; opacity: .45; }
+  50% { scale: 1.2; opacity: 1; }
+}
+
+@keyframes dairyVillageStamp {
+  50% { translate: 0 -5px; }
+}
+
+/* Mobile registration layout */
+
+@media (max-width: 860px) {
+  .dairy-registration-layout {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    max-width: 680px;
+  }
+
+  .dairy-registration-intro h1 { max-width: 560px; }
+  .dairy-village-scene { min-height: 380px; }
+}
+
+@media (max-width: 600px) {
+  .dairy-registration-layout {
+    width: 100%;
+    gap: 24px;
+    margin: 20px auto 38px;
+  }
+
+  .dairy-registration-intro h1 {
+    font-size: 35px;
+    letter-spacing: -.035em;
+  }
+
+  .dairy-registration-intro > p { font-size: 14px; }
+
+  .dairy-village-scene {
+    min-height: 340px;
+    border-radius: 20px;
+  }
+
+  .dairy-village-scene .dairy-scene-caption {
+    top: 17px;
+    left: 15px;
+    max-width: 74%;
+  }
+
+  .dairy-village-scene .dairy-scene-caption strong { font-size: 21px; }
+
+  .dairy-village-scene .dairy-scene-house {
+    top: 145px;
+    left: 3%;
+    font-size: 42px;
+  }
+
+  .dairy-village-scene .dairy-tree-one {
+    top: 190px;
+    left: 5%;
+    font-size: 28px;
+  }
+
+  .dairy-village-scene .dairy-tree-two {
+    top: 170px;
+    right: 3%;
+    font-size: 28px;
+  }
+
+  .dairy-village-scene .dairy-farmer-character {
+    left: 18%;
+    bottom: 42px;
+    scale: .83;
+    transform-origin: bottom left;
+  }
+
+  .dairy-village-scene .dairy-customer-character {
+    right: 9%;
+    bottom: 42px;
+    scale: .83;
+    transform-origin: bottom right;
+  }
+
+  .dairy-village-scene .dairy-scene-stamp {
+    right: 10px;
+    bottom: 35px;
+    padding: 7px 9px;
+    font-size: 9px;
+  }
+
+  .dairy-village-scene .dairy-scene-sun {
+    top: 38px;
+    right: 20px;
+    width: 46px;
+    height: 46px;
+  }
+
+  .dairy-registration-form-section {
+    width: 100%;
+    margin-bottom: 38px;
+    padding: 22px 16px;
+    border-radius: 20px;
+  }
+
+  .dairy-store-form .dairy-registration-grid { grid-template-columns: 1fr; }
+}
+
+/* Respect device accessibility preferences */
+@media (prefers-reduced-motion: reduce) {
+  .dairy-registration-page *,
+  .dairy-registration-page *::before,
+  .dairy-registration-page *::after {
+    animation: none !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

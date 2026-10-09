@@ -817,3 +817,402 @@
     font-size: 84px;
   }
 }
+
+/* =========================================================
+   KISANDIRECT DAIRY — FARM-TO-HOME VISUAL UPGRADE
+   Keep this section at the end of dairy-marketplace.css.
+   Place the generated image at: frontend/public/dairy-farmer.png
+========================================================= */
+
+.dairy-page {
+  --dairy-green: #287b3b;
+  --dairy-green-dark: #174d2b;
+  --dairy-green-soft: #eaf7e9;
+  --dairy-cream: #fff8e9;
+  --dairy-ink: #17291d;
+  --dairy-muted: #637267;
+  --dairy-border: #e1e9df;
+  position: relative;
+  isolation: isolate;
+}
+
+.dairy-page::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(221, 241, 192, .42), transparent 30%),
+    radial-gradient(circle at 85% 75%, rgba(192, 231, 199, .35), transparent 32%),
+    linear-gradient(135deg, #fbfcf5, #f4f8ef 48%, #fffaf0);
+  background-size: 140% 140%;
+  animation: dairyAmbientShift 18s ease-in-out infinite alternate;
+}
+
+@keyframes dairyAmbientShift {
+  0% { transform: translate3d(-1%, -1%, 0) scale(1); background-position: 0% 50%; }
+  100% { transform: translate3d(1%, 1%, 0) scale(1.04); background-position: 100% 50%; }
+}
+
+.dairy-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 420px;
+  padding: clamp(28px, 4vw, 54px);
+  border: 1px solid rgba(255, 255, 255, .8);
+  background:
+    radial-gradient(circle at 80% 15%, rgba(255, 255, 255, .8), transparent 27%),
+    linear-gradient(120deg, #fff9eb 0%, #f5f7e9 48%, #e8f5e9 100%);
+  box-shadow: 0 24px 70px rgba(42, 86, 48, .08);
+  animation: dairyHeroEnter .8s cubic-bezier(.2,.75,.2,1) both;
+}
+
+.dairy-hero::before,
+.dairy-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(1px);
+}
+
+.dairy-hero::before {
+  top: -100px;
+  right: 12%;
+  background: rgba(255, 255, 255, .42);
+  animation: dairyOrbFloat 9s ease-in-out infinite;
+}
+
+.dairy-hero::after {
+  bottom: -130px;
+  left: 35%;
+  background: rgba(198, 231, 187, .22);
+  animation: dairyOrbFloat 12s ease-in-out infinite reverse;
+}
+
+@keyframes dairyHeroEnter {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dairyOrbFloat {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(12px, -18px, 0); }
+}
+
+.dairy-eyebrow {
+  box-shadow: 0 8px 24px rgba(36, 88, 43, .07);
+  animation: dairySoftPulse 4s ease-in-out infinite;
+}
+
+@keyframes dairySoftPulse {
+  0%, 100% { box-shadow: 0 8px 24px rgba(36, 88, 43, .07); }
+  50% { box-shadow: 0 10px 30px rgba(36, 88, 43, .14); }
+}
+
+.dairy-hero h1 {
+  letter-spacing: -.045em;
+  text-wrap: balance;
+}
+
+.dairy-hero p {
+  max-width: 570px;
+}
+
+.dairy-primary-button,
+.dairy-secondary-button,
+.dairy-cart-button,
+.dairy-category,
+.dairy-product-bottom button,
+.dairy-subscription-banner > button {
+  transition: transform .22s ease, box-shadow .22s ease, background .22s ease, border-color .22s ease;
+}
+
+.dairy-primary-button {
+  box-shadow: 0 10px 24px rgba(40, 123, 59, .2);
+}
+
+.dairy-primary-button:hover,
+.dairy-secondary-button:hover,
+.dairy-cart-button:hover,
+.dairy-subscription-banner > button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(30, 80, 39, .14);
+}
+
+.dairy-hero-art {
+  min-height: 340px;
+  perspective: 1000px;
+}
+
+/* Replace the old glass emoji with a rural Indian dairy-farmer image.
+   Save the generated image as public/dairy-farmer.png. */
+.dairy-art-circle {
+  position: relative;
+  width: clamp(250px, 27vw, 360px);
+  height: clamp(250px, 27vw, 360px);
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 8px solid rgba(255, 255, 255, .88);
+  border-radius: 50%;
+  background-color: #e7f3e4;
+  background-image: url("/dairy-farmer.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 43% center;
+  box-shadow:
+    0 24px 60px rgba(37, 93, 47, .2),
+    0 0 0 16px rgba(255, 255, 255, .22);
+  font-size: 0;
+  animation: dairyImageFloat 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+.dairy-art-circle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(145deg, rgba(255,255,255,.16), transparent 48%, rgba(20,75,34,.08));
+  pointer-events: none;
+}
+
+@keyframes dairyImageFloat {
+  0%, 100% { transform: translateY(0) rotateY(-3deg); }
+  50% { transform: translateY(-10px) rotateY(3deg); }
+}
+
+.dairy-art-note {
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, .9);
+  box-shadow: 0 16px 38px rgba(25, 55, 30, .13);
+  animation: dairyNoteFloat 5s ease-in-out infinite;
+  backdrop-filter: blur(12px);
+}
+
+.dairy-art-note-one {
+  top: 8%;
+  left: -2%;
+  animation-delay: -.8s;
+}
+
+.dairy-art-note-two {
+  right: -2%;
+  bottom: 8%;
+  animation-delay: -2.4s;
+}
+
+@keyframes dairyNoteFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.dairy-benefits > div {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(220, 232, 218, .9);
+  box-shadow: 0 10px 30px rgba(31, 67, 37, .035);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+
+.dairy-benefits > div::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -110%;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent);
+  transform: skewX(-18deg);
+  transition: left .6s ease;
+}
+
+.dairy-benefits > div:hover {
+  transform: translateY(-5px);
+  border-color: #c3dfc5;
+  box-shadow: 0 18px 40px rgba(31, 92, 42, .09);
+}
+
+.dairy-benefits > div:hover::after {
+  left: 140%;
+}
+
+.dairy-section-heading h2 {
+  letter-spacing: -.035em;
+}
+
+.dairy-search {
+  box-shadow: 0 8px 24px rgba(30, 65, 35, .035);
+  transition: box-shadow .2s ease, border-color .2s ease, transform .2s ease;
+}
+
+.dairy-search:focus-within {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 4px rgba(47, 125, 59, .09), 0 12px 28px rgba(30, 65, 35, .06);
+}
+
+.dairy-category {
+  box-shadow: 0 3px 10px rgba(20, 50, 24, .025);
+}
+
+.dairy-category:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(31, 92, 42, .08);
+}
+
+.dairy-category.active {
+  box-shadow: 0 8px 20px rgba(40, 123, 59, .18);
+}
+
+.dairy-product-card {
+  position: relative;
+  border-color: rgba(223, 232, 221, .95);
+  box-shadow: 0 8px 28px rgba(23, 55, 29, .035);
+  animation: dairyCardEnter .55s both;
+}
+
+.dairy-product-card:nth-child(2) { animation-delay: .06s; }
+.dairy-product-card:nth-child(3) { animation-delay: .12s; }
+.dairy-product-card:nth-child(4) { animation-delay: .18s; }
+.dairy-product-card:nth-child(5) { animation-delay: .24s; }
+.dairy-product-card:nth-child(6) { animation-delay: .30s; }
+
+@keyframes dairyCardEnter {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dairy-product-card:hover {
+  transform: translateY(-7px);
+  border-color: #c6dfc8;
+  box-shadow: 0 22px 48px rgba(26, 76, 35, .12);
+}
+
+.dairy-product-art {
+  background:
+    radial-gradient(circle at 50% 15%, rgba(255,255,255,.9), transparent 42%),
+    linear-gradient(135deg, #fff6e5, #e9f6e9);
+}
+
+.dairy-product-bottom button {
+  box-shadow: 0 6px 16px rgba(40, 123, 59, .15);
+}
+
+.dairy-product-bottom button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(40, 123, 59, .24);
+}
+
+.dairy-subscription-banner {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 22px 55px rgba(24, 77, 42, .18);
+}
+
+.dairy-subscription-banner::after {
+  content: "";
+  position: absolute;
+  top: -65%;
+  right: -8%;
+  width: 280px;
+  height: 280px;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 50%;
+  box-shadow: 0 0 0 28px rgba(255,255,255,.045), 0 0 0 58px rgba(255,255,255,.035);
+  pointer-events: none;
+  animation: dairyOrbFloat 10s ease-in-out infinite;
+}
+
+.dairy-modal {
+  animation: dairyModalEnter .25s ease-out both;
+}
+
+@keyframes dairyModalEnter {
+  from { opacity: 0; transform: translateY(10px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dairy-page button:focus-visible,
+.dairy-page a:focus-visible,
+.dairy-page input:focus-visible,
+.dairy-page select:focus-visible {
+  outline: 3px solid rgba(47, 125, 59, .38);
+  outline-offset: 3px;
+}
+
+@media (max-width: 860px) {
+  .dairy-hero-art {
+    min-height: 300px;
+  }
+
+  .dairy-art-circle {
+    width: min(300px, 68vw);
+    height: min(300px, 68vw);
+  }
+
+  .dairy-art-note-one { left: 2%; }
+  .dairy-art-note-two { right: 2%; }
+}
+
+@media (max-width: 520px) {
+  .dairy-hero {
+    border-radius: 22px;
+    padding: 25px 19px;
+  }
+
+  .dairy-hero-art {
+    min-height: 245px;
+    margin-top: 6px;
+  }
+
+  .dairy-art-circle {
+    width: 220px;
+    height: 220px;
+    border-width: 6px;
+    background-position: 43% center;
+  }
+
+  .dairy-art-note {
+    gap: 6px;
+    padding: 9px 11px;
+    border-radius: 12px;
+    font-size: 12px;
+  }
+
+  .dairy-art-note span {
+    font-size: 17px;
+  }
+
+  .dairy-art-note-one { top: 0; left: 0; }
+  .dairy-art-note-two { right: 0; bottom: 0; }
+
+  .dairy-subscription-banner {
+    padding: 24px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dairy-page::before,
+  .dairy-hero,
+  .dairy-hero::before,
+  .dairy-hero::after,
+  .dairy-eyebrow,
+  .dairy-art-circle,
+  .dairy-art-note,
+  .dairy-product-card,
+  .dairy-subscription-banner::after,
+  .dairy-modal {
+    animation: none !important;
+  }
+
+  .dairy-page *,
+  .dairy-page *::before,
+  .dairy-page *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}

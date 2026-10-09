@@ -1,447 +1,535 @@
 /* =========================================================
-   KISANDIRECT DAIRY — MILK WORLD UPGRADE
-   PASTE THIS AT THE VERY END of dairy-marketplace.css
-   (it overrides earlier rules, so it must come last).
-   Pure CSS. No JS, no libraries.
-
-   What you get:
-   1. Milk rain falling over the whole page (2 depth layers)
-   2. Faster, denser milk rain inside the hero
-   3. Moving milk waves at the bottom of hero + subscription banner
-   4. Milk ripples radiating from the farmer image
-   5. Flowing milk-shine on the hero headline word
-   6. Floating glass top bar with a "milk filling" scroll bar
-   7. Liquid-fill buttons (milk rises on hover) + pulsing cart badge
-   8. Rising milk bubbles inside every product image
-   9. Product cards that pour in while you scroll
-  10. Modals that pour open like milk, with a wave edge
+   KisanDirect Dairy Marketplace — COMPLETE MILK WORLD STYLESHEET
+   REPLACE the whole contents of
+   frontend/src/components/Marketplace/dairy-marketplace.css
+   with this file. It already contains layout + design + animation,
+   so do NOT keep the old CSS below/above it.
+   Image: frontend/public/dairy-farmer.png
 ========================================================= */
 
-@property --milk-fill {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 0%;
-}
+@property --fill { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
 
+/* ---------- 1. Tokens + base ---------- */
 .dairy-page {
-  --milk-white: #fffefb;
-  --milk-tint: 60, 140, 80;
-
-  /* One tile of milk drops, reused by the page and the hero.
-     Tile height is 400px so a 400px translate loops seamlessly. */
-  --milk-rain:
-    radial-gradient(ellipse 2px 5.5px at 34px 44px,  rgba(255,255,255,.98) 0 70%, transparent 74%),
-    radial-gradient(ellipse 3.6px 8px at 34px 44px,  rgba(var(--milk-tint), .20) 0 70%, transparent 74%),
+  --g: #287b3b; --g-dark: #174d2b; --g-soft: #eaf7e9; --g-light: #9fd8a8;
+  --cream: #fff8e9; --ink: #17291d; --muted: #637267; --border: #e1e9df;
+  --milk: #fffefb; --tint: 60, 140, 80;
+  --rain:
+    radial-gradient(ellipse 2px 5.5px at 34px 44px, rgba(255,255,255,.98) 0 70%, transparent 74%),
+    radial-gradient(ellipse 3.6px 8px at 34px 44px, rgba(var(--tint), .2) 0 70%, transparent 74%),
     radial-gradient(ellipse 2px 5.5px at 150px 190px, rgba(255,255,255,.98) 0 70%, transparent 74%),
-    radial-gradient(ellipse 3.6px 8px at 150px 190px, rgba(var(--milk-tint), .20) 0 70%, transparent 74%),
+    radial-gradient(ellipse 3.6px 8px at 150px 190px, rgba(var(--tint), .2) 0 70%, transparent 74%),
     radial-gradient(ellipse 2px 5.5px at 214px 320px, rgba(255,255,255,.98) 0 70%, transparent 74%),
-    radial-gradient(ellipse 3.6px 8px at 214px 320px, rgba(var(--milk-tint), .20) 0 70%, transparent 74%),
+    radial-gradient(ellipse 3.6px 8px at 214px 320px, rgba(var(--tint), .2) 0 70%, transparent 74%),
     radial-gradient(ellipse 1.6px 4.5px at 90px 120px, rgba(255,255,255,.9) 0 70%, transparent 74%),
-    radial-gradient(ellipse 3px 6.5px at 90px 120px,  rgba(var(--milk-tint), .14) 0 70%, transparent 74%),
-    radial-gradient(ellipse 1.6px 4.5px at 190px 400px, rgba(255,255,255,.9) 0 70%, transparent 74%),
-    radial-gradient(ellipse 3px 6.5px at 190px 400px,  rgba(var(--milk-tint), .14) 0 70%, transparent 74%);
-  --milk-rain-size: 250px 400px;
-}
-
-/* ---------- 1. Milk rain over the whole page (behind content) ---------- */
-
-.dairy-page::after {
-  content: "";
-  position: fixed;
-  z-index: -1;
-  top: -400px;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  opacity: .75;
-  background-image: var(--milk-rain);
-  background-size: var(--milk-rain-size);
-  will-change: transform;
-  animation: dairyRainFall 9s linear infinite;
-}
-
-@keyframes dairyRainFall {
-  from { transform: translate3d(0, 0, 0); }
-  to   { transform: translate3d(0, 400px, 0); }
-}
-
-/* ---------- 2. Denser, faster rain inside the hero ---------- */
-
-.dairy-hero::before {
-  top: -400px;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: auto;
-  height: auto;
-  border-radius: 0;
-  filter: none;
-  opacity: .95;
-  background-color: transparent;
-  background-image: var(--milk-rain), var(--milk-rain);
-  background-size: 250px 400px, 190px 400px;
-  background-position: 0 0, 70px 0;
-  will-change: transform;
-  animation: dairyRainFall 5.5s linear infinite;
-}
-
-/* ---------- 3. Milk waves: hero floor + subscription banner ---------- */
-
-.dairy-hero::after,
-.dairy-subscription-banner::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  background-repeat: repeat-x;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'%3E%3Cpath d='M0 30 Q150 0 300 30 T600 30 T900 30 T1200 30 V60 H0Z' fill='%23ffffff' fill-opacity='.55'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 3px 6.5px at 90px 120px, rgba(var(--tint), .14) 0 70%, transparent 74%);
+  --wave:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'%3E%3Cpath d='M0 30 Q150 0 300 30 T600 30 T900 30 T1200 30 V60 H0Z' fill='%23ffffff' fill-opacity='.6'/%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'%3E%3Cpath d='M0 36 Q150 8 300 36 T600 36 T900 36 T1200 36 V60 H0Z' fill='%23ffffff' fill-opacity='.35'/%3E%3C/svg%3E");
-  background-size: 1200px 100%, 900px 100%;
-  background-position: 0 100%, 0 100%;
-  animation: dairyWaveFlow 11s linear infinite;
+
+  position: relative; isolation: isolate;
+  max-width: 1180px; margin: 0 auto; padding: 20px 20px 60px;
+  color: var(--ink);
+  font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
 }
+.dairy-page *, .dairy-page *::before, .dairy-page *::after { box-sizing: border-box; }
+.dairy-page button, .dairy-page input, .dairy-page select { font: inherit; color: inherit; }
+.dairy-page button { cursor: pointer; border: 0; background: none; padding: 0; }
+.dairy-page a { color: inherit; }
+.dairy-page h1, .dairy-page h2, .dairy-page h3, .dairy-page p { margin: 0; }
 
-.dairy-hero::after {
-  width: auto;
-  height: 74px;
-  border-radius: 0;
-  filter: none;
-  background-color: transparent;
+/* Page background (soft moving light) */
+.dairy-page::before {
+  content: ""; position: fixed; inset: -20%; z-index: -2; pointer-events: none;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(221,241,192,.45), transparent 30%),
+    radial-gradient(circle at 85% 75%, rgba(192,231,199,.38), transparent 32%),
+    linear-gradient(135deg, #fbfcf5, #f4f8ef 48%, #fffaf0);
+  animation: ambient 18s ease-in-out infinite alternate;
 }
+@keyframes ambient { to { transform: translate3d(1.5%, 1.5%, 0) scale(1.05); } }
 
-.dairy-subscription-banner {
-  isolation: isolate;
+/* Page-wide milk rain (behind content) */
+.dairy-page::after {
+  content: ""; position: fixed; z-index: -1; top: -400px; left: 0; right: 0; bottom: 0;
+  pointer-events: none; opacity: .75;
+  background-image: var(--rain); background-size: 250px 400px;
+  will-change: transform; animation: rainFall 9s linear infinite;
 }
+@keyframes rainFall { to { transform: translate3d(0, 400px, 0); } }
 
-.dairy-subscription-banner::before {
-  height: 52px;
-  opacity: .5;
+/* Liquid-fill buttons */
+.dairy-primary-button, .dairy-secondary-button, .dairy-cart-button, .dairy-category,
+.dairy-product-bottom button, .dairy-subscription-banner > button,
+.dairy-empty-state button, .dairy-empty-cart button {
+  position: relative; overflow: hidden;
+  transition: --fill .45s cubic-bezier(.3,.8,.3,1), transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
+.dairy-primary-button:hover, .dairy-secondary-button:hover, .dairy-cart-button:hover,
+.dairy-category:hover, .dairy-product-bottom button:hover,
+.dairy-subscription-banner > button:hover, .dairy-empty-state button:hover,
+.dairy-empty-cart button:hover { --fill: 100%; }
+.dairy-page button:active { transform: scale(.95); }
 
-@keyframes dairyWaveFlow {
-  from { background-position: 0 100%, 0 100%; }
-  to   { background-position: 1200px 100%, -900px 100%; }
-}
-
-/* ---------- 4. Ripples radiating from the farmer image ---------- */
-
-.dairy-art-circle {
-  animation:
-    dairyImageFloat 6s ease-in-out infinite,
-    dairyMilkRipple 3.6s ease-out infinite;
-}
-
-@keyframes dairyMilkRipple {
-  0% {
-    box-shadow:
-      0 24px 60px rgba(37, 93, 47, .2),
-      0 0 0 16px rgba(255, 255, 255, .22),
-      0 0 0 16px rgba(255, 255, 255, .6);
-  }
-  100% {
-    box-shadow:
-      0 24px 60px rgba(37, 93, 47, .2),
-      0 0 0 16px rgba(255, 255, 255, .22),
-      0 0 0 76px rgba(255, 255, 255, 0);
-  }
-}
-
-/* ---------- 5. Flowing milk-shine on the headline word ---------- */
-
-.dairy-hero h1 span {
-  background: linear-gradient(100deg, #1f6a31 0%, #3f9a52 30%, #bfe9c4 50%, #3f9a52 70%, #1f6a31 100%);
-  background-size: 250% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  animation: dairyTextMilk 5s ease-in-out infinite;
-}
-
-@keyframes dairyTextMilk {
-  0%   { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
-}
-
-/* ---------- 6. Floating glass top bar + milk-fill scroll bar ---------- */
-
+/* ---------- 2. Top bar ---------- */
 .dairy-topbar {
-  position: sticky;
-  top: 10px;
-  z-index: 60;
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, .85);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .62);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
-  backdrop-filter: blur(16px) saturate(1.3);
-  box-shadow: 0 10px 34px rgba(30, 80, 40, .09);
+  position: sticky; top: 10px; z-index: 60;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 22px; padding: 8px 10px 8px 18px;
+  border: 1px solid rgba(255,255,255,.9); border-radius: 999px;
+  background: rgba(255,255,255,.66);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
+  box-shadow: 0 10px 34px rgba(30,80,40,.09);
 }
-
-.dairy-topbar::after {
-  content: none;
+.dairy-back-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--g-dark); font-weight: 700; text-decoration: none;
 }
-
+.dairy-back-link svg { transition: transform .25s ease; }
+.dairy-back-link:hover svg { transform: translateX(-4px); }
+.dairy-cart-button {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px;
+  border: 1px solid var(--border); border-radius: 999px; background-color: #fff;
+  background-image: linear-gradient(to top, var(--g-soft) var(--fill), transparent var(--fill));
+  font-weight: 700;
+}
+.dairy-cart-button:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(30,80,39,.14); }
+.dairy-cart-button span {
+  min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
+  background: var(--g); color: #fff; font-size: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+  animation: badgePing 2.4s ease-out infinite;
+}
+@keyframes badgePing {
+  0% { box-shadow: 0 0 0 0 rgba(40,123,59,.45); }
+  70%, 100% { box-shadow: 0 0 0 10px rgba(40,123,59,0); }
+}
 @supports (animation-timeline: scroll()) {
   .dairy-topbar::after {
-    content: "";
-    position: absolute;
-    left: 22px;
-    right: 22px;
-    bottom: 3px;
-    height: 3px;
-    border-radius: 3px;
-    background: linear-gradient(90deg, #ffffff, #9fd8a8, var(--dairy-green));
-    box-shadow: 0 0 10px rgba(255, 255, 255, .9);
-    transform-origin: left center;
-    transform: scaleX(0);
-    animation: dairyScrollFill linear both;
-    animation-timeline: scroll(root block);
+    content: ""; position: absolute; left: 24px; right: 24px; bottom: 3px; height: 3px;
+    border-radius: 3px; background: linear-gradient(90deg, #fff, var(--g-light), var(--g));
+    transform-origin: left; transform: scaleX(0);
+    animation: scrollFill linear both; animation-timeline: scroll(root block);
   }
-
-  @keyframes dairyScrollFill {
-    to { transform: scaleX(1); }
-  }
+  @keyframes scrollFill { to { transform: scaleX(1); } }
 }
 
-/* Cart badge: pulsing milk ring */
-.dairy-cart-button span {
-  position: relative;
-  animation: dairyBadgePing 2.4s ease-out infinite;
+/* ---------- 3. Hero ---------- */
+.dairy-hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: center;
+  min-height: 440px; padding: clamp(28px, 4vw, 54px) clamp(22px, 4vw, 54px) 90px;
+  border: 1px solid rgba(255,255,255,.85); border-radius: 28px;
+  background:
+    radial-gradient(circle at 80% 15%, rgba(255,255,255,.8), transparent 27%),
+    linear-gradient(120deg, #fff9eb 0%, #f5f7e9 48%, #e8f5e9 100%);
+  box-shadow: 0 24px 70px rgba(42,86,48,.09);
+  animation: heroEnter .8s cubic-bezier(.2,.75,.2,1) both;
+}
+@keyframes heroEnter { from { opacity: 0; transform: translateY(16px); } }
+
+/* hero rain */
+.dairy-hero::before {
+  content: ""; position: absolute; z-index: -1; top: -400px; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  background-image: var(--rain), var(--rain);
+  background-size: 250px 400px, 190px 400px; background-position: 0 0, 70px 0;
+  will-change: transform; animation: rainFall 5.5s linear infinite;
+}
+/* hero milk waves */
+.dairy-hero::after, .dairy-subscription-banner::before {
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; bottom: 0; height: 74px;
+  pointer-events: none; background-repeat: repeat-x; background-image: var(--wave);
+  background-size: 1200px 100%, 900px 100%; background-position: 0 100%, 0 100%;
+  animation: waveFlow 11s linear infinite;
+}
+@keyframes waveFlow { to { background-position: 1200px 100%, -900px 100%; } }
+
+.dairy-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px;
+  border-radius: 999px; background: #fff; color: var(--g-dark);
+  font-size: 12px; font-weight: 700; letter-spacing: .08em;
+  box-shadow: 0 8px 24px rgba(36,88,43,.08);
+}
+.dairy-hero h1 {
+  margin: 18px 0 14px; font-size: clamp(34px, 5.4vw, 58px);
+  line-height: 1.05; letter-spacing: -.045em; text-wrap: balance;
+}
+.dairy-hero h1 span {
+  display: block;
+  background: linear-gradient(100deg, #1f6a31 0%, #3f9a52 30%, #bfe9c4 50%, #3f9a52 70%, #1f6a31 100%);
+  background-size: 250% 100%; -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  animation: textMilk 5s ease-in-out infinite;
+}
+@keyframes textMilk { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.dairy-hero p { max-width: 560px; margin-bottom: 26px; color: var(--muted); font-size: 17px; line-height: 1.65; }
+.dairy-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.dairy-primary-button, .dairy-secondary-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 24px; border-radius: 999px; font-size: 15px; font-weight: 700; text-decoration: none;
+}
+.dairy-primary-button {
+  background-color: var(--g); color: #fff;
+  background-image: linear-gradient(to top, rgba(255,255,255,.3) var(--fill), transparent var(--fill));
+  box-shadow: 0 10px 24px rgba(40,123,59,.25);
+}
+.dairy-secondary-button {
+  border: 1.5px solid var(--g); color: var(--g-dark);
+  background-image: linear-gradient(to top, #fff var(--fill), transparent var(--fill));
+}
+.dairy-primary-button:hover, .dairy-secondary-button:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(30,80,39,.18); }
+.dairy-primary-button svg { transition: transform .25s ease; }
+.dairy-primary-button:hover svg { transform: translateX(4px); }
+
+.dairy-trust-row { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 26px; }
+.dairy-trust-row span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; font-weight: 500; }
+.dairy-trust-row svg { color: var(--g); }
+
+/* hero art */
+.dairy-hero-art { position: relative; min-height: 340px; display: flex; align-items: center; justify-content: center; }
+.dairy-art-circle {
+  position: relative; overflow: hidden; flex: 0 0 auto;
+  width: clamp(250px, 27vw, 360px); height: clamp(250px, 27vw, 360px);
+  display: flex; align-items: center; justify-content: center;
+  border: 8px solid rgba(255,255,255,.9); border-radius: 50%;
+  background: #e7f3e4 url("/dairy-farmer.png") 43% center / cover no-repeat;
+  font-size: 0;
+  box-shadow: 0 24px 60px rgba(37,93,47,.2), 0 0 0 16px rgba(255,255,255,.22), 0 0 0 16px rgba(255,255,255,.6);
+  animation: imgFloat 6s ease-in-out infinite, ripple 3.6s ease-out infinite;
+}
+@keyframes imgFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes ripple {
+  to { box-shadow: 0 24px 60px rgba(37,93,47,.2), 0 0 0 16px rgba(255,255,255,.22), 0 0 0 76px rgba(255,255,255,0); }
+}
+.dairy-art-circle::before {
+  content: ""; position: absolute; z-index: 1; top: -25%; left: -65%; width: 42%; height: 150%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+  transform: rotate(20deg); pointer-events: none; animation: shimmer 7s ease-in-out infinite;
+}
+@keyframes shimmer { 0%, 15% { left: -65%; opacity: 0; } 30% { opacity: .9; } 58% { left: 125%; opacity: .5; } 59%, 100% { left: 125%; opacity: 0; } }
+.dairy-hero-art::before {
+  content: ""; position: absolute; z-index: 3; top: 18%; left: 13%; width: 21px; height: 28px;
+  border: 2px solid #fff; border-radius: 58% 42% 58% 42%;
+  background: linear-gradient(145deg, #fff 8%, #f2fff4 80%);
+  box-shadow: 0 8px 22px rgba(39,112,52,.15); animation: dropDrift 5.5s ease-in-out infinite;
+}
+.dairy-hero-art::after {
+  content: ""; position: absolute; z-index: 3; right: 13%; bottom: 13%; width: 56px; height: 28px;
+  border: 4px solid rgba(255,255,255,.9); border-top-color: rgba(255,255,255,.2); border-radius: 50%;
+  animation: splash 3.8s ease-in-out infinite;
+}
+@keyframes dropDrift {
+  0%, 100% { transform: translate3d(0,0,0) rotate(18deg) scale(.94); }
+  50% { transform: translate3d(10px,-22px,0) rotate(34deg) scale(1.08); }
+}
+@keyframes splash {
+  0%, 100% { opacity: 0; transform: translateY(8px) scale(.55); }
+  35% { opacity: .9; transform: translateY(-3px) scale(1); }
+  65% { opacity: .6; transform: translateY(-7px) scale(1.08); }
+}
+.dairy-art-note {
+  position: absolute; z-index: 2; display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border: 1px solid #fff; border-radius: 14px;
+  background: rgba(255,255,255,.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  font-size: 14px; font-weight: 700; box-shadow: 0 16px 38px rgba(25,55,30,.14);
+  animation: noteFloat 5s ease-in-out infinite;
+}
+.dairy-art-note span { font-size: 20px; }
+.dairy-art-note-one { top: 8%; left: -2%; animation-delay: -.8s; }
+.dairy-art-note-two { right: -2%; bottom: 8%; animation-delay: -2.4s; }
+@keyframes noteFloat { 50% { transform: translateY(-8px); } }
+
+/* ---------- 4. Benefits ---------- */
+.dairy-benefits { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 26px 0 46px; }
+.dairy-benefits > div {
+  position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px;
+  padding: 18px; border: 1px solid rgba(220,232,218,.9); border-radius: 18px;
+  background: rgba(255,255,255,.88); color: var(--g);
+  box-shadow: 0 10px 30px rgba(31,67,37,.04);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.dairy-benefits > div::after {
+  content: ""; position: absolute; top: 0; left: -110%; width: 70%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent);
+  transform: skewX(-18deg); transition: left .6s ease;
+}
+.dairy-benefits > div:hover { transform: translateY(-5px); border-color: #c3dfc5; box-shadow: 0 18px 40px rgba(31,92,42,.1); }
+.dairy-benefits > div:hover::after { left: 140%; }
+.dairy-benefits > div > svg { flex-shrink: 0; transition: transform .4s ease; }
+.dairy-benefits > div:hover > svg { transform: rotate(-8deg) scale(1.15); }
+.dairy-benefits span { display: flex; flex-direction: column; gap: 2px; }
+.dairy-benefits strong { color: var(--ink); font-size: 15px; }
+.dairy-benefits small { color: var(--muted); font-size: 13px; }
+
+/* ---------- 5. Section heading, search, categories ---------- */
+.dairy-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.dairy-section-kicker { display: block; margin-bottom: 6px; color: var(--g); font-size: 12px; font-weight: 700; letter-spacing: .1em; }
+.dairy-section-heading h2 { position: relative; padding-bottom: 12px; margin-bottom: 4px; font-size: 30px; letter-spacing: -.035em; }
+.dairy-section-heading h2::after {
+  content: ""; position: absolute; left: 0; bottom: 0; width: 64px; height: 6px; border-radius: 6px;
+  background: linear-gradient(90deg, var(--g), var(--g-light));
+  transform-origin: left; animation: pourLine 1.2s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes pourLine { from { transform: scaleX(0); } }
+.dairy-section-heading p { color: var(--muted); }
+.dairy-product-count {
+  padding: 7px 14px; border-radius: 999px; background: var(--g-soft); color: var(--g-dark);
+  font-size: 13px; font-weight: 700; white-space: nowrap;
 }
 
-@keyframes dairyBadgePing {
-  0%   { box-shadow: 0 0 0 0 rgba(47, 125, 59, .45); }
-  70%  { box-shadow: 0 0 0 10px rgba(47, 125, 59, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(47, 125, 59, 0); }
+.dairy-search {
+  display: flex; align-items: center; gap: 10px; padding: 0 16px; margin-bottom: 16px;
+  border: 1px solid var(--border); border-radius: 16px; background: rgba(255,255,255,.92);
+  color: var(--muted); box-shadow: 0 8px 24px rgba(30,65,35,.04);
+  transition: box-shadow .2s ease, border-color .2s ease, transform .2s ease;
 }
+.dairy-search:focus-within { border-color: var(--g); transform: translateY(-1px); box-shadow: 0 0 0 4px rgba(40,123,59,.1), 0 12px 28px rgba(30,65,35,.07); }
+.dairy-search input { flex: 1; min-width: 0; padding: 15px 0; border: 0; outline: 0; background: transparent; font-size: 15px; }
+.dairy-search button { display: inline-flex; padding: 5px; border-radius: 50%; color: var(--muted); }
+.dairy-search button:hover { background: var(--g-soft); }
 
-/* ---------- 7. Liquid-fill buttons: milk rises on hover ---------- */
-
-.dairy-primary-button,
-.dairy-secondary-button,
-.dairy-product-bottom button,
-.dairy-subscription-banner > button,
-.dairy-empty-state button,
-.dairy-empty-cart button,
+.dairy-categories { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
 .dairy-category {
-  position: relative;
-  overflow: hidden;
-  transition:
-    --milk-fill .45s cubic-bezier(.3, .8, .3, 1),
-    transform .22s ease, box-shadow .22s ease, background .22s ease, border-color .22s ease;
+  display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+  border: 1px solid var(--border); border-radius: 999px; background-color: #fff;
+  background-image: linear-gradient(to top, var(--g-soft) var(--fill), transparent var(--fill));
+  font-size: 14px; font-weight: 700; box-shadow: 0 3px 10px rgba(20,50,24,.03);
 }
-
-.dairy-primary-button,
-.dairy-product-bottom button,
-.dairy-empty-state button,
-.dairy-empty-cart button,
+.dairy-category:hover { border-color: var(--g); transform: translateY(-2px); box-shadow: 0 8px 18px rgba(31,92,42,.1); }
 .dairy-category.active {
-  background-image: linear-gradient(to top, rgba(255, 255, 255, .3) var(--milk-fill), transparent var(--milk-fill));
+  border-color: var(--g); background-color: var(--g); color: #fff;
+  background-image: linear-gradient(to top, rgba(255,255,255,.22) var(--fill), transparent var(--fill));
+  box-shadow: 0 8px 20px rgba(40,123,59,.22);
 }
 
-.dairy-secondary-button,
-.dairy-category:not(.active) {
-  background-image: linear-gradient(to top, var(--dairy-green-soft) var(--milk-fill), transparent var(--milk-fill));
+/* ---------- 6. Product grid + cards ---------- */
+.dairy-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+.dairy-product-card {
+  position: relative; display: flex; flex-direction: column; overflow: hidden;
+  border: 1px solid rgba(223,232,221,.95); border-radius: 22px; background: rgba(255,255,255,.92);
+  box-shadow: 0 8px 28px rgba(23,55,29,.05);
+  animation: cardEnter .55s both;
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
 }
+.dairy-product-card:nth-child(2) { animation-delay: .06s; }
+.dairy-product-card:nth-child(3) { animation-delay: .12s; }
+.dairy-product-card:nth-child(4) { animation-delay: .18s; }
+.dairy-product-card:nth-child(5) { animation-delay: .24s; }
+.dairy-product-card:nth-child(6) { animation-delay: .3s; }
+@keyframes cardEnter { from { opacity: 0; transform: translateY(16px); } }
+.dairy-product-card:hover { transform: translateY(-8px); border-color: #c6dfc8; box-shadow: 0 24px 50px rgba(26,76,35,.14); }
 
-.dairy-subscription-banner > button {
-  background-image: linear-gradient(to top, #d9f2dd var(--milk-fill), transparent var(--milk-fill));
+@supports (animation-timeline: view()) {
+  .dairy-product-card, .dairy-benefits > div {
+    animation: riseIn linear both; animation-delay: 0s;
+    animation-timeline: view(); animation-range: entry 0% entry 60%;
+  }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(46px) scale(.95); } }
 }
-
-.dairy-primary-button:hover,
-.dairy-secondary-button:hover,
-.dairy-product-bottom button:hover,
-.dairy-subscription-banner > button:hover,
-.dairy-empty-state button:hover,
-.dairy-empty-cart button:hover,
-.dairy-category:hover {
-  --milk-fill: 100%;
-}
-
-.dairy-page button:active,
-.dairy-page .dairy-primary-button:active {
-  transform: scale(.95);
-}
-
-/* ---------- 8. Rising milk bubbles inside product images ---------- */
 
 .dairy-product-art {
-  isolation: isolate;
-  overflow: hidden;
+  position: relative; isolation: isolate; overflow: hidden; height: 160px;
+  display: flex; align-items: center; justify-content: center; font-size: 66px;
+  background: radial-gradient(circle at 50% 15%, rgba(255,255,255,.9), transparent 42%), linear-gradient(135deg, #fff6e5, #e9f6e9);
+  transition: background-size .5s ease;
 }
-
 .dairy-product-art::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  pointer-events: none;
+  content: ""; position: absolute; z-index: -1; inset: 0; pointer-events: none;
   background-image:
-    radial-gradient(circle at 20px 120px, transparent 5px, rgba(255, 255, 255, .85) 5.5px 6.5px, transparent 7px),
-    radial-gradient(circle at 80px 60px,  rgba(255, 255, 255, .8) 0 3px, transparent 3.5px),
-    radial-gradient(circle at 130px 140px, transparent 7px, rgba(255, 255, 255, .8) 7.5px 8.5px, transparent 9px),
-    radial-gradient(circle at 200px 40px, rgba(255, 255, 255, .85) 0 4px, transparent 4.5px),
-    radial-gradient(circle at 240px 110px, transparent 4px, rgba(255, 255, 255, .8) 4.5px 5.5px, transparent 6px);
-  background-size: 260px 150px;
-  animation: dairyBubblesRise 7s linear infinite;
+    radial-gradient(circle at 20px 120px, transparent 5px, rgba(255,255,255,.9) 5.5px 6.5px, transparent 7px),
+    radial-gradient(circle at 80px 60px, rgba(255,255,255,.85) 0 3px, transparent 3.5px),
+    radial-gradient(circle at 130px 140px, transparent 7px, rgba(255,255,255,.85) 7.5px 8.5px, transparent 9px),
+    radial-gradient(circle at 200px 40px, rgba(255,255,255,.9) 0 4px, transparent 4.5px),
+    radial-gradient(circle at 240px 110px, transparent 4px, rgba(255,255,255,.85) 4.5px 5.5px, transparent 6px);
+  background-size: 260px 150px; animation: bubbles 7s linear infinite;
 }
-
-.dairy-product-card:nth-child(even) .dairy-product-art::before {
-  animation-duration: 9s;
-  background-position: 90px 0;
+.dairy-product-card:nth-child(even) .dairy-product-art::before { animation-duration: 9s; background-position: 90px 0; }
+@keyframes bubbles { to { background-position-y: -150px; } }
+.dairy-product-art::after {
+  content: "✦"; position: absolute; right: 16px; bottom: 12px; color: rgba(40,123,59,.25);
+  font-size: 22px; pointer-events: none; animation: sparkle 3.2s ease-in-out infinite;
 }
-
-@keyframes dairyBubblesRise {
-  from { background-position-y: 0; }
-  to   { background-position-y: -150px; }
-}
-
-/* Gloss that sweeps across the art when a card is hovered */
+@keyframes sparkle { 0%, 100% { opacity: .25; transform: scale(.8) rotate(0); } 50% { opacity: .9; transform: scale(1.15) rotate(18deg); } }
 .dairy-product-art small {
-  z-index: 2;
+  position: absolute; z-index: 2; top: 12px; left: 12px; padding: 4px 10px; border-radius: 999px;
+  background: #fff; color: var(--g-dark); font-size: 12px; font-weight: 700;
 }
-
-.dairy-product-card:hover .dairy-product-art {
-  background-size: 140% 140%;
-  background-position: 70% 30%;
+.dairy-product-info { display: flex; flex: 1; flex-direction: column; padding: 18px; }
+.dairy-seller-name { display: inline-flex; align-items: center; gap: 5px; margin-bottom: 8px; color: var(--muted); font-size: 12px; }
+.dairy-product-info h3 { margin-bottom: 6px; font-size: 18px; }
+.dairy-product-info p { flex: 1; margin-bottom: 16px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+.dairy-product-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dairy-product-bottom strong { font-size: 20px; }
+.dairy-product-bottom small { color: var(--muted); }
+.dairy-product-bottom button {
+  display: inline-flex; align-items: center; gap: 5px; padding: 10px 16px; border-radius: 999px;
+  background-color: var(--g); color: #fff; font-size: 14px; font-weight: 700;
+  background-image: linear-gradient(to top, rgba(255,255,255,.3) var(--fill), transparent var(--fill));
+  box-shadow: 0 6px 16px rgba(40,123,59,.18);
 }
+.dairy-product-bottom button:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(40,123,59,.28); }
 
-/* ---------- 9. Section headings: milk pours into an underline ---------- */
-
-.dairy-section-heading h2 {
-  position: relative;
-  padding-bottom: 12px;
+/* ---------- 7. Empty states ---------- */
+.dairy-empty-state, .dairy-empty-cart {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 44px 20px;
+  border: 1px dashed var(--border); border-radius: 20px; text-align: center; color: var(--muted);
+  background: rgba(255,255,255,.7);
 }
-
-.dairy-section-heading h2::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 64px;
-  height: 6px;
-  border-radius: 6px;
-  background: linear-gradient(90deg, var(--dairy-green), #9fd8a8);
-  transform-origin: left center;
-  animation: dairyPourLine 1.2s cubic-bezier(.2, .8, .2, 1) both;
+.dairy-empty-cart { border: 0; background: none; }
+.dairy-empty-state h3, .dairy-empty-cart h3 { margin-top: 4px; color: var(--ink); }
+.dairy-empty-state p, .dairy-empty-cart p { margin-bottom: 8px; }
+.dairy-empty-state button, .dairy-empty-cart button {
+  padding: 10px 20px; border-radius: 999px; background-color: var(--g); color: #fff; font-weight: 700;
+  background-image: linear-gradient(to top, rgba(255,255,255,.3) var(--fill), transparent var(--fill));
 }
+.dairy-empty-state > svg, .dairy-empty-cart > svg { animation: noteFloat 3s ease-in-out infinite; }
 
-@keyframes dairyPourLine {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
+/* ---------- 8. Subscription banner ---------- */
+.dairy-subscription-banner {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; align-items: center; gap: 22px; margin-top: 48px; padding: 32px 32px 56px;
+  border-radius: 26px; color: #fff;
+  background: linear-gradient(135deg, var(--g-dark), var(--g));
+  box-shadow: 0 22px 55px rgba(24,77,42,.2);
 }
-
-/* Scroll-driven reveal: cards and benefits pour in as they enter view */
-@supports (animation-timeline: view()) {
-  .dairy-product-card,
-  .dairy-benefits > div {
-    animation: dairyRiseIn linear both;
-    animation-delay: 0s;
-    animation-timeline: view();
-    animation-range: entry 0% entry 60%;
-  }
-
-  @keyframes dairyRiseIn {
-    from { opacity: 0; transform: translateY(46px) scale(.95); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-  }
+.dairy-subscription-banner::before { height: 52px; opacity: .5; }
+.dairy-subscription-banner::after {
+  content: ""; position: absolute; z-index: -1; top: -65%; right: -8%; width: 280px; height: 280px;
+  border: 1px solid rgba(255,255,255,.16); border-radius: 50%;
+  box-shadow: 0 0 0 28px rgba(255,255,255,.045), 0 0 0 58px rgba(255,255,255,.035);
+  pointer-events: none; animation: noteFloat 10s ease-in-out infinite;
 }
-
-/* Cards get a faint milky glass look so the rain shows through softly */
-.dairy-product-card,
-.dairy-benefits > div,
-.dairy-search {
-  background: rgba(255, 255, 255, .88);
+.dairy-subscription-banner > div:nth-child(2) { flex: 1; }
+.dairy-subscription-banner .dairy-section-kicker { color: #c9f0cf; }
+.dairy-subscription-banner h2 { margin-bottom: 6px; font-size: 26px; }
+.dairy-subscription-banner p { opacity: .92; }
+.dairy-subscription-icon {
+  width: 62px; height: 62px; flex-shrink: 0; border-radius: 18px;
+  background: rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center;
+  animation: noteFloat 4s ease-in-out infinite;
 }
+.dairy-subscription-banner > button {
+  display: inline-flex; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 999px;
+  background-color: #fff; color: var(--g-dark); font-weight: 800; white-space: nowrap;
+  background-image: linear-gradient(to top, #d9f2dd var(--fill), transparent var(--fill));
+}
+.dairy-subscription-banner > button:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,.2); }
 
-/* ---------- 10. Modals pour open like milk ---------- */
-
+/* ---------- 9. Modals, cart, form ---------- */
 .dairy-modal-overlay {
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  animation: dairyOverlayIn .3s ease both;
+  position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(15,25,18,.55);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fadeIn .3s ease both;
 }
-
+@keyframes fadeIn { from { opacity: 0; } }
 .dairy-modal {
-  position: relative;
-  animation: dairyModalPour .6s cubic-bezier(.2, .8, .2, 1) both;
+  position: relative; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+  padding: 26px 24px 24px; border-radius: 22px; background: #fff; box-shadow: 0 30px 70px rgba(0,0,0,.28);
+  animation: modalPour .6s cubic-bezier(.2,.8,.2,1) both;
 }
-
 .dairy-modal::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 6px;
-  border-radius: 22px 22px 0 0;
-  background: linear-gradient(90deg, #cfeed3, var(--dairy-green), #cfeed3);
-  background-size: 200% 100%;
-  animation: dairyTextMilk 4s linear infinite;
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+  background: linear-gradient(90deg, #cfeed3, var(--g), #cfeed3); background-size: 200% 100%;
+  animation: textMilk 4s linear infinite;
 }
-
-@keyframes dairyOverlayIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+@keyframes modalPour {
+  0% { clip-path: inset(0 0 100% 0 round 22px); opacity: .4; transform: translateY(-18px); }
+  60% { clip-path: inset(0 0 0 0 round 22px); opacity: 1; transform: translateY(5px); }
+  100% { clip-path: inset(0 0 0 0 round 22px); opacity: 1; transform: none; }
 }
+.dairy-modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.dairy-modal-header h2 { font-size: 22px; }
+.dairy-close-button { display: inline-flex; padding: 8px; border-radius: 50%; background: #f1f4f1; transition: transform .3s ease, background .2s ease; }
+.dairy-close-button:hover { background: var(--border); transform: rotate(90deg); }
 
-@keyframes dairyModalPour {
-  0%   { clip-path: inset(0 0 100% 0 round 22px); opacity: .4; transform: translateY(-18px); }
-  60%  { clip-path: inset(0 0 0 0 round 22px); opacity: 1; transform: translateY(5px); }
-  100% { clip-path: inset(0 0 0 0 round 22px); opacity: 1; transform: translateY(0); }
+.dairy-cart-items { display: flex; flex-direction: column; gap: 14px; }
+.dairy-cart-item { display: flex; align-items: center; gap: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border); animation: slideIn .4s ease both; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(16px); } }
+.dairy-cart-emoji { width: 52px; height: 52px; flex-shrink: 0; border-radius: 14px; background: var(--g-soft); display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.dairy-cart-item-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.dairy-cart-item-info small { color: var(--muted); }
+.dairy-quantity-control { display: inline-flex; align-items: center; align-self: flex-start; gap: 12px; margin-top: 4px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; }
+.dairy-quantity-control button { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--g-soft); color: var(--g-dark); transition: transform .2s ease, background .2s ease; }
+.dairy-quantity-control button:hover { background: var(--g); color: #fff; transform: scale(1.14); }
+.dairy-quantity-control span { min-width: 14px; text-align: center; font-weight: 700; }
+.dairy-cart-total { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; font-size: 18px; }
+.dairy-prototype-note { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: var(--cream); color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+.dairy-subscription-form { display: flex; flex-direction: column; gap: 16px; }
+.dairy-subscription-form label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700; }
+.dairy-subscription-form select, .dairy-subscription-form input {
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: #fff; font-size: 15px;
 }
+.dairy-subscription-form select:focus, .dairy-subscription-form input:focus { outline: 0; border-color: var(--g); box-shadow: 0 0 0 3px rgba(40,123,59,.14); }
+.dairy-subscription-summary { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 14px; background: var(--g-soft); color: var(--g-dark); }
+.dairy-subscription-summary span { display: flex; flex-direction: column; gap: 2px; }
+.dairy-subscription-summary small { color: var(--muted); }
+.dairy-form-message { padding: 10px 12px; border-radius: 10px; background: #fff4d6; color: #7a5a00; font-size: 14px; }
+.dairy-submit-button { width: 100%; }
 
-.dairy-cart-item {
-  animation: dairyCartSlide .4s ease both;
+.dairy-page button:focus-visible, .dairy-page a:focus-visible,
+.dairy-page input:focus-visible, .dairy-page select:focus-visible { outline: 3px solid rgba(40,123,59,.4); outline-offset: 3px; }
+
+/* ---------- 10. Footer (outside .dairy-page — replace selectors with your real class) ---------- */
+footer, .footer, .site-footer, .app-footer, .main-footer {
+  position: relative; isolation: isolate; overflow: hidden; padding-top: 64px;
 }
-
-@keyframes dairyCartSlide {
-  from { opacity: 0; transform: translateX(16px); }
-  to   { opacity: 1; transform: translateX(0); }
+footer::before, .footer::before, .site-footer::before, .app-footer::before, .main-footer::before {
+  content: ""; position: absolute; z-index: -1; top: -400px; left: 0; right: 0; bottom: 0;
+  pointer-events: none; opacity: .8; will-change: transform;
+  background-image:
+    radial-gradient(ellipse 2px 5.5px at 40px 50px, rgba(255,255,255,.95) 0 70%, transparent 74%),
+    radial-gradient(ellipse 3.6px 8px at 40px 50px, rgba(255,255,255,.28) 0 70%, transparent 74%),
+    radial-gradient(ellipse 2px 5.5px at 160px 200px, rgba(255,255,255,.95) 0 70%, transparent 74%),
+    radial-gradient(ellipse 3.6px 8px at 160px 200px, rgba(255,255,255,.28) 0 70%, transparent 74%),
+    radial-gradient(ellipse 2px 5.5px at 220px 330px, rgba(255,255,255,.95) 0 70%, transparent 74%),
+    radial-gradient(ellipse 3.6px 8px at 220px 330px, rgba(255,255,255,.28) 0 70%, transparent 74%);
+  background-size: 250px 400px; animation: rainFall 6s linear infinite;
 }
-
-.dairy-quantity-control button:hover {
-  background: var(--dairy-green);
-  color: #fff;
-  transform: scale(1.12);
+footer::after, .footer::after, .site-footer::after, .app-footer::after, .main-footer::after {
+  content: ""; position: absolute; z-index: -1; top: 0; left: 0; right: 0; height: 56px; pointer-events: none;
+  background-repeat: repeat-x;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'%3E%3Cpath d='M0 0 H1200 V30 Q1050 60 900 30 T600 30 T300 30 T0 30Z' fill='%23fffefb' fill-opacity='.95'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'%3E%3Cpath d='M0 0 H1200 V22 Q1050 52 900 22 T600 22 T300 22 T0 22Z' fill='%23ffffff' fill-opacity='.4'/%3E%3C/svg%3E");
+  background-size: 1200px 100%, 900px 100%; animation: footWave 12s linear infinite;
 }
+@keyframes footWave { to { background-position: -1200px 0, 900px 0; } }
+footer a, .footer a, .site-footer a, .app-footer a, .main-footer a {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0% 2px no-repeat;
+  transition: background-size .35s ease, transform .25s ease;
+}
+footer a:hover, .footer a:hover, .site-footer a:hover, .app-footer a:hover, .main-footer a:hover { background-size: 100% 2px; transform: translateY(-2px); }
 
-/* ---------- Mobile: lighter effects ---------- */
-
+/* ---------- 11. Responsive ---------- */
+@media (max-width: 860px) {
+  .dairy-hero { grid-template-columns: 1fr; padding-bottom: 90px; }
+  .dairy-hero-art { min-height: 300px; }
+  .dairy-art-circle { width: min(300px, 68vw); height: min(300px, 68vw); }
+  .dairy-art-note-one { left: 2%; } .dairy-art-note-two { right: 2%; }
+  .dairy-benefits { grid-template-columns: 1fr; }
+  .dairy-subscription-banner { flex-direction: column; align-items: flex-start; }
+}
 @media (max-width: 520px) {
+  .dairy-page { padding: 14px 14px 48px; }
   .dairy-page::after { opacity: .5; animation-duration: 12s; }
-  .dairy-hero::before { background-size: 250px 400px, 190px 400px; opacity: .8; }
-  .dairy-topbar { top: 6px; padding: 6px 8px; }
+  .dairy-topbar { top: 6px; padding: 6px 6px 6px 12px; }
+  .dairy-hero { border-radius: 22px; padding: 25px 19px 84px; }
+  .dairy-hero-art { min-height: 245px; }
+  .dairy-art-circle { width: 220px; height: 220px; border-width: 6px; }
+  .dairy-art-note { gap: 6px; padding: 9px 11px; border-radius: 12px; font-size: 12px; }
+  .dairy-art-note span { font-size: 17px; }
+  .dairy-art-note-one { top: 0; left: 0; } .dairy-art-note-two { right: 0; bottom: 0; }
+  .dairy-section-heading { flex-direction: column; align-items: flex-start; }
+  .dairy-subscription-banner { padding: 24px 20px 56px; }
 }
 
-/* ---------- Accessibility: stop all motion if requested ---------- */
-
+/* ---------- 12. Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .dairy-page::after,
-  .dairy-hero::before,
-  .dairy-hero::after,
-  .dairy-subscription-banner::before,
-  .dairy-hero h1 span,
-  .dairy-cart-button span,
-  .dairy-product-art::before,
-  .dairy-section-heading h2::after,
-  .dairy-modal,
-  .dairy-modal::before,
-  .dairy-modal-overlay,
-  .dairy-cart-item,
-  .dairy-product-card,
-  .dairy-benefits > div,
-  .dairy-topbar::after {
-    animation: none !important;
-  }
-
-  .dairy-art-circle {
-    animation: none !important;
-  }
+  .dairy-page *, .dairy-page *::before, .dairy-page *::after,
+  footer::before, footer::after, .footer::before, .footer::after,
+  .site-footer::before, .site-footer::after { animation: none !important; transition-duration: .01ms !important; }
 }

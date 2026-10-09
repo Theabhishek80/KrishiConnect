@@ -304,6 +304,28 @@ const [storesError, setStoresError] = useState("");
       </section>
 
       <section className="dairy-products-section" id="dairy-products">
+        {storesLoading && (
+  <div className="dairy-empty-state">
+    <Milk size={30} />
+    <h3>Finding local dairy stores...</h3>
+    <p>Please wait while we load stores from the backend.</p>
+  </div>
+)}
+
+{!storesLoading && storesError && (
+  <div className="dairy-empty-state" role="alert">
+    <h3>Unable to load dairy stores</h3>
+    <p>{storesError}</p>
+  </div>
+)}
+
+{!storesLoading && !storesError && stores.length === 0 && (
+  <div className="dairy-empty-state">
+    <Store size={30} />
+    <h3>No dairy stores registered yet</h3>
+    <p>Local dairy stores will appear here when farmers register.</p>
+  </div>
+)}
         <div className="dairy-section-heading">
           <div>
             <span className="dairy-section-kicker">OUR COLLECTION</span>

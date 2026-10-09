@@ -7,7 +7,7 @@
     },
     {
       "source": "/api/:path*",
-      "destination": "https://YOUR-RAILWAY-BACKEND-DOMAIN/:path*"
+      "destination": "https://krishiconnect-production-a757.up.railway.app/api/:path*"
     },
     {
       "source": "/((?!api/).*)",
@@ -15,4 +15,5 @@
     }
   ]
 }
+
 

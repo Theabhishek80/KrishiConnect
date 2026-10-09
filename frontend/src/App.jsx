@@ -40,7 +40,7 @@ import ResetPassword from "./components/Auth/ResetPassword";
 import CartPage from "./components/Marketplace/Cart";
 import Navbar from "./components/Navbar/Navbar";
 import AdvertisementSlider from "./components/Advertisement/AdvertisementSlider";
-import "./styles/dairy-home-promo.css";
+   import "./styles/dairy-home-promo.css";
 import AIAssistant from "./components/AI/AIAssistant";
 import Footer from "./components/Footer";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -2147,3 +2147,241 @@ function Farmer() {
               </div>
 
             );
+
+          })
+
+        )}
+
+      </div>
+
+
+    </section>
+  );
+}
+
+
+/* =========================
+   APP ROUTES
+========================= */
+
+export default function App() {
+
+  const location = useLocation();
+
+  return (
+
+    <Layout>
+
+      <ErrorBoundary resetKey={location.pathname}>
+      <Routes>
+
+        <Route
+          path="/"
+          element={<Home />}
+        />
+
+      
+        <Route
+          path="/dairy"
+          element={<DairyMarketplace />}
+        />
+
+        <Route
+          path="/dairy/register-store"
+          element={<DairyStoreRegistration />}
+        />
+
+        <Route
+          path="/dairy/stores/:id"
+          element={<DairyStorePage />}
+        />
+
+        <Route
+          path="/dairy/orders"
+          element={<DairyOrders />}
+        />
+
+
+        <Route
+          path="/about"
+          element={<About />}
+        />
+
+        <Route
+          path="/blog"
+          element={<ContentList kind="blog" />}
+        />
+
+        <Route
+          path="/blog/:slug"
+          element={<BlogDetail />}
+        />
+
+        <Route
+          path="/recipes"
+          element={<ContentList kind="recipe" />}
+        />
+
+        <Route
+          path="/recipes/:slug"
+          element={<RecipeDetail />}
+        />
+
+        <Route
+          path="/kisandirect-ai"
+          element={<AIAssistant />}
+        />
+
+        <Route
+          path="/ai"
+          element={
+            <Navigate
+              to="/kisandirect-ai"
+              replace
+            />
+          }
+        />
+
+        <Route
+          path="/system-status"
+          element={<ServiceStatus />}
+        />
+
+        <Route
+          path="/mandi"
+          element={<MandiPage />}
+        />
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+
+        <Route
+          path="/verify-email"
+          element={<VerifyEmail />}
+        />
+
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
+
+        <Route
+          path="/reset-password"
+          element={<ResetPassword />}
+        />
+
+        <Route
+          path="/cart"
+          element={<CartPage />}
+        />
+
+        <Route
+          path="/profile"
+          element={<Profile />}
+        />
+
+        <Route
+          path="/farmer"
+          element={<Farmer />}
+        />
+
+        <Route
+          path="/admin"
+          element={<AdminPanel />}
+        />
+
+        <Route
+          path="/admin/overview"
+          element={
+            <AdminPanel
+              defaultTab="overview"
+            />
+          }
+        />
+
+        <Route
+          path="/admin/approvals"
+          element={
+            <AdminPanel
+              defaultTab="approvals"
+            />
+          }
+        />
+
+        <Route
+          path="/admin/products"
+          element={
+            <AdminPanel
+              defaultTab="products"
+            />
+          }
+        />
+
+        <Route
+          path="/admin/recipes"
+          element={
+            <AdminSectionPage
+              section="recipes"
+            />
+          }
+        />
+
+        <Route
+          path="/admin/advertisements"
+          element={
+            <AdminSectionPage
+              section="advertisements"
+            />
+          }
+        />
+
+        <Route
+          path="/orders"
+          element={
+            <ComingSoon
+              title="My orders"
+              text="Your order history will appear here soon."
+            />
+          }
+        />
+
+        <Route
+          path="/addresses"
+          element={
+            <ComingSoon
+              title="Saved addresses"
+              text="Manage your delivery addresses here soon."
+            />
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <ComingSoon
+              title="Settings"
+              text="Account preferences are coming soon."
+            />
+          }
+        />
+
+        <Route
+          path="*"
+          element={<NotFoundPage />}
+        />
+
+      </Routes>
+      </ErrorBoundary>
+
+      <Footer />
+
+    </Layout>
+  );
+}

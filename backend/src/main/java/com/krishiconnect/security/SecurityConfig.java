@@ -177,44 +177,34 @@ public class SecurityConfig {
                         ).authenticated()
 
 
-                                       
-// ------------------------------------------------
-// PUBLIC DAIRY STORE DISCOVERY
-// ------------------------------------------------
-
-
                         // ------------------------------------------------
                         // DAIRY MARKETPLACE
+                        // Order matters: the first matching rule wins.
                         // ------------------------------------------------
 
-                        // Anyone can browse active dairy stores.
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/dairy/stores",
-                                "/api/dairy/stores/**"
-                        ).permitAll()
-
-                        // Any signed-in user can register a dairy store.
-                        // No FARMER role is required.
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/dairy/stores"
-                        ).authenticated()
-
-                        // Any signed-in user can view their own stores.
+                        // "My store" must stay private, so it comes BEFORE
+                        // the public GET rule below.
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/dairy/stores/mine"
                         ).authenticated()
 
-                        // Any signed-in user may attempt an update;
-                        // DairyStoreService must enforce ownership.
+                        // Anyone can browse stores, their products and reviews.
                         .requestMatchers(
-                                HttpMethod.PUT,
-                                "/api/dairy/stores/*"
+                                HttpMethod.GET,
+                                "/api/dairy/stores",
+                                "/api/dairy/stores/*",
+                                "/api/dairy/stores/*/products",
+                                "/api/dairy/stores/*/reviews"
+                        ).permitAll()
+
+                        // Everything else under /api/dairy (register store,
+                        // manage products, review, order, subscribe) needs a
+                        // signed-in user. No FARMER role is required; the
+                        // services enforce store ownership.
+                        .requestMatchers(
+                                "/api/dairy/**"
                         ).authenticated()
-
-
 
 
                         // ------------------------------------------------

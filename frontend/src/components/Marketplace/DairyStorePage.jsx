@@ -393,4 +393,355 @@ function ReviewsSection({ storeId, data, isOwner, user, onChange, onNeedLogin })
       </div>
 
       {!isOwner && (
-        <form
+        <form className="dairy-review-form" onSubmit={submit}>
+          <strong>Rate this store</strong>
+          <StarPicker value={rating} onChange={setRating} />
+          <textarea
+            rows={3}
+            maxLength={1000}
+            placeholder="Share your experience: freshness, delivery, service…"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          />
+          {message && <p className="dairy-inline-note" role="status">{message}</p>}
+          <button type="submit" className="dairy-primary-button dairy-small-button" disabled={busy}>
+            {busy ? "Saving…" : "Submit review"}
+          </button>
+        </form>
+      )}
+
+      {data.reviews.length === 0 ? (
+        <p className="dairy-muted-text">No reviews yet.</p>
+      ) : (
+        <ul className="dairy-review-list">
+          {data.reviews.map((r) => (
+            <li key={r.id}>
+              <div className="dairy-review-head">
+                <strong>{r.userName || "Customer"}</strong>
+                <Stars value={r.rating} size={14} />
+                <small>{new Date(r.createdAt).toLocaleDateString("en-IN")}</small>
+              </div>
+              {r.comment && <p>{r.comment}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/* ================================================================
+   Direct order
+================================================================ */
+function OrderModal({ product, onClose, onDone }) {
+  const [quantity, setQuantity] = useState("1");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [placed, setPlaced] = useState(null);
+
+  const qty = Number(quantity);
+  const total = Number.isFinite(qty) ? qty * Number(product.price) : 0;
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!(qty > 0)) return setError("Enter a valid quantity.");
+    if (qty > Number(product.stockQuantity)) {
+      return setError(`Only ${Number(product.stockQuantity)} ${product.unit} in stock.`);
+    }
+    try {
+      setBusy(true);
+      setError("");
+      const { data } = await api.post("/dairy/orders", {
+        productId: product.id,
+        quantity: qty,
+        deliveryAddress: address,
+        phone,
+        note,
+      });
+      setPlaced(data);
+      onDone?.();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal title={placed ? "Order placed" : `Order ${product.name}`} onClose={onClose}>
+      {placed ? (
+        <div className="dairy-done">
+          <CheckCircle2 size={42} />
+          <h3>Thank you!</h3>
+          <p>
+            {Number(placed.quantity)} {placed.unit} of {placed.productName} · <strong>{rupees(placed.totalAmount)}</strong>
+            <br />Pay cash on delivery. The store will confirm your order shortly.
+          </p>
+          <Link to="/dairy/orders" className="dairy-primary-button">View my orders</Link>
+        </div>
+      ) : (
+        <form className="dairy-subscription-form" onSubmit={submit}>
+          <label>
+            Quantity ({product.unit})
+            <input type="number" min="0.5" step="0.5" value={quantity}
+              onChange={(e) => setQuantity(e.target.value)} required />
+          </label>
+          <label>
+            Delivery address
+            <textarea rows={2} value={address} onChange={(e) => setAddress(e.target.value)}
+              placeholder="House no., street, area" required />
+          </label>
+          <label>
+            Phone number
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+          </label>
+          <label>
+            Note for the store (optional)
+            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. deliver before 7 AM" />
+          </label>
+
+          <div className="dairy-subscription-summary">
+            <ShoppingBag size={19} />
+            <span>
+              <strong>Total {rupees(total)}</strong>
+              <small>{rupees(product.price)} / {product.unit} · Cash on delivery</small>
+            </span>
+          </div>
+
+          {error && <div className="dairy-form-message" role="alert">{error}</div>}
+          <button type="submit" className="dairy-primary-button dairy-submit-button" disabled={busy}>
+            {busy ? "Placing order…" : "Place order"}
+          </button>
+        </form>
+      )}
+    </Modal>
+  );
+}
+
+/* ================================================================
+   Monthly subscription
+================================================================ */
+function SubscribeModal({ product, onClose }) {
+  const [startDate, setStartDate] = useState(tomorrow());
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(null);
+
+  async function submit(e) {
+    e.preventDefault();
+    try {
+      setBusy(true);
+      setError("");
+      const { data } = await api.post("/dairy/subscriptions", {
+        productId: product.id,
+        deliveryAddress: address,
+        phone,
+        startDate,
+      });
+      setDone(data);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal title={done ? "Subscription requested" : `Subscribe to ${product.name}`} onClose={onClose}>
+      {done ? (
+        <div className="dairy-done">
+          <CheckCircle2 size={42} />
+          <h3>Request sent</h3>
+          <p>
+            The store will review and activate your plan. Starting {done.startDate}, {Number(done.quantityPerDay)} {done.unit} each day for <strong>{rupees(done.monthlyPrice)}</strong> a month, paid to the store.
+          </p>
+          <Link to="/dairy/orders" className="dairy-primary-button">View my subscriptions</Link>
+        </div>
+      ) : (
+        <form className="dairy-subscription-form" onSubmit={submit}>
+          <div className="dairy-subscription-summary">
+            <Repeat size={19} />
+            <span>
+              <strong>{Number(product.subscriptionQuantityPerDay)} {product.unit} every day</strong>
+              <small>{rupees(product.monthlySubscriptionPrice)} per month, set by the store</small>
+            </span>
+          </div>
+          <label>
+            Start date
+            <input type="date" min={new Date().toISOString().slice(0, 10)}
+              value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+          </label>
+          <label>
+            Delivery address
+            <textarea rows={2} value={address} onChange={(e) => setAddress(e.target.value)}
+              placeholder="House no., street, area" required />
+          </label>
+          <label>
+            Phone number
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+          </label>
+          {error && <div className="dairy-form-message" role="alert">{error}</div>}
+          <button type="submit" className="dairy-primary-button dairy-submit-button" disabled={busy}>
+            {busy ? "Sending…" : "Request subscription"}
+          </button>
+        </form>
+      )}
+    </Modal>
+  );
+}
+
+/* ================================================================
+   Add / edit product (store owner)
+================================================================ */
+function ProductModal({ initial, onClose, onSaved }) {
+  const [form, setForm] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const editing = Boolean(initial.id);
+
+  const set = (name, value) => setForm((f) => ({ ...f, [name]: value }));
+
+  async function submit(e) {
+    e.preventDefault();
+    const payload = {
+      name: form.name.trim(),
+      category: form.category,
+      description: form.description.trim(),
+      price: Number(form.price),
+      unit: form.unit.trim(),
+      stockQuantity: Number(form.stockQuantity),
+      available: form.available,
+      subscriptionEnabled: form.subscriptionEnabled,
+      subscriptionQuantityPerDay: form.subscriptionEnabled ? Number(form.subscriptionQuantityPerDay) : null,
+      monthlySubscriptionPrice: form.subscriptionEnabled ? Number(form.monthlySubscriptionPrice) : null,
+    };
+    if (!payload.name) return setError("Product name is required.");
+    if (!(payload.price >= 0) || form.price === "") return setError("Enter a valid price.");
+    if (!(payload.stockQuantity >= 0) || form.stockQuantity === "") return setError("Enter the stock you have.");
+    if (form.subscriptionEnabled &&
+      (!(payload.subscriptionQuantityPerDay > 0) || form.monthlySubscriptionPrice === "")) {
+      return setError("Enter the daily quantity and the monthly price for the subscription.");
+    }
+
+    try {
+      setBusy(true);
+      setError("");
+      if (editing) await api.put(`/dairy/products/${initial.id}`, payload);
+      else await api.post("/dairy/products", payload);
+      await onSaved();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal title={editing ? "Edit product" : "Add a product"} onClose={onClose} wide>
+      <form className="dairy-subscription-form" onSubmit={submit}>
+        <div className="dairy-form-row">
+          <label>
+            Product name
+            <input value={form.name} onChange={(e) => set("name", e.target.value)}
+              placeholder="e.g. Fresh cow milk" maxLength={180} required />
+          </label>
+          <label>
+            Category
+            <select value={form.category} onChange={(e) => set("category", e.target.value)}>
+              {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Description (optional)
+          <textarea rows={2} value={form.description} onChange={(e) => set("description", e.target.value)}
+            placeholder="Cow / buffalo, fat %, packaging…" maxLength={2000} />
+        </label>
+
+        <div className="dairy-form-row dairy-form-row-3">
+          <label>
+            Price (₹)
+            <input type="number" min="0" step="0.01" value={form.price}
+              onChange={(e) => set("price", e.target.value)} required />
+          </label>
+          <label>
+            Per unit
+            <input list="dairy-units" value={form.unit} onChange={(e) => set("unit", e.target.value)} required />
+            <datalist id="dairy-units">
+              <option value="litre" /><option value="500 ml" /><option value="kg" />
+              <option value="500 g" /><option value="packet" /><option value="piece" />
+            </datalist>
+          </label>
+          <label>
+            Stock available
+            <input type="number" min="0" step="0.5" value={form.stockQuantity}
+              onChange={(e) => set("stockQuantity", e.target.value)} required />
+          </label>
+        </div>
+
+        <label className="dairy-check">
+          <input type="checkbox" checked={form.available} onChange={(e) => set("available", e.target.checked)} />
+          Show this product to customers
+        </label>
+
+        <div className="dairy-sub-box">
+          <label className="dairy-check">
+            <input type="checkbox" checked={form.subscriptionEnabled}
+              onChange={(e) => set("subscriptionEnabled", e.target.checked)} />
+            Offer a monthly subscription
+          </label>
+
+          {form.subscriptionEnabled && (
+            <div className="dairy-form-row">
+              <label>
+                Delivered every day ({form.unit || "unit"})
+                <input type="number" min="0.1" step="0.1" value={form.subscriptionQuantityPerDay}
+                  onChange={(e) => set("subscriptionQuantityPerDay", e.target.value)} />
+              </label>
+              <label>
+                Monthly charge (₹)
+                <input type="number" min="0" step="1" value={form.monthlySubscriptionPrice}
+                  onChange={(e) => set("monthlySubscriptionPrice", e.target.value)}
+                  placeholder="e.g. 1800" />
+              </label>
+            </div>
+          )}
+        </div>
+
+        {error && <div className="dairy-form-message" role="alert">{error}</div>}
+        <button type="submit" className="dairy-primary-button dairy-submit-button" disabled={busy}>
+          {busy ? "Saving…" : editing ? "Save changes" : "Add product"}
+        </button>
+      </form>
+    </Modal>
+  );
+}
+
+/* ---------------- shared modal shell ---------------- */
+function Modal({ title, onClose, children, wide }) {
+  return (
+    <div className="dairy-modal-overlay" onClick={onClose}>
+      <section
+        className={`dairy-modal ${wide ? "dairy-modal-wide" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="dairy-modal-header">
+          <h2>{title}</h2>
+          <button type="button" className="dairy-close-button" onClick={onClose} aria-label="Close">
+            <X size={20} />
+          </button>
+        </div>
+        {children}
+      </section>
+    </div>
+  );
+}

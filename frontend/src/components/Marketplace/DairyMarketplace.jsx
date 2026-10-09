@@ -95,6 +95,9 @@ export default function DairyMarketplace() {
   const [frequency, setFrequency] = useState("Daily");
   const [area, setArea] = useState("");
   const [message, setMessage] = useState("");
+  const [stores, setStores] = useState([]);
+const [storesLoading, setStoresLoading] = useState(true);
+const [storesError, setStoresError] = useState("");
 
   const products = useMemo(() => {
     const query = search.trim().toLowerCase();

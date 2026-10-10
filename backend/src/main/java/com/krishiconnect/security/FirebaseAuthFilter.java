@@ -168,6 +168,14 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
         }
 
         /*
+         * Public blogs
+         */
+        if (path.equals("/api/blogs")
+                || path.startsWith("/api/blogs/")) {
+            return true;
+        }
+
+        /*
          * ============================================================
          * MANDI RATES
          * ============================================================
@@ -366,3 +374,4 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
                 .setAuthentication(authentication);
     }
 }
+

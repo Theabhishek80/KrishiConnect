@@ -1,41 +1,52 @@
 
 {
-  "name": "KisanDirect",
-  "description": "An online platform connecting consumers with farmers and helping users discover farm products, agricultural information, recipes, and farming resources.",
-  "url": "https://www.kisandirect.online/",
-  "sitemap": "https://www.kisandirect.online/sitemap.xml",
-  "robots": "https://www.kisandirect.online/robots.txt",
-  "resources": [
+  "entries": [
     {
-      "name": "Products Marketplace",
-      "url": "https://www.kisandirect.online/products",
-      "description": "Browse farm products listed on KisanDirect."
+      "identifier": "urn:air:kisandirect.online:website:marketplace",
+      "displayName": "KisanDirect Marketplace",
+      "type": "text/html",
+      "url": "https://www.kisandirect.online/",
+      "description": "Discover farm products and connect with agricultural producers through KisanDirect.",
+      "representativeQueries": [
+        "Where can I discover fresh farm products?",
+        "How can I find farmers selling products directly?",
+        "What services does KisanDirect provide?"
+      ]
     },
     {
-      "name": "Mandi Information",
+      "identifier": "urn:air:kisandirect.online:website:agricultural-information",
+      "displayName": "KisanDirect Mandi Information",
+      "type": "text/html",
       "url": "https://www.kisandirect.online/mandi",
-      "description": "Explore agricultural market information."
+      "description": "Agricultural market information for people interested in farming and crop prices.",
+      "representativeQueries": [
+        "Where can I find agricultural mandi information?",
+        "Where can farmers check crop market information?"
+      ]
     },
     {
-      "name": "Dairy Marketplace",
-      "url": "https://www.kisandirect.online/dairy",
-      "description": "Explore dairy products and participating producers."
-    },
-    {
-      "name": "Recipes",
-      "url": "https://www.kisandirect.online/recipes",
-      "description": "Discover food and recipe content."
-    },
-    {
-      "name": "Blog",
+      "identifier": "urn:air:kisandirect.online:website:farming-blog",
+      "displayName": "KisanDirect Farming Blog",
+      "type": "text/html",
       "url": "https://www.kisandirect.online/blog",
-      "description": "Read farming articles and agricultural guides."
+      "description": "Farming articles and agricultural educational content.",
+      "representativeQueries": [
+        "Where can I read farming guides?",
+        "How can I learn practical ways to improve soil health?"
+      ]
     },
     {
-      "name": "About",
-      "url": "https://www.kisandirect.online/about",
-      "description": "Learn about KisanDirect."
+      "identifier": "urn:air:kisandirect.online:website:recipes",
+      "displayName": "KisanDirect Recipes",
+      "type": "text/html",
+      "url": "https://www.kisandirect.online/recipes",
+      "description": "Recipe and food-related content.",
+      "representativeQueries": [
+        "Where can I discover recipes?",
+        "Where can I find homemade Indian recipes?"
+      ]
     }
   ]
 }
+
 

@@ -46,9 +46,18 @@ private String phone;
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
 
+    /** Show order updates in the in-app notification bell. */
+    @Column(name = "notify_orders", nullable = false)
+    private boolean notifyOrders = true;
+
+    /** Also e-mail order updates. */
+    @Column(name = "notify_email", nullable = false)
+    private boolean notifyEmail = true;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
 }
+

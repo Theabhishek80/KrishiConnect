@@ -9,8 +9,9 @@ import {
   Gauge
 } from "lucide-react";
 
-import { BLOGS, getBlog } from "../../data/content";
+import { useBlog, useBlogs } from "../../hooks/useBlogs";
 import { useRecipe, useRecipes } from "../../hooks/useRecipes";
+import "../../styles/blog.css";
 
 /* =========================
    LIST PAGES  (/blog , /recipes)
@@ -19,7 +20,9 @@ import { useRecipe, useRecipes } from "../../hooks/useRecipes";
 export function ContentList({ kind }) {
   const isRecipe = kind === "recipe";
   const recipeData = useRecipes(isRecipe);
-  const items = isRecipe ? recipeData.items : BLOGS;
+  const blogData = useBlogs(!isRecipe);
+  const items = isRecipe ? recipeData.items : blogData.items;
+  const loading = isRecipe ? recipeData.loading : blogData.loading;
   const base = isRecipe ? "/recipes" : "/blog";
 
   return (
@@ -42,14 +45,20 @@ export function ContentList({ kind }) {
         </Link>
       </div>
 
-      {isRecipe && recipeData.loading && (
-        <div className="empty-inline">Loading recipes…</div>
+      {loading && (
+        <div className="empty-inline">
+          {isRecipe ? "Loading recipes…" : "Loading articles…"}
+        </div>
       )}
 
-      {isRecipe && !recipeData.loading && items.length === 0 && (
+      {!loading && items.length === 0 && (
         <div className="empty-state">
-          <h3>No recipes yet</h3>
-          <p>New recipes will appear here soon.</p>
+          <h3>{isRecipe ? "No recipes yet" : "No articles yet"}</h3>
+          <p>
+            {isRecipe
+              ? "New recipes will appear here soon."
+              : "New articles will appear here soon."}
+          </p>
         </div>
       )}
 
@@ -111,9 +120,25 @@ function NotFound({ backTo, label }) {
   );
 }
 
+function BodyLine({ text }) {
+  if (text.startsWith("## ")) {
+    return <h2>{text.slice(3).trim()}</h2>;
+  }
+
+  return <p>{text}</p>;
+}
+
 export function BlogDetail() {
   const { slug } = useParams();
-  const post = getBlog(slug);
+  const { blog: post, loading } = useBlog(slug);
+
+  if (loading) {
+    return (
+      <section className="page-section">
+        <div className="empty-inline">Loading article…</div>
+      </section>
+    );
+  }
 
   if (!post) return <NotFound backTo="/blog" label="article" />;
 
@@ -124,8 +149,12 @@ export function BlogDetail() {
         <ArrowLeft size={16} /> All articles
       </Link>
 
-      <div className={`kd-article-hero tone-${post.tone}`}>
-        <span className="kd-article-emoji" aria-hidden="true">{post.emoji}</span>
+      <div className={`kd-article-hero tone-${post.tone}${post.imageUrl ? " has-image" : ""}`}>
+        {post.imageUrl ? (
+          <img className="kd-article-img" src={post.imageUrl} alt={post.title} />
+        ) : (
+          <span className="kd-article-emoji" aria-hidden="true">{post.emoji}</span>
+        )}
       </div>
 
       <div className="kd-article-head">
@@ -137,8 +166,8 @@ export function BlogDetail() {
       </div>
 
       <div className="kd-article-body">
-        {post.body.map((paragraph, i) => (
-          <p key={i}>{paragraph}</p>
+        {(post.body || []).map((line, i) => (
+          <BodyLine key={i} text={line} />
         ))}
       </div>
 

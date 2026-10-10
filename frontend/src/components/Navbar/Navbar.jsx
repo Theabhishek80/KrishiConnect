@@ -9,6 +9,8 @@ import {
 import {
   Bell,
   BookOpen,
+  CheckCheck,
+  Loader2,
   ChefHat,
   TrendingUp,
   ChevronRight,
@@ -26,6 +28,10 @@ import {
   X
 } from "lucide-react";
 
+import useNotifications from "../../hooks/useNotifications";
+import { timeAgo } from "../../utils/orderUtils";
+import "../../styles/account.css";
+
 
 export default function Navbar({ user, onLogout }) {
 
@@ -40,6 +46,21 @@ export default function Navbar({ user, onLogout }) {
 
   const isAdmin = user?.role === "ADMIN";
   const isFarmer = user?.role === "FARMER";
+
+  const notificationsEnabled = Boolean(user) && !isAdmin;
+
+  const {
+    items: notificationItems,
+    unread: unreadCount,
+    loading: notificationsLoading,
+    error: notificationsError,
+    loadAll: loadNotifications,
+    markRead: markNotificationRead,
+    markAllRead: markAllNotificationsRead
+  } = useNotifications(
+    notificationsEnabled,
+    location.pathname
+  );
 
 
   const closeAll = () => {
@@ -111,6 +132,7 @@ export default function Navbar({ user, onLogout }) {
     setAccountOpen(false);
     setMobileOpen(false);
     setNotificationsOpen(true);
+    loadNotifications();
 
   };
 
@@ -361,6 +383,12 @@ export default function Navbar({ user, onLogout }) {
                 title="Notifications"
               >
                 <Bell size={19} />
+
+                {unreadCount > 0 && (
+                  <span className="kd-notification-count">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </button>
             )}
 
@@ -433,6 +461,12 @@ export default function Navbar({ user, onLogout }) {
                 aria-label="Open notifications"
               >
                 <Bell size={19} />
+
+                {unreadCount > 0 && (
+                  <span className="kd-notification-count">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </button>
             )}
 
@@ -923,22 +957,164 @@ export default function Navbar({ user, onLogout }) {
               </div>
 
 
-              <div className="kd-notification-empty">
+              {notificationItems.length > 0 && (
+                <div className="ac-notif-tools">
 
-                <span className="kd-notification-empty-icon">
-                  <Bell size={22} />
-                </span>
+                  <span>
+                    {unreadCount > 0
+                      ? `${unreadCount} unread`
+                      : "All read"}
+                  </span>
 
-                <h3>
-                  You're all caught up
-                </h3>
+                  <button
+                    type="button"
+                    onClick={markAllNotificationsRead}
+                    disabled={unreadCount === 0}
+                  >
+                    <CheckCheck
+                      size={14}
+                      style={{
+                        verticalAlign: "-2px",
+                        marginRight: 5
+                      }}
+                    />
+                    Mark all as read
+                  </button>
 
-                <p>
-                  New order, account and platform
-                  updates will appear here.
-                </p>
+                </div>
+              )}
 
-              </div>
+
+              {notificationsLoading &&
+                notificationItems.length === 0 && (
+
+                  <div className="kd-notification-empty">
+
+                    <Loader2
+                      size={26}
+                      className="ac-spin"
+                    />
+
+                  </div>
+
+                )}
+
+
+              {!notificationsLoading &&
+                notificationsError &&
+                notificationItems.length === 0 && (
+
+                  <div className="kd-notification-empty">
+
+                    <h3>
+                      Couldn't load updates
+                    </h3>
+
+                    <p>
+                      {notificationsError}
+                    </p>
+
+                    <button
+                      type="button"
+                      className="ac-btn small"
+                      style={{ marginTop: 14 }}
+                      onClick={loadNotifications}
+                    >
+                      Try again
+                    </button>
+
+                  </div>
+
+                )}
+
+
+              {!notificationsLoading &&
+                !notificationsError &&
+                notificationItems.length === 0 && (
+
+                  <div className="kd-notification-empty">
+
+                    <span className="kd-notification-empty-icon">
+                      <Bell size={22} />
+                    </span>
+
+                    <h3>
+                      You're all caught up
+                    </h3>
+
+                    <p>
+                      New order, account and platform
+                      updates will appear here.
+                    </p>
+
+                  </div>
+
+                )}
+
+
+              {notificationItems.length > 0 && (
+
+                <div className="ac-notif-list">
+
+                  {notificationItems.map(notification => (
+
+                    <button
+                      key={notification.id}
+                      type="button"
+                      className={`ac-notif ${
+                        notification.read
+                          ? ""
+                          : "unread"
+                      }`}
+                      onClick={() => {
+
+                        if (!notification.read) {
+                          markNotificationRead(
+                            notification.id
+                          );
+                        }
+
+                        if (notification.link) {
+                          closeAll();
+                          navigate(notification.link);
+                        }
+
+                      }}
+                    >
+
+                      <span className="ac-notif-icon">
+                        <Package size={18} />
+                      </span>
+
+                      <span className="ac-notif-text">
+
+                        <strong>
+                          {notification.title}
+                        </strong>
+
+                        <p>
+                          {notification.message}
+                        </p>
+
+                        <small>
+                          {timeAgo(
+                            notification.createdAt
+                          )}
+                        </small>
+
+                      </span>
+
+                      {!notification.read && (
+                        <span className="ac-notif-dot" />
+                      )}
+
+                    </button>
+
+                  ))}
+
+                </div>
+
+              )}
 
             </aside>
 

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getStoredUser } from "../../utils/auth";
 import AdvertisementManager from "../Advertisement/AdvertisementManager";
 import RecipeManager from "../Recipes/RecipeManager";
+import BlogManager from "../Blogs/BlogManager";
 
 export default function AdminSectionPage({ section }) {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ export default function AdminSectionPage({ section }) {
 
   if (!user || user.role !== "ADMIN") return null;
   if (section === "recipes") return <RecipeManager />;
+  if (section === "blogs") return <BlogManager />;
   if (section === "advertisements") return <AdvertisementManager />;
   return null;
 }
+

@@ -264,4 +264,49 @@ public class ImageKitService {
             throw new IllegalStateException("ImageKit upload failed.", e);
         }
     }
+
+    public String uploadBlogImage(MultipartFile image) {
+
+        if (image == null || image.isEmpty()) {
+            throw new IllegalArgumentException("Blog image is required.");
+        }
+
+        String contentType = image.getContentType();
+
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Only image files are allowed.");
+        }
+
+        if (image.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("Image size must be 5 MB or less.");
+        }
+
+        String originalName = Objects.requireNonNullElse(
+                image.getOriginalFilename(), "blog.jpg");
+
+        String fileName = System.currentTimeMillis() + "-" + originalName;
+
+        try {
+            FileUploadParams params = FileUploadParams.builder()
+                    .file(image.getBytes())
+                    .fileName(fileName)
+                    .folder("/blogs")
+                    .build();
+
+            FileUploadResponse response = client().files().upload(params);
+
+            return response.url()
+                    .orElseThrow(() ->
+                            new IllegalStateException("ImageKit did not return an image URL."));
+
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not read the uploaded image.", e);
+        } catch (IllegalStateException e) {
+            log.error("ImageKit upload failed: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("ImageKit upload failed", e);
+            throw new IllegalStateException("ImageKit upload failed.", e);
+        }
+    }
 }

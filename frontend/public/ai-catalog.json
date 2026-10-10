@@ -1,0 +1,41 @@
+```json
+{
+  "name": "KisanDirect",
+  "description": "An online platform connecting consumers with farmers and helping users discover farm products, agricultural information, recipes, and farming resources.",
+  "url": "https://www.kisandirect.online/",
+  "sitemap": "https://www.kisandirect.online/sitemap.xml",
+  "robots": "https://www.kisandirect.online/robots.txt",
+  "resources": [
+    {
+      "name": "Products Marketplace",
+      "url": "https://www.kisandirect.online/products",
+      "description": "Browse farm products listed on KisanDirect."
+    },
+    {
+      "name": "Mandi Information",
+      "url": "https://www.kisandirect.online/mandi",
+      "description": "Explore agricultural market information."
+    },
+    {
+      "name": "Dairy Marketplace",
+      "url": "https://www.kisandirect.online/dairy",
+      "description": "Explore dairy products and participating producers."
+    },
+    {
+      "name": "Recipes",
+      "url": "https://www.kisandirect.online/recipes",
+      "description": "Discover food and recipe content."
+    },
+    {
+      "name": "Blog",
+      "url": "https://www.kisandirect.online/blog",
+      "description": "Read farming articles and agricultural guides."
+    },
+    {
+      "name": "About",
+      "url": "https://www.kisandirect.online/about",
+      "description": "Learn about KisanDirect."
+    }
+  ]
+}
+```

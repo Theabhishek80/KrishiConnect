@@ -225,6 +225,12 @@ public class SecurityConfig {
                                 "/api/recipes/**"
                         ).permitAll()
 
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/blogs",
+                                "/api/blogs/**"
+                        ).permitAll()
+
 
                         // ------------------------------------------------
                         // PUBLIC PRODUCTS

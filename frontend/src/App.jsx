@@ -70,9 +70,9 @@ import {
   RecipeDetail
 } from "./components/Content/ContentPages";
 
-import { BLOGS } from "./data/content";
 import ServiceStatus from "./components/Pages/ServiceStatus";
 import { useRecipes } from "./hooks/useRecipes";
+import { useBlogs } from "./hooks/useBlogs";
 
 import {
   AUTH_EVENT,
@@ -220,6 +220,7 @@ function Home() {
 
   const location = useLocation();
   const { items: homeRecipes } = useRecipes();
+  const { items: homeBlogs } = useBlogs();
 
   const [products, setProducts] = useState([]);
   const [q, setQ] = useState(
@@ -595,7 +596,7 @@ function Home() {
         kicker="FROM THE BLOG"
         title="Farming tips & stories"
         subtitle="Practical guides for growers and curious food lovers."
-        items={BLOGS}
+        items={homeBlogs}
         viewAllTo="/blog"
       />
 
@@ -2334,6 +2335,15 @@ export default function App() {
           element={
             <AdminSectionPage
               section="recipes"
+            />
+          }
+        />
+
+        <Route
+          path="/admin/blogs"
+          element={
+            <AdminSectionPage
+              section="blogs"
             />
           }
         />

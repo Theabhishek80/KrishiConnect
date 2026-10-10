@@ -30,4 +30,16 @@ public class EmailService {
             + "\n\nIf you did not request this, you can ignore this email.");
         mailSender.send(message);
     }
+
+    /** Generic notification e-mail (order updates etc.). Path is a front-end route like /orders/5. */
+    public void sendNotification(String email, String subject, String body, String path) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(from);
+        message.setTo(email);
+        message.setSubject(subject);
+        message.setText(body
+            + (path == null || path.isBlank() ? "" : "\n\nView details: " + frontendUrl + path)
+            + "\n\n- KrishiConnect");
+        mailSender.send(message);
+    }
 }

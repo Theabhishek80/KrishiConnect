@@ -1,17 +1,33 @@
-# KrishiConnect
+# KisanDirect
 
-> KrishiConnect is a farmer-to-consumer marketplace that connects customers directly with farmers and helps users discover fresh farm products.
+> KisanDirect is an online platform designed to connect consumers with farmers and help users discover fresh farm products, agricultural information, recipes, and farming resources.
 
-## Main Pages
+## Main Public Pages
 
-- [Marketplace](https://www.kisandirect.online/): Browse fresh farm products available from farmers.
-- [Login](https://www.kisandirect.online/login): Sign in to a KrishiConnect account.
-- [Register](https://www.kisandirect.online/register): Create a KrishiConnect account.
+- [Homepage](https://www.kisandirect.online/): Discover the KisanDirect platform and available farm products.
+- [Products Marketplace](https://www.kisandirect.online/products): Browse farm products offered through the marketplace.
+- [Mandi Information](https://www.kisandirect.online/mandi): Explore agricultural market information.
+- [Blog](https://www.kisandirect.online/blog): Discover farming articles, agricultural guides, and educational content.
+- [Recipes](https://www.kisandirect.online/recipes): Explore food and recipe content.
+- [About KisanDirect](https://www.kisandirect.online/about): Learn about the platform.
 
-## About
+## Dairy Marketplace
 
-KrishiConnect provides an online marketplace connecting consumers and farmers.
+KisanDirect includes a dairy marketplace concept for discovering dairy producers and their products.
 
-## Website
+The public dairy page URL should be added here once its actual route is confirmed.
 
-- [Homepage](https://www.kisandirect.online/): Main KrishiConnect marketplace.
+## Platform Information
+
+KisanDirect aims to help consumers discover farm products and agricultural resources through a digital platform.
+
+Information about product availability, prices, producers, and services should be verified on the relevant live pages.
+
+## Website Discovery
+
+- [XML Sitemap](https://www.kisandirect.online/sitemap.xml): Lists public URLs submitted for search engine discovery.
+- [Robots.txt](https://www.kisandirect.online/robots.txt): Provides crawler access instructions.
+
+## Content and Accuracy
+
+Use the relevant public KisanDirect page as the source for current product listings, agricultural information, recipes, and articles. Do not assume that products, prices, or services are available unless confirmed on the website.

@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   Images,
   LayoutDashboard,
+  Newspaper,
   Package,
   RefreshCw,
   Search,
@@ -21,6 +22,7 @@ import {
 import api from "../../api";
 import AdvertisementManager from "../Advertisement/AdvertisementManager";
 import RecipeManager from "../Recipes/RecipeManager";
+import BlogManager from "../Blogs/BlogManager";
 
 
 /* =========================
@@ -70,6 +72,11 @@ const TABS = [
     id: "recipes",
     label: "Recipes",
     icon: ChefHat
+  },
+  {
+    id: "blogs",
+    label: "Blogs",
+    icon: Newspaper
   }
 ];
 
@@ -1126,6 +1133,9 @@ export default function AdminPanel({
 
         {tab === "recipes" &&
           <RecipeManager />}
+
+        {tab === "blogs" &&
+          <BlogManager />}
 
       </div>
 

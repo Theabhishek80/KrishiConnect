@@ -48,6 +48,11 @@ import DairyMarketplace from "./components/Marketplace/DairyMarketplace";
 import DairyStoreRegistration from "./components/Marketplace/DairyStoreRegistration";
 import DairyStorePage from "./components/Marketplace/DairyStorePage";
 import DairyOrders from "./components/Marketplace/DairyOrders";
+import OrdersPage from "./components/Orders/OrdersPage";
+import OrderDetailPage from "./components/Orders/OrderDetailPage";
+import SavedAddresses from "./components/Addresses/SavedAddresses";
+import Checkout from "./components/Checkout/Checkout";
+import SettingsPage from "./components/Settings/SettingsPage";
 
 import {
   MandiPage,
@@ -2343,33 +2348,28 @@ export default function App() {
         />
 
         <Route
+          path="/checkout"
+          element={<Checkout />}
+        />
+
+        <Route
           path="/orders"
-          element={
-            <ComingSoon
-              title="My orders"
-              text="Your order history will appear here soon."
-            />
-          }
+          element={<OrdersPage />}
+        />
+
+        <Route
+          path="/orders/:id"
+          element={<OrderDetailPage />}
         />
 
         <Route
           path="/addresses"
-          element={
-            <ComingSoon
-              title="Saved addresses"
-              text="Manage your delivery addresses here soon."
-            />
-          }
+          element={<SavedAddresses />}
         />
 
         <Route
           path="/settings"
-          element={
-            <ComingSoon
-              title="Settings"
-              text="Account preferences are coming soon."
-            />
-          }
+          element={<SettingsPage />}
         />
 
         <Route

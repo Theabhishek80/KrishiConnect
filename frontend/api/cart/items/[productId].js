@@ -1,151 +1,151 @@
-export default async function handler(req, res) {
-  const railway = process.env.PRIMARY_BACKEND_URL;
-  const render = process.env.BACKUP_BACKEND_URL;
 
-  if (!railway || !render) {
-    return res.status(500).json({
-      message: "Backend URLs are not configured"
+export const config = {
+  maxDuration: 60,
+  api: {
+    bodyParser: false,
+  },
+};
+
+export default async function handler(req, res) {
+  const allowedMethods = [
+    "GET",
+    "HEAD",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+  ];
+
+  if (!allowedMethods.includes(req.method)) {
+    res.setHeader("Allow", allowedMethods);
+
+    return res.status(405).json({
+      message: "Method not allowed",
     });
   }
 
+  // Render is the only backend.
+  const backend = process.env.PRIMARY_BACKEND_URL;
+
+  if (!backend) {
+    console.error("PRIMARY_BACKEND_URL is missing.");
+
+    return res.status(500).json({
+      message: "Backend URL is not configured.",
+    });
+  }
+
+  // Preserve the original API path and query parameters.
   const path = req.url;
+
+  const targetUrl =
+    `${backend.replace(/\/+$/, "")}${path}`;
 
   const headers = new Headers();
 
+  // Forward authentication and content headers.
   for (const [key, value] of Object.entries(req.headers)) {
     if (!value) continue;
 
     const lower = key.toLowerCase();
 
     if (
-      lower === "host" ||
-      lower === "content-length" ||
-      lower === "connection" ||
-      lower === "origin"
+      [
+        "host",
+        "content-length",
+        "connection",
+        "origin",
+      ].includes(lower)
     ) {
       continue;
     }
 
     headers.set(
       key,
-      Array.isArray(value)
-        ? value.join(",")
-        : value
+      Array.isArray(value) ? value.join(",") : value
     );
   }
 
+  // Read request body for write operations.
   let body;
 
   if (!["GET", "HEAD"].includes(req.method)) {
-    const chunks = [];
-
-    for await (const chunk of req) {
-      chunks.push(
-        Buffer.isBuffer(chunk)
-          ? chunk
-          : Buffer.from(chunk)
-      );
-    }
-
-    body = Buffer.concat(chunks);
-  }
-
-  async function callBackend(baseUrl, timeoutMs) {
-    const url =
-      `${baseUrl.replace(/\/$/, "")}${path}`;
-
-    console.log(
-      `Calling cart backend: ${url}`
-    );
-
-    const controller =
-      new AbortController();
-
-    const timeout = setTimeout(() => {
-      controller.abort();
-    }, timeoutMs);
-
     try {
-      return await fetch(url, {
-        method: req.method,
-        headers,
-        body,
-        redirect: "manual",
-        signal: controller.signal
+      const chunks = [];
+
+      for await (const chunk of req) {
+        chunks.push(
+          Buffer.isBuffer(chunk)
+            ? chunk
+            : Buffer.from(chunk)
+        );
+      }
+
+      body = Buffer.concat(chunks);
+    } catch (error) {
+      console.error("Request body error:", error);
+
+      return res.status(400).json({
+        message: "Unable to read request body.",
       });
-    } finally {
-      clearTimeout(timeout);
     }
   }
 
-  async function sendResponse(response) {
-    response.headers.forEach(
-      (value, key) => {
-        const lower = key.toLowerCase();
+  const controller = new AbortController();
 
-        if (
-          lower !== "content-length" &&
-          lower !== "content-encoding" &&
-          lower !== "transfer-encoding" &&
-          lower !== "connection"
-        ) {
-          res.setHeader(key, value);
-        }
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, 55000);
+
+  try {
+    console.log("Cart request → Render:", targetUrl);
+
+    const response = await fetch(targetUrl, {
+      method: req.method,
+      headers,
+      body,
+      redirect: "manual",
+      signal: controller.signal,
+    });
+
+    // Forward backend response headers.
+    response.headers.forEach((value, key) => {
+      const lower = key.toLowerCase();
+
+      if (
+        [
+          "content-length",
+          "content-encoding",
+          "transfer-encoding",
+          "connection",
+      ].includes(lower)
+      ) {
+        return;
       }
-    );
 
-    const buffer = Buffer.from(
+      res.setHeader(key, value);
+    });
+
+    const responseBuffer = Buffer.from(
       await response.arrayBuffer()
     );
 
     return res
       .status(response.status)
-      .send(buffer);
-  }
-
-  try {
-    let response =
-      await callBackend(railway, 8000);
-
-    if (
-      ![502, 503, 504].includes(
-        response.status
-      )
-    ) {
-      return await sendResponse(response);
-    }
-
-    console.log(
-      `Railway returned ${response.status}. Trying Render...`
-    );
-
-    response =
-      await callBackend(render, 50000);
-
-    return await sendResponse(response);
+      .send(responseBuffer);
 
   } catch (error) {
-    console.error(
-      "Railway cart request failed:",
-      error
-    );
+    console.error("Render cart request failed:", error);
 
-    try {
-      const response =
-        await callBackend(render, 50000);
+    return res.status(503).json({
+      message:
+        error.name === "AbortError"
+          ? "Render backend request timed out."
+          : "Unable to connect to Render backend.",
+    });
 
-      return await sendResponse(response);
-
-    } catch (backupError) {
-      console.error(
-        "Both cart backends failed:",
-        backupError
-      );
-
-      return res.status(503).json({
-        message:
-          "Both backend servers are currently unavailable"
-      });
-    }
+  } finally {
+    clearTimeout(timeout);
   }
 }
+

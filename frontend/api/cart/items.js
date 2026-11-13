@@ -1,21 +1,32 @@
+
+export const config = {
+  maxDuration: 60,
+  api: {
+    bodyParser: false,
+  },
+};
+
 export default async function handler(req, res) {
-  const railway = process.env.PRIMARY_BACKEND_URL;
-  const render = process.env.BACKUP_BACKEND_URL;
-
-  if (!railway || !render) {
-    return res.status(500).json({
-      message: "Backend URLs are not configured"
-    });
-  }
-
   if (req.method !== "POST") {
     return res.status(405).json({
-      message: "Method not allowed"
+      message: "Method not allowed",
     });
   }
 
-  const path = "/api/cart/items";
+  const backend = process.env.PRIMARY_BACKEND_URL;
 
+  if (!backend) {
+    console.error("PRIMARY_BACKEND_URL is missing.");
+
+    return res.status(500).json({
+      message: "Backend URL is not configured.",
+    });
+  }
+
+  const baseUrl = backend.replace(/\/+$/, "");
+  const targetUrl = `${baseUrl}/api/cart/items`;
+
+  // Forward request headers while excluding hop-by-hop headers.
   const headers = new Headers();
 
   for (const [key, value] of Object.entries(req.headers)) {
@@ -24,10 +35,12 @@ export default async function handler(req, res) {
     const lower = key.toLowerCase();
 
     if (
-      lower === "host" ||
-      lower === "content-length" ||
-      lower === "connection" ||
-      lower === "origin"
+      [
+        "host",
+        "content-length",
+        "connection",
+        "origin",
+      ].includes(lower)
     ) {
       continue;
     }
@@ -38,6 +51,7 @@ export default async function handler(req, res) {
     );
   }
 
+  // Read the original request body.
   let body;
 
   try {
@@ -53,111 +67,64 @@ export default async function handler(req, res) {
 
     body = Buffer.concat(chunks);
   } catch (error) {
-    console.error("Failed to read request body:", error);
+    console.error("Cart request body error:", error);
 
     return res.status(400).json({
-      message: "Invalid request body"
+      message: "Unable to read cart request.",
     });
   }
 
-  async function callBackend(baseUrl, timeoutMs) {
-    const url =
-      `${baseUrl.replace(/\/$/, "")}${path}`;
+  const controller = new AbortController();
 
-    console.log(`Calling backend: ${url}`);
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, 55000);
 
-    const controller = new AbortController();
+  try {
+    console.log("Sending cart request to Render:", targetUrl);
 
-    const timeout = setTimeout(
-      () => controller.abort(),
-      timeoutMs
-    );
+    const response = await fetch(targetUrl, {
+      method: "POST",
+      headers,
+      body,
+      redirect: "manual",
+      signal: controller.signal,
+    });
 
-    try {
-      return await fetch(url, {
-        method: "POST",
-        headers,
-        body,
-        redirect: "manual",
-        signal: controller.signal
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
-
-  async function sendResponse(response) {
     response.headers.forEach((value, key) => {
       const lower = key.toLowerCase();
 
       if (
-        lower !== "content-length" &&
-        lower !== "content-encoding" &&
-        lower !== "transfer-encoding" &&
-        lower !== "connection"
+        ![
+          "content-length",
+          "content-encoding",
+          "transfer-encoding",
+          "connection",
+      ].includes(lower)
       ) {
         res.setHeader(key, value);
       }
     });
 
-    const buffer = Buffer.from(
+    const responseBuffer = Buffer.from(
       await response.arrayBuffer()
     );
 
     return res
       .status(response.status)
-      .send(buffer);
-  }
-
-  try {
-    let response = await callBackend(
-      railway,
-      8000
-    );
-
-    if (![502, 503, 504].includes(response.status)) {
-      return await sendResponse(response);
-    }
-
-    console.log(
-      `Railway returned ${response.status}. Trying Render...`
-    );
-
-    response = await callBackend(
-      render,
-      50000
-    );
-
-    return await sendResponse(response);
+      .send(responseBuffer);
 
   } catch (error) {
-    console.error(
-      "Railway cart request failed:",
-      error
-    );
+    console.error("Render cart request failed:", error);
 
-    try {
-      console.log(
-        "Trying Render backup..."
-      );
+    return res.status(503).json({
+      message: error.name === "AbortError"
+        ? "Render backend request timed out. Please try again."
+        : "Unable to connect to the Render backend.",
+    });
 
-      const response = await callBackend(
-        render,
-        50000
-      );
-
-      return await sendResponse(response);
-
-    } catch (backupError) {
-      console.error(
-        "Both cart backends failed:",
-        backupError
-      );
-
-      return res.status(503).json({
-        message:
-          "Both backend servers are currently unavailable"
-      });
-    }
+  } finally {
+    clearTimeout(timeout);
   }
 }
+
